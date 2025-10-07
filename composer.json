@@ -6,7 +6,7 @@
   "version": "1.0.0",
   "require": {
     "php": "~8.2|~8.3|~8.4",
-    "algolia/algoliasearch-magento-2": "^3.18.0",
+    "algolia/algoliasearch-magento-2": "^3.18.0"
   },
   "autoload": {
     "files": [ "registration.php" ],
