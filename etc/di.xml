@@ -22,4 +22,73 @@
             </argument>
         </arguments>
     </type>
+
+    <type name="Magento\Search\Model\AdapterFactory">
+        <arguments>
+            <argument name="adapters" xsi:type="array">
+                <item name="algolia" xsi:type="string">Algolia\SearchAdapter\SearchAdapter\Adapter</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!-- Temp fallback to Elasticsearch aggregators / mappers -->
+    <type name="Magento\Framework\Search\Dynamic\IntervalFactory">
+        <arguments>
+            <argument name="intervals" xsi:type="array">
+                <item name="algolia" xsi:type="string">Magento\Elasticsearch\Elasticsearch5\SearchAdapter\Aggregation\Interval</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <type name="Magento\Elasticsearch\Elasticsearch5\Model\Adapter\FieldMapper\ProductFieldMapperProxy">
+        <arguments>
+            <argument name="productFieldMappers" xsi:type="array">
+                <item name="algolia" xsi:type="object">Algolia\SearchAdapter\Model\Adapter\FieldMapper\ProductFieldMapper</item>
+            </argument>
+        </arguments>
+    </type>
+    <virtualType name="Algolia\SearchAdapter\Model\Adapter\FieldMapper\ProductFieldMapper"
+                 type="Magento\Elasticsearch\Elasticsearch5\Model\Adapter\FieldMapper\ProductFieldMapper">
+        <arguments>
+            <argument name="fieldProvider" xsi:type="object">elasticsearch5FieldProvider</argument>
+            <argument name="fieldNameResolver" xsi:type="object">Algolia\SearchAdapter\Model\Adapter\FieldMapper\Product\FieldProvider\FieldName\Resolver\CompositeResolver</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="Algolia\SearchAdapter\Model\Adapter\FieldMapper\Product\FieldProvider\FieldName\Resolver\CompositeResolver"
+                 type="Magento\Elasticsearch\Model\Adapter\FieldMapper\Product\FieldProvider\FieldName\Resolver\CompositeResolver">
+        <arguments>
+            <argument name="items" xsi:type="array">
+                <item name="notEav" xsi:type="object" sortOrder="10">\Magento\Elasticsearch\Model\Adapter\FieldMapper\Product\FieldProvider\FieldName\Resolver\NotEavAttribute</item>
+                <item name="special" xsi:type="object" sortOrder="20">\Magento\Elasticsearch\Model\Adapter\FieldMapper\Product\FieldProvider\FieldName\Resolver\SpecialAttribute</item>
+                <item name="price" xsi:type="object" sortOrder="30">\Magento\Elasticsearch\Model\Adapter\FieldMapper\Product\FieldProvider\FieldName\Resolver\Price</item>
+                <item name="categoryName" xsi:type="object" sortOrder="40">\Magento\Elasticsearch\Model\Adapter\FieldMapper\Product\FieldProvider\FieldName\Resolver\CategoryName</item>
+                <item name="position" xsi:type="object" sortOrder="50">\Magento\Elasticsearch\Model\Adapter\FieldMapper\Product\FieldProvider\FieldName\Resolver\Position</item>
+                <item name="default" xsi:type="object" sortOrder="100">Magento\OpenSearch\Model\Adapter\FieldMapper\Product\FieldProvider\FieldName\Resolver\DefaultResolver</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="Algolia\SearchAdapter\Model\DataProvider\Suggestions" type="Magento\Elasticsearch\Model\DataProvider\Base\Suggestions">
+        <arguments>
+            <argument name="fieldProvider" xsi:type="object">elasticsearch5FieldProvider</argument>
+        </arguments>
+    </virtualType>
+    <type name="Magento\AdvancedSearch\Model\SuggestedQueries">
+        <arguments>
+            <argument name="data" xsi:type="array">
+                <item name="algolia" xsi:type="string">Algolia\SearchAdapter\Model\DataProvider\Suggestions</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!-- Elasticsearch is best disabled - but if it is not... -->
+    <virtualType name="elasticsearchLayerSearchItemCollectionProvider" type="Magento\Elasticsearch\Model\Layer\Search\ItemCollectionProvider">
+        <arguments>
+            <argument name="factories" xsi:type="array">
+                <item name="algolia" xsi:type="object">Magento\CatalogSearch\Model\ResourceModel\Fulltext\SearchCollectionFactory</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+
 </config>
