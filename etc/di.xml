@@ -90,5 +90,13 @@
         </arguments>
     </virtualType>
 
+    <virtualType name="elasticsearchLayerCategoryItemCollectionProvider" type="Magento\Elasticsearch\Model\Layer\Category\ItemCollectionProvider">
+        <arguments>
+            <argument name="factories" xsi:type="array">
+                <item name="algolia" xsi:type="object">Magento\CatalogSearch\Model\ResourceModel\Fulltext\SearchCollectionFactory</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
 
 </config>
