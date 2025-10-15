@@ -90,10 +90,20 @@
         </arguments>
     </virtualType>
 
+    <virtualType name="algoliaCategoryCollection" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection">
+        <arguments>
+            <argument name="searchRequestName" xsi:type="string">catalog_view_container</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="algoliaCategoryCollectionFactory" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\SearchCollectionFactory">
+        <arguments>
+            <argument name="instanceName" xsi:type="string">algoliaCategoryCollection</argument>
+        </arguments>
+    </virtualType>
     <virtualType name="elasticsearchLayerCategoryItemCollectionProvider" type="Magento\Elasticsearch\Model\Layer\Category\ItemCollectionProvider">
         <arguments>
             <argument name="factories" xsi:type="array">
-                <item name="algolia" xsi:type="object">Magento\CatalogSearch\Model\ResourceModel\Fulltext\SearchCollectionFactory</item>
+                <item name="algolia" xsi:type="object">algoliaCategoryCollectionFactory</item>
             </argument>
         </arguments>
     </virtualType>
