@@ -26,7 +26,7 @@
     <type name="Magento\Search\Model\AdapterFactory">
         <arguments>
             <argument name="adapters" xsi:type="array">
-                <item name="algolia" xsi:type="string">Algolia\SearchAdapter\SearchAdapter\Adapter</item>
+                <item name="algolia" xsi:type="string">Algolia\SearchAdapter\Model\Adapter</item>
             </argument>
         </arguments>
     </type>
