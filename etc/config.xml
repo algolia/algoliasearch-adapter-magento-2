@@ -5,5 +5,10 @@
                 <algolia_search_timeout>100</algolia_search_timeout>
             </search>
         </catalog>
+        <algoliasearch_advanced>
+            <search_adapter>
+                <disable_es>1</disable_es>
+            </search_adapter>
+        </algoliasearch_advanced>
     </default>
 </config>

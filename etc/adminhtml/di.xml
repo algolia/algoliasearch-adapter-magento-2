@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\CatalogSearch\Model\Indexer\Fulltext">
+        <plugin name="algolia_adapter_disable_es_indexing" type="Algolia\SearchAdapter\Plugin\Indexer\DisableElasticSearchIndexing"/>
+    </type>
+</config>

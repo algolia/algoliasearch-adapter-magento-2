@@ -4,7 +4,6 @@
     <system>
         <section id="catalog">
             <group id="search">
-                <!-- Elasticsearch 8 -->
                 <field id="algolia_search_timeout" translate="label" type="text" sortOrder="61"
                        showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Algolia Search Request Timeout</label>
@@ -16,6 +15,29 @@
                     <depends>
                         <field id="engine">algolia</field>
                     </depends>
+                </field>
+            </group>
+        </section>
+        <section id="algoliasearch_advanced">
+            <group id="search_adapter" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>Search Adapter</label>
+                <attribute type="expanded">1</attribute>
+                <comment>
+                    <![CDATA[
+                            These advanced settings belong to the <code>Algolia_SearchAdapter</code> module
+                      ]]>
+                </comment>
+                <field id="disable_es" translate="label comment" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Disable Elasticsearch (or OpenSearch)</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>
+                        <![CDATA[
+                             If you are using Algolia for both your browse and search experiences then it will not be necessary to use Elasticsearch.
+                             Select this option if you wish to use your Algolia indices for all product data retrieval.
+                             This will prevent future indexing to Elasticsearch via the <code>catalogsearch_fulltext</code> index and even backend rendering will now be performed by building your results from the Algolia index.
+                        <br><span class="algolia-config-warning">&#9888;</span> This setting depends on the configuration defined at <code>catalog/search/engine</code>.
+                        ]]>
+                    </comment>
                 </field>
             </group>
         </section>
