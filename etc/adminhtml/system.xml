@@ -2,6 +2,22 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
+        <section id="catalog">
+            <group id="search">
+                <field id="algolia_search_timeout" translate="label" type="text" sortOrder="61"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Algolia Search Request Timeout</label>
+                    <comment>
+                        <![CDATA[
+                            Number of milliseconds to allow Algolia to respond to search requests.
+                        ]]>
+                    </comment>
+                    <depends>
+                        <field id="engine">algolia</field>
+                    </depends>
+                </field>
+            </group>
+        </section>
         <section id="algoliasearch_advanced">
             <group id="search_adapter" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0">
                 <label>Search Adapter</label>
