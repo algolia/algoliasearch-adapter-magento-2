@@ -3,6 +3,8 @@
 namespace Algolia\SearchAdapter\Model;
 
 use Algolia\AlgoliaSearch\Service\AlgoliaConnector;
+use Algolia\SearchAdapter\Model\Request\QueryMapper;
+use Algolia\SearchAdapter\Model\Response\DocumentMapper;;
 
 use Magento\Framework\Search\AdapterInterface;
 use Magento\Framework\Search\RequestInterface;
@@ -18,6 +20,8 @@ class Adapter implements AdapterInterface
 {
     public function __construct(
         protected AlgoliaConnector      $connector,
+        protected QueryMapper           $queryMapper,
+        protected DocumentMapper        $documentMapper,
         protected ResponseFactory       $responseFactory,
         protected AggregationBuilder    $aggregationBuilder,
         protected QueryContainerFactory $queryContainerFactory,
@@ -29,24 +33,28 @@ class Adapter implements AdapterInterface
      */
     public function query(RequestInterface $request): QueryResponse
     {
-        // Fallback to OpenSearch impl to stub returning a valid QueryResponse
+        $queryLegacy = $this->mapper->buildQuery($request);
+        $query = $this->queryMapper->buildQuery($request);
 
-        // TODO: Implement Algolia query mapper
-        $query = $this->mapper->buildQuery($request);
+        $response = $this->connector->query($query);
 
-        // Mock response - TODO: Implement Algolia search client
-        $rawResponse = $this->getSampleResponseData($request);
-        $rawDocuments = $rawResponse['hits']['hits'] ?? [];
+        $documents = $this->documentMapper->buildDocuments($response);
 
+        // Mock response for aggregations and testing
         // TODO: Implement Algolia aggregation builder
-        $this->aggregationBuilder->setQuery($this->queryContainerFactory->create(['query' => $query]));
+        $mockResponse = $this->getSampleResponseData($request);
+        $mockDocuments = $mockResponse['hits']['hits'] ?? [];
+        $mockTotal = $mockResponse['hits']['total']['value'] ?? 0;
+        $this->aggregationBuilder->setQuery($this->queryContainerFactory->create(['query' => $queryLegacy]));
+        $mockAggregations = $this->aggregationBuilder->build($request, $mockResponse);
+        // End mocks
 
         // TODO: Implement Algolia response factory as needed
         return $this->responseFactory->create(
             [
-                'documents' => $rawDocuments,
-                'aggregations' => $this->aggregationBuilder->build($request, $rawResponse),
-                'total' => $rawResponse['hits']['total']['value'] ?? 0
+                'documents' => $documents,
+                'aggregations' => $mockAggregations,
+                'total' => count($documents),
             ]
         );
     }
@@ -65,6 +73,7 @@ class Adapter implements AdapterInterface
         }
     }
 
+    /** Test on Category ID 12 */
     private function rawCategoryResponseProvider(): array
     {
         return array(
@@ -863,6 +872,7 @@ class Adapter implements AdapterInterface
         );
     }
 
+    /** "Joust" */
     private function rawSearchResponseProvider(): array
     {
         return array(
