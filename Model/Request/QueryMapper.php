@@ -7,9 +7,9 @@ use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterfaceFactory;
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\AlgoliaSearch\Service\Product\IndexOptionsBuilder;
-use Magento\Elasticsearch\Model\Adapter\FieldMapper\Product\FieldProvider\FieldType\ConverterInterface as FieldTypeConverterInterface;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Search\Request\Filter\Term;
 use Magento\Framework\Search\Request\FilterInterface as RequestFilterInterface;
 use Magento\Framework\Search\Request\Query\BoolExpression as BoolQuery;
 use Magento\Framework\Search\Request\Query\Filter as FilterQuery;
@@ -107,6 +107,10 @@ class QueryMapper
         }
 
         $term = $filter->getReference();
+        if ($term->getType() !== RequestFilterInterface::TYPE_TERM) {
+            return '';
+        }
+        /** @var Term */
         return $term->getValue() !== false ? $term->getValue() : '';
     }
 
