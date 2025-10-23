@@ -43,6 +43,6 @@ class Engine implements EngineInterface
     /** Not part of interface but called by \Magento\CatalogSearch\Model\ResourceModel\EngineProvider */
     public function isAvailable(): bool
     {
-        return false; // preventing indexing for now - but ugly error
+        return true;
     }
 }

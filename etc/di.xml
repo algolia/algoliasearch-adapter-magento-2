@@ -31,6 +31,14 @@
         </arguments>
     </type>
 
+    <type name="Magento\CatalogSearch\Model\Indexer\IndexerHandlerFactory">
+        <arguments>
+            <argument name="handlers" xsi:type="array">
+                <item name="algolia" xsi:type="string">Algolia\SearchAdapter\Model\Indexer\IndexerHandler</item>
+            </argument>
+        </arguments>
+    </type>
+
     <!-- Temp fallback to Elasticsearch aggregators / mappers -->
     <type name="Magento\Framework\Search\Dynamic\IntervalFactory">
         <arguments>
