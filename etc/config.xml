@@ -7,7 +7,7 @@
         </catalog>
         <algoliasearch_advanced>
             <search_adapter>
-                <disable_es>1</disable_es>
+                <!-- placeholder for future fields -->
             </search_adapter>
         </algoliasearch_advanced>
     </default>

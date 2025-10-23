@@ -19,7 +19,7 @@ class DisableElasticSearchIndexing
      */
     public function aroundExecute(EsFulltextIndexer $subject, callable $proceed, $entityIds): void
     {
-        if ($this->adapterConfigHelper->isElasticSearchDisabled()) {
+        if ($this->adapterConfigHelper->isAlgoliaEngineSelected()) {
             return;
         }
 
@@ -33,7 +33,7 @@ class DisableElasticSearchIndexing
      */
     public function aroundExecuteFull(EsFulltextIndexer $subject, callable $proceed): void
     {
-        if ($this->adapterConfigHelper->isElasticSearchDisabled()) {
+        if ($this->adapterConfigHelper->isAlgoliaEngineSelected()) {
             return;
         }
 
@@ -53,7 +53,7 @@ class DisableElasticSearchIndexing
         array $dimensions,
         ?\Traversable $entityIds = null
     ): void {
-        if ($this->adapterConfigHelper->isElasticSearchDisabled()) {
+        if ($this->adapterConfigHelper->isAlgoliaEngineSelected()) {
             return;
         }
 
