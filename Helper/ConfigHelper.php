@@ -12,6 +12,9 @@ class ConfigHelper
 {
     public const ALGOLIA_ENGINE = "algolia";
 
+    public const CONNECTION_TIMEOUT = 'catalog/search/algolia_connect_timeout';
+    public const READ_TIMEOUT = 'catalog/search/algolia_read_timeout';
+
     public function __construct(
         protected EngineResolverInterface $engineResolver,
         protected ScopeConfigInterface    $configInterface,
@@ -70,6 +73,24 @@ class ConfigHelper
     public function getApiKey(?int $websiteId = null, ?int $storeId = null): string
     {
         return $this->getConfigByScope(BaseConfigHelper::API_KEY, $websiteId, $storeId);
+    }
+
+    /**
+     * Backend search uses different timeout settings from indexer
+     * Only used by frontend not adminhtml scoped
+     */
+    public function getConnectionTimeout(?int $storeId = null): int
+    {
+        return $this->getConfigByScope(self::CONNECTION_TIMEOUT, null, $storeId);
+    }
+
+    /**
+     * Backend search uses different timeout settings from indexer
+     * Only used by frontend not adminhtml scoped
+     */
+    public function getReadTimeout(?int $storeId = null): int
+    {
+        return $this->getConfigByScope(self::READ_TIMEOUT, null, $storeId);
     }
 
 }
