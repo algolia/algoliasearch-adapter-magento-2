@@ -2,8 +2,8 @@
     <default>
         <catalog>
             <search>
-                <algolia_connect_timeout>100</algolia_connect_timeout>
-                <algolia_read_timeout>100</algolia_read_timeout>
+                <algolia_connect_timeout>2</algolia_connect_timeout>
+                <algolia_read_timeout>5</algolia_read_timeout>
             </search>
         </catalog>
         <algoliasearch_advanced>

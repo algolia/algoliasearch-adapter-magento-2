@@ -11,10 +11,10 @@
                 </field>
                 <field id="algolia_connect_timeout" translate="label" type="text" sortOrder="61"
                        showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Algolia Connection Timeout (in milliseconds)</label>
+                    <label>Algolia Connection Timeout (in seconds)</label>
                     <comment>
                         <![CDATA[
-                            Number of milliseconds to allow Algolia to respond to connection requests.
+                            Number of seconds to allow Algolia to respond to connection requests.
                         ]]>
                     </comment>
                     <depends>
@@ -23,10 +23,10 @@
                 </field>
                 <field id="algolia_read_timeout" translate="label" type="text" sortOrder="62"
                        showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Algolia Read Timeout (in milliseconds)</label>
+                    <label>Algolia Read Timeout (in seconds)</label>
                     <comment>
                         <![CDATA[
-                            Number of milliseconds to allow Algolia to perform read operations.
+                            Number of seconds to allow Algolia to perform read operations.
                         ]]>
                     </comment>
                     <depends>

@@ -7,7 +7,8 @@ use Magento\AdvancedSearch\Model\Client\ClientOptionsInterface;
 
 class Config implements ClientOptionsInterface
 {
-    const ALGOLIA_DEFAULT_TIMEOUT = 300;
+    const DEFAULT_TIMEOUT_CONNECT = 2;
+    const DEFAULT_TIMEOUT_READ = 5;
 
     public function __construct(
         protected ConfigHelper  $configHelper
@@ -16,7 +17,7 @@ class Config implements ClientOptionsInterface
     /**
      * @inheritdoc
      */
-    public function prepareClientOptions($options = [])
+    public function prepareClientOptions($options = []): array
     {
         $storeId = $options['store'] ?? null;
         $websiteId = $options['website'] ?? null;
@@ -24,8 +25,8 @@ class Config implements ClientOptionsInterface
         $defaultOptions = [
             'applicationId' => $this->configHelper->getApplicationId($websiteId, $storeId),
             'apiKey' => $this->configHelper->getApiKey($websiteId, $storeId),
-            'connectTimeout' => self::ALGOLIA_DEFAULT_TIMEOUT,
-            'readTimeout' => self::ALGOLIA_DEFAULT_TIMEOUT
+            'connectTimeout' => self::DEFAULT_TIMEOUT_CONNECT,
+            'readTimeout' => self::DEFAULT_TIMEOUT_READ
         ];
         $options = array_merge($defaultOptions, $options);
         $allowedOptions = array_merge(array_keys($defaultOptions), ['engine']);
