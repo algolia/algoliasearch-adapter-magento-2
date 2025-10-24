@@ -11,8 +11,14 @@
                 </field>
                 <field id="algolia_app_id" translate="label" type="text" sortOrder="61"
                        showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Application ID</label>
+                    <label>Algolia Application ID</label>
                     <frontend_model>Algolia\SearchAdapter\Block\Adminhtml\System\Config\ApplicationId</frontend_model>
+                    <comment>
+                        <model>Algolia\SearchAdapter\Model\Config\Comment\ApplicationIdComment</model>
+                    </comment>
+                    <depends>
+                        <field id="engine">algolia</field>
+                    </depends>
                 </field>
                 <field id="algolia_connect_timeout" translate="label" type="text" sortOrder="64"
                        showInDefault="1" showInWebsite="1" showInStore="1">
