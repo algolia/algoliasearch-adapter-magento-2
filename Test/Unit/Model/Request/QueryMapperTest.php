@@ -34,8 +34,6 @@ class QueryMapperTest extends TestCase
 
     protected function setUp(): void
     {
-        parent::setUp();
-
         $this->searchQueryFactory = $this->createMock(SearchQueryInterfaceFactory::class);
         $this->scopeResolver = $this->createMock(ScopeResolverInterface::class);
         $this->indexOptionsBuilder = $this->createMock(IndexOptionsBuilder::class);
@@ -59,19 +57,19 @@ class QueryMapperTest extends TestCase
 
         $request->method('getDimensions')->willReturn([$dimension]);
         $request->method('getQuery')->willReturn($boolQuery);
-        
+
         $dimension->method('getValue')->willReturn('default');
         $this->scopeResolver->method('getScope')->with('default')->willReturn($this->scope);
         $this->scope->method('getId')->willReturn(1);
-        
+
         $this->indexOptionsBuilder->method('buildEntityIndexOptions')->with(1)->willReturn($this->indexOptions);
-        
+
         $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
         $boolQuery->method('getShould')->willReturn(['search' => $matchQuery]);
         $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery()]);
-        
+
         $matchQuery->method('getValue')->willReturn('test search');
-        
+
         $this->searchQueryFactory->method('create')->willReturn($this->searchQuery);
 
         $result = $this->queryMapper->buildQuery($request);
@@ -86,7 +84,7 @@ class QueryMapperTest extends TestCase
 
         $request->method('getDimensions')->willReturn([$dimension]);
         $dimension->method('getValue')->willReturn('invalid');
-        
+
         $this->scopeResolver->method('getScope')->with('invalid')
             ->willThrowException(new NoSuchEntityException(__('Invalid scope')));
 
@@ -101,10 +99,10 @@ class QueryMapperTest extends TestCase
 
         $request->method('getDimensions')->willReturn([$dimension]);
         $dimension->method('getValue')->willReturn('default');
-        
+
         $this->scopeResolver->method('getScope')->with('default')->willReturn($this->scope);
         $this->scope->method('getId')->willReturn(1);
-        
+
         $this->indexOptionsBuilder->method('buildEntityIndexOptions')->with(1)
             ->willThrowException(new AlgoliaException('Algolia error'));
 
@@ -119,10 +117,10 @@ class QueryMapperTest extends TestCase
 
         $request->method('getDimensions')->willReturn([$dimension]);
         $dimension->method('getValue')->willReturn('default');
-        
+
         $this->scopeResolver->method('getScope')->with('default')->willReturn($this->scope);
         $this->scope->method('getId')->willReturn(1);
-        
+
         $this->indexOptionsBuilder->method('buildEntityIndexOptions')->with(1)->willReturn($this->indexOptions);
 
         $result = $this->invokeMethod($this->queryMapper, 'getIndexOptions', [$request]);
@@ -204,11 +202,11 @@ class QueryMapperTest extends TestCase
         $request->method('getQuery')->willReturn($boolQuery);
         $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
         $boolQuery->method('getMust')->willReturn(['category' => $filterQuery]);
-        
+
         $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
         $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
         $filterQuery->method('getReference')->willReturn($termFilter);
-        
+
         $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
         $termFilter->method('getValue')->willReturn('12');
 
@@ -251,11 +249,11 @@ class QueryMapperTest extends TestCase
         $termFilter = $this->createMockTermFilter();
 
         $boolQuery->method('getMust')->willReturn(['category' => $filterQuery]);
-        
+
         $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
         $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
         $filterQuery->method('getReference')->willReturn($termFilter);
-        
+
         $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
         $termFilter->method('getValue')->willReturn('12');
 
@@ -294,7 +292,7 @@ class QueryMapperTest extends TestCase
         $filterQuery = $this->createMockFilterQuery();
 
         $boolQuery->method('getMust')->willReturn(['category' => $filterQuery]);
-        
+
         $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
         $filterQuery->method('getReferenceType')->willReturn('other');
 
@@ -310,11 +308,11 @@ class QueryMapperTest extends TestCase
         $termFilter = $this->createMockTermFilter();
 
         $boolQuery->method('getMust')->willReturn(['category' => $filterQuery]);
-        
+
         $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
         $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
         $filterQuery->method('getReference')->willReturn($termFilter);
-        
+
         $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
         $termFilter->method('getValue')->willReturn(false);
 

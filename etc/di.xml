@@ -89,6 +89,23 @@
         </arguments>
     </type>
 
+    <!-- Resolver -->
+    <type name="Magento\AdvancedSearch\Model\Client\ClientResolver">
+        <arguments>
+            <argument name="clientFactories" xsi:type="array">
+                <item name="algolia" xsi:type="string">Algolia\SearchAdapter\Model\Client\AlgoliaSearchFactory</item>
+            </argument>
+            <argument name="clientOptions" xsi:type="array">
+                <item name="algolia" xsi:type="string">Algolia\SearchAdapter\Model\Config</item>
+            </argument>
+        </arguments>
+    </type>
+    <virtualType name="Algolia\SearchAdapter\Model\Client\AlgoliaSearchFactory" type="Magento\AdvancedSearch\Model\Client\ClientFactory">
+        <arguments>
+            <argument name="clientClass" xsi:type="string">Algolia\SearchAdapter\Model\SearchClient</argument>
+        </arguments>
+    </virtualType>
+
     <!-- Elasticsearch is best disabled - but if it is not... -->
     <virtualType name="elasticsearchLayerSearchItemCollectionProvider" type="Magento\Elasticsearch\Model\Layer\Search\ItemCollectionProvider">
         <arguments>

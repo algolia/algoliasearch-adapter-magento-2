@@ -5,7 +5,6 @@ namespace Algolia\SearchAdapter\Model\Request;
 use Algolia\AlgoliaSearch\Api\Data\IndexOptionsInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterfaceFactory;
-use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\AlgoliaSearch\Service\Product\IndexOptionsBuilder;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -27,7 +26,6 @@ class QueryMapper
 
     /**
      * @throws NoSuchEntityException
-     * @throws AlgoliaException
      */
     public function buildQuery(RequestInterface $request): SearchQueryInterface
     {
@@ -40,7 +38,6 @@ class QueryMapper
 
     /**
      * @throws NoSuchEntityException
-     * @throws AlgoliaException
      */
     protected function getIndexOptions(RequestInterface $request): IndexOptionsInterface
     {
@@ -91,7 +88,7 @@ class QueryMapper
         return $params;
     }
 
-    protected function getParam(BoolQuery $query, string $key)
+    protected function getParam(BoolQuery $query, string $key): string
     {
         $must = $query->getMust();
         if (!array_key_exists($key, $must)) {

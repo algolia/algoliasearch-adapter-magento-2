@@ -8,13 +8,15 @@ class DocumentMapper
     {
         $i = 0;
         return array_map(
-            fn(array $hit) => [
-                'fields' => [
-                    '_id' => [ $hit['objectID'] ],
-                ],
-                'score' => null,
-                'sort' => [ ++$i, $hit['objectID'] ]
-            ],
+            function(array $hit) use (&$i) {
+                return [
+                    'fields' => [
+                        '_id' => [ $hit['objectID'] ],
+                    ],
+                    'score' => null,
+                    'sort' => [ ++$i, $hit['objectID'] ]
+                ];
+            },
             $this->extractHits($searchResponse)
         );
     }
