@@ -2,10 +2,11 @@
 
 namespace Algolia\SearchAdapter\Model;
 
-use Algolia\AlgoliaSearch\Service\AlgoliaConnector;
+use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\SearchAdapter\Model\Request\QueryMapper;
 use Algolia\SearchAdapter\Model\Response\DocumentMapper;;
-
+use Algolia\SearchAdapter\Service\AlgoliaBackendConnector;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\AdapterInterface;
 use Magento\Framework\Search\RequestInterface;
 use Magento\Framework\Search\Response\QueryResponse;
@@ -19,17 +20,19 @@ use Magento\Elasticsearch\ElasticAdapter\SearchAdapter\Mapper;
 class Adapter implements AdapterInterface
 {
     public function __construct(
-        protected AlgoliaConnector      $connector,
-        protected QueryMapper           $queryMapper,
-        protected DocumentMapper        $documentMapper,
-        protected ResponseFactory       $responseFactory,
-        protected AggregationBuilder    $aggregationBuilder,
-        protected QueryContainerFactory $queryContainerFactory,
-        protected Mapper                $mapper,
+        protected AlgoliaBackendConnector $connector,
+        protected QueryMapper             $queryMapper,
+        protected DocumentMapper          $documentMapper,
+        protected ResponseFactory         $responseFactory,
+        protected AggregationBuilder      $aggregationBuilder,
+        protected QueryContainerFactory   $queryContainerFactory,
+        protected Mapper                  $mapper,
     ){}
 
     /**
      * @inheritDoc
+     *
+     * @throws NoSuchEntityException|AlgoliaException
      */
     public function query(RequestInterface $request): QueryResponse
     {
