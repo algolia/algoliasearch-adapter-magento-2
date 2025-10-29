@@ -33,6 +33,7 @@ class Engine extends \Magento\Config\Block\System\Config\Form\Field
     {
         if (!$this->configHelper->isEngineSelectEnabled($this->getRequest())) {
             $element->setReadonly(true);
+            $element->setData('disabled', true);
         }
         return parent::_getElementHtml($element);
     }
