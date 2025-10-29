@@ -33,10 +33,9 @@ class ConfigHelper
         return !$request->getParam('store') && !$request->getParam('website');
     }
 
-    public function isEngineSelectVisible(RequestInterface $request): bool {
-        return
-            $this->isEngineSelectEnabled($request)
-            ||
+    public function isEngineSelectVisible(RequestInterface $request): bool 
+    {
+        return $this->isEngineSelectEnabled($request)  ||
             !$this->isEngineSelectEnabled($request) && $this->isAlgoliaEngineSelected();
     }
 
