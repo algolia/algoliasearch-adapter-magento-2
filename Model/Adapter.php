@@ -4,7 +4,7 @@ namespace Algolia\SearchAdapter\Model;
 
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\SearchAdapter\Model\Request\QueryMapper;
-use Algolia\SearchAdapter\Model\Response\DocumentMapper;;
+use Algolia\SearchAdapter\Model\Response\DocumentMapper;
 use Algolia\SearchAdapter\Service\AlgoliaBackendConnector;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\AdapterInterface;
@@ -50,15 +50,22 @@ class Adapter implements AdapterInterface
         $mockTotal = $mockResponse['hits']['total']['value'] ?? 0;
         $this->aggregationBuilder->setQuery($this->queryContainerFactory->create(['query' => $queryLegacy]));
         $mockAggregations = $this->aggregationBuilder->build($request, $mockResponse);
+        $mockRawArray = [
+            'documents' => $mockDocuments,
+            'aggregations' => $mockAggregations,
+            'total' => $mockTotal
+        ];
         // End mocks
+
+        $rawArray =  [
+            'documents' => $documents,
+            'aggregations' => $mockAggregations,
+            'total' => count($documents)
+        ];
 
         // TODO: Implement Algolia response factory as needed
         return $this->responseFactory->create(
-            [
-                'documents' => $documents,
-                'aggregations' => $mockAggregations,
-                'total' => count($documents),
-            ]
+            $rawArray
         );
     }
 

@@ -31,6 +31,7 @@
         </arguments>
     </type>
 
+    <!-- catalogsearch_fulltext index -->
     <type name="Magento\CatalogSearch\Model\Indexer\IndexerHandlerFactory">
         <arguments>
             <argument name="handlers" xsi:type="array">
@@ -39,7 +40,100 @@
         </arguments>
     </type>
 
-    <!-- Temp fallback to Elasticsearch aggregators / mappers -->
+    <!-- AdvancedSearch client resolver for Algolia backend search configuration -->
+    <type name="Magento\AdvancedSearch\Model\Client\ClientResolver">
+        <arguments>
+            <argument name="clientFactories" xsi:type="array">
+                <item name="algolia" xsi:type="string">Algolia\SearchAdapter\Model\Client\AlgoliaSearchFactory</item>
+            </argument>
+            <argument name="clientOptions" xsi:type="array">
+                <item name="algolia" xsi:type="string">Algolia\SearchAdapter\Model\Config</item>
+            </argument>
+        </arguments>
+    </type>
+    <virtualType name="Algolia\SearchAdapter\Model\Client\AlgoliaSearchFactory" type="Magento\AdvancedSearch\Model\Client\ClientFactory">
+        <arguments>
+            <argument name="clientClass" xsi:type="string">Algolia\SearchAdapter\Model\SearchClient</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- ############################################################################################################ -->
+    <!-- BEGIN virtual collections -->
+    <!-- ############################################################################################################ -->
+
+    <virtualType name="algoliaTotalRecordsResolver\Factory" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection\TotalRecordsResolverFactory">
+        <arguments>
+            <argument name="instanceName" xsi:type="string">Algolia\SearchAdapter\Model\ResourceModel\Fulltext\Collection\TotalRecordsResolver</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- TODO: Implement resolvers / appliers as needed -->
+    <virtualType name="algoliaFulltextSearchCollection" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection">
+        <arguments>
+            <argument name="searchRequestName" xsi:type="string">quick_search_container</argument>
+            <argument name="totalRecordsResolverFactory" xsi:type="object">algoliaTotalRecordsResolver\Factory</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="algoliaFulltextSearchCollectionFactory" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\SearchCollectionFactory">
+        <arguments>
+            <argument name="instanceName" xsi:type="string">algoliaFulltextSearchCollection</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Categories -->
+    <!-- TODO: Implement resolvers / appliers as needed -->
+    <virtualType name="algoliaCategoryCollection" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection">
+        <arguments>
+            <argument name="searchRequestName" xsi:type="string">catalog_view_container</argument>
+            <argument name="totalRecordsResolverFactory" xsi:type="object">algoliaTotalRecordsResolver\Factory</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="algoliaCategoryCollectionFactory" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\SearchCollectionFactory">
+        <arguments>
+            <argument name="instanceName" xsi:type="string">algoliaCategoryCollection</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- ############################################################################################################ -->
+    <!-- END virtual collections -->
+    <!-- ############################################################################################################ -->
+
+    <!-- The Algolia adapter implementation relies on core Elasticsearch plumbing to inject the engine -->
+    <virtualType name="elasticsearchLayerSearchItemCollectionProvider" type="Magento\Elasticsearch\Model\Layer\Search\ItemCollectionProvider">
+        <arguments>
+            <argument name="factories" xsi:type="array">
+                <item name="algolia" xsi:type="object">algoliaFulltextSearchCollectionFactory</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="elasticsearchLayerCategoryItemCollectionProvider" type="Magento\Elasticsearch\Model\Layer\Category\ItemCollectionProvider">
+        <arguments>
+            <argument name="factories" xsi:type="array">
+                <item name="algolia" xsi:type="object">algoliaCategoryCollectionFactory</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <!-- If Elasticsearch is disabled other DI must be enabled -->
+    <!-- TODO: Ensure that injections can still work without Elastic -->
+    <virtualType name="Algolia\SearchAdapter\Model\Layer\Search\Context" type="Magento\Catalog\Model\Layer\Search\Context">
+        <arguments>
+            <!-- TODO: Inject here the Algolia collection provider TBD -->
+            <argument name="collectionProvider" xsi:type="object">elasticsearchLayerSearchItemCollectionProvider</argument>
+            <argument name="stateKey" xsi:type="object">Magento\CatalogSearch\Model\Layer\Search\StateKey</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Uncomment to inject Algolia into the layer model - if ElasticSearch is fully uninstalled -->
+<!--    <type name="Magento\Catalog\Model\Layer\Search">-->
+<!--        <arguments>-->
+<!--            <argument name="context" xsi:type="object">Algolia\SearchAdapter\Model\Layer\Search\Context</argument>-->
+<!--        </arguments>-->
+<!--    </type>-->
+
+
+    <!-- Temp fallback to Elasticsearch aggregators / mappers - this will all be reimplemented -->
     <type name="Magento\Framework\Search\Dynamic\IntervalFactory">
         <arguments>
             <argument name="intervals" xsi:type="array">
@@ -88,50 +182,6 @@
             </argument>
         </arguments>
     </type>
-
-    <!-- Resolver -->
-    <type name="Magento\AdvancedSearch\Model\Client\ClientResolver">
-        <arguments>
-            <argument name="clientFactories" xsi:type="array">
-                <item name="algolia" xsi:type="string">Algolia\SearchAdapter\Model\Client\AlgoliaSearchFactory</item>
-            </argument>
-            <argument name="clientOptions" xsi:type="array">
-                <item name="algolia" xsi:type="string">Algolia\SearchAdapter\Model\Config</item>
-            </argument>
-        </arguments>
-    </type>
-    <virtualType name="Algolia\SearchAdapter\Model\Client\AlgoliaSearchFactory" type="Magento\AdvancedSearch\Model\Client\ClientFactory">
-        <arguments>
-            <argument name="clientClass" xsi:type="string">Algolia\SearchAdapter\Model\SearchClient</argument>
-        </arguments>
-    </virtualType>
-
-    <!-- Elasticsearch is best disabled - but if it is not... -->
-    <virtualType name="elasticsearchLayerSearchItemCollectionProvider" type="Magento\Elasticsearch\Model\Layer\Search\ItemCollectionProvider">
-        <arguments>
-            <argument name="factories" xsi:type="array">
-                <item name="algolia" xsi:type="object">Magento\CatalogSearch\Model\ResourceModel\Fulltext\SearchCollectionFactory</item>
-            </argument>
-        </arguments>
-    </virtualType>
-
-    <virtualType name="algoliaCategoryCollection" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection">
-        <arguments>
-            <argument name="searchRequestName" xsi:type="string">catalog_view_container</argument>
-        </arguments>
-    </virtualType>
-    <virtualType name="algoliaCategoryCollectionFactory" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\SearchCollectionFactory">
-        <arguments>
-            <argument name="instanceName" xsi:type="string">algoliaCategoryCollection</argument>
-        </arguments>
-    </virtualType>
-    <virtualType name="elasticsearchLayerCategoryItemCollectionProvider" type="Magento\Elasticsearch\Model\Layer\Category\ItemCollectionProvider">
-        <arguments>
-            <argument name="factories" xsi:type="array">
-                <item name="algolia" xsi:type="object">algoliaCategoryCollectionFactory</item>
-            </argument>
-        </arguments>
-    </virtualType>
 
 
 </config>
