@@ -2,20 +2,45 @@
 
 namespace Algolia\SearchAdapter\Model\Response;
 
+use Algolia\AlgoliaSearch\Api\Data\PaginationInfoInterface;
+use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterface;
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
+use Algolia\AlgoliaSearch\Model\Data\PaginationInfo;
+use Algolia\SearchAdapter\Api\Data\PaginatedResultInterface;
+use Algolia\SearchAdapter\Api\Data\PaginatedResultInterfaceFactory;
 
 class DocumentMapper
 {
-    /** @var int */
-    public const DEFAULT_PRODUCTS_PER_PAGE = 9;
+    /** @var bool  */
+    private const SYNC_WITH_ALGOLIA = false;
 
     public function __construct(
         protected InstantSearchHelper $instantSearchHelper,
+        protected PaginatedResultInterfaceFactory $paginatedResultFactory,
     ) {}
 
-    public function buildDocuments(array $searchResponse, ?int $storeId = null): array
+    public function process(array $searchResponse, SearchQueryInterface $searchQuery): PaginatedResultInterface
     {
-        $productsPerPage = $this->instantSearchHelper->getNumberOfProductResults($storeId);
+        $hits = $this->getHits($searchResponse);
+        $pagination = $this->getPagination($searchQuery);
+        $total = count($hits);
+        $totalPages = ceil($total / $pagination->getPageSize());
+        return $this->paginatedResultFactory->create([
+            'documents' => $this->buildDocuments(
+                $this->getPagedHits(
+                    $hits,
+                    $pagination
+                )
+            ),
+            'totalCount' => $total,
+            'totalPages' => $totalPages,
+            'pageSize' => $pagination->getPageSize(),
+            'currentPage' => $pagination->getPageNumber()
+        ]);
+    }
+
+    protected function buildDocuments(array $hits): array
+    {
         $i = 0;
         return array_map(
             function(array $hit) use (&$i) {
@@ -27,8 +52,18 @@ class DocumentMapper
                     'sort' => [ ++$i, $hit['objectID'] ]
                 ];
             },
-            $this->getPagedHits($searchResponse, [ 'pageNum' => 1, 'productsPerPage' => $productsPerPage ])
+            $hits
         );
+    }
+
+    protected function getPagination(SearchQueryInterface $searchQuery): PaginationInfoInterface
+    {
+        // TODO: Should we sync with Algolia or make configurable? This choice can affect functionality of \Magento\Catalog\Helper\Product\ProductList::getAvailableLimit
+        $paginationInfo = $searchQuery->getPaginationInfo();
+        if (self::SYNC_WITH_ALGOLIA) {
+            $paginationInfo->setPageSize($this->instantSearchHelper->getNumberOfProductResults($searchQuery->getIndexOptions()->getStoreId()));
+        }
+        return $paginationInfo;
     }
 
     protected function getHits(array $searchResponse): array
@@ -43,14 +78,15 @@ class DocumentMapper
     }
 
     protected function getPagedHits(
-        array $searchResponse,
-        array $options = [ 'pageNum' => 1, 'productsPerPage' => self::DEFAULT_PRODUCTS_PER_PAGE ]
+        array $hits,
+        PaginationInfoInterface $pagination
     ): array
     {
-        $hits = $this->getHits($searchResponse);
-        $length = $options['productsPerPage'];
-        $offset = ($options['pageNum'] - 1) * $length;
-        return array_slice($hits, $offset, $length);
+        return array_slice(
+            $hits,
+            $pagination->getOffset(),
+            $pagination->getPageSize()
+        );
     }
 
     public function getHitCount(array $searchResponse): int

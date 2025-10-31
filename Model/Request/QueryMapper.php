@@ -3,6 +3,8 @@
 namespace Algolia\SearchAdapter\Model\Request;
 
 use Algolia\AlgoliaSearch\Api\Data\IndexOptionsInterface;
+use Algolia\AlgoliaSearch\Api\Data\PaginationInfoInterface;
+use Algolia\AlgoliaSearch\Api\Data\PaginationInfoInterfaceFactory;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterfaceFactory;
 use Algolia\AlgoliaSearch\Service\Product\IndexOptionsBuilder;
@@ -19,9 +21,10 @@ use Magento\Framework\Search\RequestInterface;
 class QueryMapper
 {
     public function __construct(
-        protected SearchQueryInterfaceFactory $searchQueryFactory,
-        protected ScopeResolverInterface      $scopeResolver,
-        protected IndexOptionsBuilder         $indexOptionsBuilder,
+        protected SearchQueryInterfaceFactory    $searchQueryFactory,
+        protected PaginationInfoInterfaceFactory $paginationInfoFactory,
+        protected ScopeResolverInterface         $scopeResolver,
+        protected IndexOptionsBuilder            $indexOptionsBuilder,
     ) {}
 
     /**
@@ -30,9 +33,10 @@ class QueryMapper
     public function buildQuery(RequestInterface $request): SearchQueryInterface
     {
         return $this->searchQueryFactory->create([
-            'indexOptions' => $this->getIndexOptions($request),
             'query' => $this->getQuery($request),
             'params' => $this->getParams($request),
+            'indexOptions' => $this->getIndexOptions($request),
+            'paginationInfo' => $this->getPaginationInfo($request),
         ]);
     }
 
@@ -48,6 +52,17 @@ class QueryMapper
     protected function getIndexOptions(RequestInterface $request): IndexOptionsInterface
     {
         return $this->indexOptionsBuilder->buildEntityIndexOptions($this->getStoreId($request));
+    }
+
+    protected function getPaginationInfo(RequestInterface $request): PaginationInfoInterface
+    {
+        $pageSize = $request->getSize();
+        $offset = $request->getFrom();
+        return $this->paginationInfoFactory->create([
+            'pageNumber' => $offset/$pageSize + 1,
+            'pageSize' => $pageSize,
+            'offset' => $offset,
+        ]);
     }
 
     protected function getQuery(RequestInterface $request): string

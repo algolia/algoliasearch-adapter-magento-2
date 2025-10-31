@@ -36,15 +36,13 @@ class Adapter implements AdapterInterface
      */
     public function query(RequestInterface $request): QueryResponse
     {
-        $queryLegacy = $this->mapper->buildQuery($request);
         $query = $this->queryMapper->buildQuery($request);
-
         $response = $this->connector->query($query);
-
-        $documents = $this->documentMapper->buildDocuments($response, $query->getIndexOptions()->getStoreId());
+        $result = $this->documentMapper->process($response, $query);
 
         // Mock response for aggregations and testing
         // TODO: Implement Algolia aggregation builder
+        $queryLegacy = $this->mapper->buildQuery($request);
         $mockResponse = $this->getSampleResponseData($request);
         $mockDocuments = $mockResponse['hits']['hits'] ?? [];
         $mockTotal = $mockResponse['hits']['total']['value'] ?? 0;
@@ -58,9 +56,9 @@ class Adapter implements AdapterInterface
         // End mocks
 
         $rawArray =  [
-            'documents' => $documents,
+            'documents' => $result->getDocuments(),
             'aggregations' => $mockAggregations,
-            'total' => count($documents)
+            'total' => $result->getTotalCount()
         ];
 
         // TODO: Implement Algolia response factory as needed
