@@ -36,14 +36,18 @@ class QueryMapper
         ]);
     }
 
+    public function getStoreId(RequestInterface $request): int
+    {
+        $dimension = current($request->getDimensions());
+        return $this->scopeResolver->getScope($dimension->getValue())->getId();
+    }
+
     /**
      * @throws NoSuchEntityException
      */
     protected function getIndexOptions(RequestInterface $request): IndexOptionsInterface
     {
-        $dimension = current($request->getDimensions());
-        $storeId = $this->scopeResolver->getScope($dimension->getValue())->getId();
-        return $this->indexOptionsBuilder->buildEntityIndexOptions($storeId);
+        return $this->indexOptionsBuilder->buildEntityIndexOptions($this->getStoreId($request));
     }
 
     protected function getQuery(RequestInterface $request): string

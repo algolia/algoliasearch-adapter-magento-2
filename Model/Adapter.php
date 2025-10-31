@@ -41,7 +41,7 @@ class Adapter implements AdapterInterface
 
         $response = $this->connector->query($query);
 
-        $documents = $this->documentMapper->buildDocuments($response);
+        $documents = $this->documentMapper->buildDocuments($response, $query->getIndexOptions()->getStoreId());
 
         // Mock response for aggregations and testing
         // TODO: Implement Algolia aggregation builder
