@@ -1,6 +1,6 @@
 <?php
 
-namespace Algolia\SearchAdapter\Model\Data;
+namespace Algolia\SearchAdapter\Model\Request;
 
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 

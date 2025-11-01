@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
 
-    <preference for="Algolia\SearchAdapter\Api\Data\PaginatedResultInterface" type="Algolia\SearchAdapter\Model\Data\PaginatedResult" />
-    <preference for="Algolia\SearchAdapter\Api\Data\PaginationInfoInterface" type="Algolia\SearchAdapter\Model\Data\PaginationInfo" />
+    <preference for="Algolia\SearchAdapter\Api\Data\PaginationInfoInterface" type="Algolia\SearchAdapter\Model\Request\PaginationInfo" />
     <preference for="Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface" type="Algolia\SearchAdapter\Model\Request\QueryMapperResult" />
-
+    <preference for="Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface" type="Algolia\SearchAdapter\Model\Response\DocumentMapperResult" />
+    
     <type name="Magento\Search\Model\EngineResolver">
         <arguments>
             <argument name="engines" xsi:type="array">
@@ -62,9 +62,10 @@
         </arguments>
     </virtualType>
 
-    <!-- ############################################################################################################ -->
+
+    <!-- ############################ -->
     <!-- BEGIN virtual collections -->
-    <!-- ############################################################################################################ -->
+    <!-- ############################ -->
 
     <virtualType name="algoliaTotalRecordsResolver\Factory" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection\TotalRecordsResolverFactory">
         <arguments>
@@ -99,9 +100,10 @@
         </arguments>
     </virtualType>
 
-    <!-- ############################################################################################################ -->
+    <!-- ############################ -->
     <!-- END virtual collections -->
-    <!-- ############################################################################################################ -->
+    <!-- ############################ -->
+
 
     <!-- The Algolia adapter implementation relies on core Elasticsearch plumbing to inject the engine -->
     <virtualType name="elasticsearchLayerSearchItemCollectionProvider" type="Magento\Elasticsearch\Model\Layer\Search\ItemCollectionProvider">
@@ -187,6 +189,5 @@
             </argument>
         </arguments>
     </type>
-
 
 </config>

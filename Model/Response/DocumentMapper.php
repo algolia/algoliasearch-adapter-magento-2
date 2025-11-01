@@ -3,8 +3,8 @@
 namespace Algolia\SearchAdapter\Model\Response;
 
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
-use Algolia\SearchAdapter\Api\Data\PaginatedResultInterface;
-use Algolia\SearchAdapter\Api\Data\PaginatedResultInterfaceFactory;
+use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface;
+use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterfaceFactory;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface;
 use Algolia\SearchAdapter\Model\Request\QueryMapperResult;
@@ -16,16 +16,16 @@ class DocumentMapper
 
     public function __construct(
         protected InstantSearchHelper $instantSearchHelper,
-        protected PaginatedResultInterfaceFactory $paginatedResultFactory,
+        protected DocumentMapperResultInterfaceFactory $documentMapperResultFactory,
     ) {}
 
-    public function process(array $searchResponse, QueryMapperResultInterface $query): PaginatedResultInterface
+    public function process(array $searchResponse, QueryMapperResultInterface $query): DocumentMapperResultInterface
     {
         $hits = $this->getHits($searchResponse);
         $pagination = $this->getPagination($query);
         $total = count($hits);
         $totalPages = ceil($total / $pagination->getPageSize());
-        return $this->paginatedResultFactory->create([
+        return $this->documentMapperResultFactory->create([
             'documents' => $this->buildDocuments(
                 $this->getPagedHits(
                     $hits,

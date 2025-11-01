@@ -1,10 +1,10 @@
 <?php
 
-namespace Algolia\SearchAdapter\Model\Data;
+namespace Algolia\SearchAdapter\Model\Response;
 
-use Algolia\SearchAdapter\Api\Data\PaginatedResultInterface;
+use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface;
 
-class PaginatedResult implements PaginatedResultInterface
+class DocumentMapperResult implements DocumentMapperResultInterface
 {
 
     public function __construct(
@@ -20,7 +20,7 @@ class PaginatedResult implements PaginatedResultInterface
         return $this->documents;
     }
 
-    public function setDocuments(array $documents): PaginatedResultInterface
+    public function setDocuments(array $documents): self
     {
         $this->documents = $documents;
         return $this;
@@ -31,7 +31,7 @@ class PaginatedResult implements PaginatedResultInterface
         return $this->totalCount;
     }
 
-    public function setTotalCount(int $totalCount): PaginatedResultInterface
+    public function setTotalCount(int $totalCount): self
     {
         $this->totalCount = $totalCount;
         return $this;
@@ -42,7 +42,7 @@ class PaginatedResult implements PaginatedResultInterface
         return $this->totalPages;
     }
 
-    public function setTotalPages(int $totalPages): PaginatedResultInterface
+    public function setTotalPages(int $totalPages): self
     {
         $this->totalPages = $totalPages;
         return $this;
@@ -53,7 +53,7 @@ class PaginatedResult implements PaginatedResultInterface
         return $this->pageSize;
     }
 
-    public function setPageSize(int $pageSize): PaginatedResultInterface
+    public function setPageSize(int $pageSize): self
     {
         $this->pageSize = $pageSize;
         return $this;
@@ -64,7 +64,7 @@ class PaginatedResult implements PaginatedResultInterface
         return $this->currentPage;
     }
 
-    public function setCurrentPage(int $currentPage): PaginatedResultInterface
+    public function setCurrentPage(int $currentPage): self
     {
         $this->currentPage = $currentPage;
         return $this;
