@@ -3,11 +3,13 @@
 namespace Algolia\SearchAdapter\Model\Request;
 
 use Algolia\AlgoliaSearch\Api\Data\IndexOptionsInterface;
-use Algolia\AlgoliaSearch\Api\Data\PaginationInfoInterface;
-use Algolia\AlgoliaSearch\Api\Data\PaginationInfoInterfaceFactory;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterfaceFactory;
 use Algolia\AlgoliaSearch\Service\Product\IndexOptionsBuilder;
+use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
+use Algolia\SearchAdapter\Api\Data\PaginationInfoInterfaceFactory;
+use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface;
+use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterfaceFactory;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\Request\Filter\Term;
@@ -21,22 +23,21 @@ use Magento\Framework\Search\RequestInterface;
 class QueryMapper
 {
     public function __construct(
-        protected SearchQueryInterfaceFactory    $searchQueryFactory,
-        protected PaginationInfoInterfaceFactory $paginationInfoFactory,
-        protected ScopeResolverInterface         $scopeResolver,
-        protected IndexOptionsBuilder            $indexOptionsBuilder,
+        protected QueryMapperResultInterfaceFactory $queryMapperResultFactory,
+        protected SearchQueryInterfaceFactory       $searchQueryFactory,
+        protected PaginationInfoInterfaceFactory    $paginationInfoFactory,
+        protected ScopeResolverInterface            $scopeResolver,
+        protected IndexOptionsBuilder               $indexOptionsBuilder,
     ) {}
 
     /**
      * @throws NoSuchEntityException
      */
-    public function buildQuery(RequestInterface $request): SearchQueryInterface
+    public function process(RequestInterface $request): QueryMapperResultInterface
     {
-        return $this->searchQueryFactory->create([
-            'query' => $this->getQuery($request),
-            'params' => $this->getParams($request),
-            'indexOptions' => $this->getIndexOptions($request),
-            'paginationInfo' => $this->getPaginationInfo($request),
+        return $this->queryMapperResultFactory->create([
+            'searchQuery' => $this->buildQueryObject($request),
+            'paginationInfo' => $this->buildPaginationInfo($request),
         ]);
     }
 
@@ -49,12 +50,24 @@ class QueryMapper
     /**
      * @throws NoSuchEntityException
      */
-    protected function getIndexOptions(RequestInterface $request): IndexOptionsInterface
+    protected function buildQueryObject(RequestInterface $request): SearchQueryInterface
+    {
+        return $this->searchQueryFactory->create([
+            'query' => $this->buildQueryString($request),
+            'params' => $this->buildParams($request),
+            'indexOptions' => $this->buildIndexOptions($request)
+        ]);
+    }
+
+    /**
+     * @throws NoSuchEntityException
+     */
+    protected function buildIndexOptions(RequestInterface $request): IndexOptionsInterface
     {
         return $this->indexOptionsBuilder->buildEntityIndexOptions($this->getStoreId($request));
     }
 
-    protected function getPaginationInfo(RequestInterface $request): PaginationInfoInterface
+    protected function buildPaginationInfo(RequestInterface $request): PaginationInfoInterface
     {
         $pageSize = $request->getSize();
         $offset = $request->getFrom();
@@ -65,7 +78,7 @@ class QueryMapper
         ]);
     }
 
-    protected function getQuery(RequestInterface $request): string
+    protected function buildQueryString(RequestInterface $request): string
     {
         $requestQuery = $request->getQuery();
         if ($requestQuery->getType() !== RequestQueryInterface::TYPE_BOOL) {
@@ -88,7 +101,7 @@ class QueryMapper
         return $matchQuery->getValue();
     }
 
-    protected function getParams(RequestInterface $request): array
+    protected function buildParams(RequestInterface $request): array
     {
         $params = [];
         $requestQuery = $request->getQuery();

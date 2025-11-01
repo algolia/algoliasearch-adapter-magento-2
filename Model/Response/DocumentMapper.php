@@ -2,12 +2,12 @@
 
 namespace Algolia\SearchAdapter\Model\Response;
 
-use Algolia\AlgoliaSearch\Api\Data\PaginationInfoInterface;
-use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterface;
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
-use Algolia\AlgoliaSearch\Model\Data\PaginationInfo;
 use Algolia\SearchAdapter\Api\Data\PaginatedResultInterface;
 use Algolia\SearchAdapter\Api\Data\PaginatedResultInterfaceFactory;
+use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
+use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface;
+use Algolia\SearchAdapter\Model\Request\QueryMapperResult;
 
 class DocumentMapper
 {
@@ -19,10 +19,10 @@ class DocumentMapper
         protected PaginatedResultInterfaceFactory $paginatedResultFactory,
     ) {}
 
-    public function process(array $searchResponse, SearchQueryInterface $searchQuery): PaginatedResultInterface
+    public function process(array $searchResponse, QueryMapperResultInterface $query): PaginatedResultInterface
     {
         $hits = $this->getHits($searchResponse);
-        $pagination = $this->getPagination($searchQuery);
+        $pagination = $this->getPagination($query);
         $total = count($hits);
         $totalPages = ceil($total / $pagination->getPageSize());
         return $this->paginatedResultFactory->create([
@@ -56,12 +56,12 @@ class DocumentMapper
         );
     }
 
-    protected function getPagination(SearchQueryInterface $searchQuery): PaginationInfoInterface
+    protected function getPagination(QueryMapperResult $query): PaginationInfoInterface
     {
         // TODO: Should we sync with Algolia or make configurable? This choice can affect functionality of \Magento\Catalog\Helper\Product\ProductList::getAvailableLimit
-        $paginationInfo = $searchQuery->getPaginationInfo();
+        $paginationInfo = $query->getPaginationInfo();
         if (self::SYNC_WITH_ALGOLIA) {
-            $paginationInfo->setPageSize($this->instantSearchHelper->getNumberOfProductResults($searchQuery->getIndexOptions()->getStoreId()));
+            $paginationInfo->setPageSize($this->instantSearchHelper->getNumberOfProductResults($query->getSearchQuery()->getIndexOptions()->getStoreId()));
         }
         return $paginationInfo;
     }

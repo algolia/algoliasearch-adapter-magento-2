@@ -36,8 +36,8 @@ class Adapter implements AdapterInterface
      */
     public function query(RequestInterface $request): QueryResponse
     {
-        $query = $this->queryMapper->buildQuery($request);
-        $response = $this->connector->query($query);
+        $query = $this->queryMapper->process($request);
+        $response = $this->connector->query($query->getSearchQuery());
         $result = $this->documentMapper->process($response, $query);
 
         // Mock response for aggregations and testing
