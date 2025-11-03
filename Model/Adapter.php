@@ -38,7 +38,7 @@ class Adapter implements AdapterInterface
     {
         $query = $this->queryMapper->process($request);
         $response = $this->connector->query($query->getSearchQuery());
-        $result = $this->documentMapper->process($response, $query);
+        $result = $this->documentMapper->process($response, $query->getPaginationInfo());
 
         // Mock response for aggregations and testing
         // TODO: Implement Algolia aggregation builder

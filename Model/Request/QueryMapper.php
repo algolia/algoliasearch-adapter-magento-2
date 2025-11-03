@@ -5,6 +5,7 @@ namespace Algolia\SearchAdapter\Model\Request;
 use Algolia\AlgoliaSearch\Api\Data\IndexOptionsInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterfaceFactory;
+use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Service\Product\IndexOptionsBuilder;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterfaceFactory;
@@ -22,12 +23,16 @@ use Magento\Framework\Search\RequestInterface;
 
 class QueryMapper
 {
+    /** @var bool  */
+    public const USE_INSTANTSEARCH_PAGING = false; // experimental flag
+
     public function __construct(
         protected QueryMapperResultInterfaceFactory $queryMapperResultFactory,
         protected SearchQueryInterfaceFactory       $searchQueryFactory,
         protected PaginationInfoInterfaceFactory    $paginationInfoFactory,
         protected ScopeResolverInterface            $scopeResolver,
         protected IndexOptionsBuilder               $indexOptionsBuilder,
+        protected InstantSearchHelper               $instantSearchHelper,
     ) {}
 
     /**
@@ -35,9 +40,10 @@ class QueryMapper
      */
     public function process(RequestInterface $request): QueryMapperResultInterface
     {
+        $pagination = $this->buildPaginationInfo($request);
         return $this->queryMapperResultFactory->create([
-            'searchQuery' => $this->buildQueryObject($request),
-            'paginationInfo' => $this->buildPaginationInfo($request),
+            'searchQuery' => $this->buildQueryObject($request, $pagination),
+            'paginationInfo' => $pagination,
         ]);
     }
 
@@ -50,11 +56,11 @@ class QueryMapper
     /**
      * @throws NoSuchEntityException
      */
-    protected function buildQueryObject(RequestInterface $request): SearchQueryInterface
+    protected function buildQueryObject(RequestInterface $request, PaginationInfoInterface $pagination): SearchQueryInterface
     {
         return $this->searchQueryFactory->create([
             'query' => $this->buildQueryString($request),
-            'params' => $this->buildParams($request),
+            'params' => $this->buildParams($request, $pagination),
             'indexOptions' => $this->buildIndexOptions($request)
         ]);
     }
@@ -67,15 +73,24 @@ class QueryMapper
         return $this->indexOptionsBuilder->buildEntityIndexOptions($this->getStoreId($request));
     }
 
+    /** Extrapolate pagination info from Magento originated search request */
     protected function buildPaginationInfo(RequestInterface $request): PaginationInfoInterface
     {
         $pageSize = $request->getSize();
         $offset = $request->getFrom();
-        return $this->paginationInfoFactory->create([
-            'pageNumber' => $offset/$pageSize + 1,
+        $paginationInfo = $this->paginationInfoFactory->create([
+            'pageNumber' => floor($offset/$pageSize) + 1,
             'pageSize' => $pageSize,
             'offset' => $offset,
         ]);
+
+        // TODO: Should we sync with Algolia or make configurable?
+        // This choice can affect functionality of \Magento\Catalog\Helper\Product\ProductList::getAvailableLimit
+        // Requires a custom SearchResultApplier to update the final collection
+        if (self::USE_INSTANTSEARCH_PAGING) {
+            $paginationInfo->setPageSize($this->instantSearchHelper->getNumberOfProductResults($this->getStoreId($request)));
+        }
+        return $paginationInfo;
     }
 
     protected function buildQueryString(RequestInterface $request): string
@@ -101,9 +116,13 @@ class QueryMapper
         return $matchQuery->getValue();
     }
 
-    protected function buildParams(RequestInterface $request): array
+    protected function buildParams(RequestInterface $request, PaginationInfoInterface $pagination): array
     {
-        $params = [];
+        $params = [
+            'hitsPerPage' => $pagination->getPageSize(),
+            'page' => $pagination->getPageNumber() - 1 # Algolia pages are 0-based, Magento 1-based
+        ];
+
         $requestQuery = $request->getQuery();
         if ($requestQuery->getType() !== RequestQueryInterface::TYPE_BOOL) {
             return $params;
