@@ -6,15 +6,14 @@ use Algolia\AlgoliaSearch\Api\Data\IndexOptionsInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterfaceFactory;
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
-use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Service\Product\IndexOptionsBuilder;
+use Algolia\AlgoliaSearch\Test\TestCase;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterfaceFactory;
 use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface;
 use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterfaceFactory;
-use Algolia\SearchAdapter\Model\Request\QueryMapper;
-use Algolia\AlgoliaSearch\Test\TestCase;
 use Algolia\SearchAdapter\Model\Request\PaginationInfo;
+use Algolia\SearchAdapter\Model\Request\QueryMapper;
 use Magento\Framework\App\ScopeInterface;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -36,7 +35,6 @@ class QueryMapperTest extends TestCase
     private PaginationInfoInterfaceFactory|MockObject $paginationInfoFactory;
     private ScopeResolverInterface|MockObject $scopeResolver;
     private IndexOptionsBuilder|MockObject $indexOptionsBuilder;
-    private InstantSearchHelper|MockObject $instantSearchHelper;
     private QueryMapperResultInterface|MockObject $queryMapperResult;
     private SearchQueryInterface|MockObject $searchQuery;
     private PaginationInfoInterface|MockObject $paginationInfo;
@@ -50,7 +48,6 @@ class QueryMapperTest extends TestCase
         $this->paginationInfoFactory = $this->createPaginationInfoFactoryMock();
         $this->scopeResolver = $this->createMock(ScopeResolverInterface::class);
         $this->indexOptionsBuilder = $this->createMock(IndexOptionsBuilder::class);
-        $this->instantSearchHelper = $this->createMock(InstantSearchHelper::class);
         $this->queryMapperResult = $this->createMock(QueryMapperResultInterface::class);
         $this->searchQuery = $this->createMock(SearchQueryInterface::class);
         $this->paginationInfo = $this->createMock(PaginationInfoInterface::class);
@@ -62,8 +59,7 @@ class QueryMapperTest extends TestCase
             $this->searchQueryFactory,
             $this->paginationInfoFactory,
             $this->scopeResolver,
-            $this->indexOptionsBuilder,
-            $this->instantSearchHelper,
+            $this->indexOptionsBuilder
         );
     }
 
@@ -415,7 +411,7 @@ class QueryMapperTest extends TestCase
     public static function paginationDataProvider(): array
     {
         return [
-            // Standard page sizes 
+            // Standard page sizes
             [
                 'size' => 12,
                 'from' => 0,
@@ -436,7 +432,7 @@ class QueryMapperTest extends TestCase
                 'from' => 12,
                 'page' => 2
             ],
-            
+
             [
                 'size' => 24,
                 'from' => 24,

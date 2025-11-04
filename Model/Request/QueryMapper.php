@@ -5,7 +5,6 @@ namespace Algolia\SearchAdapter\Model\Request;
 use Algolia\AlgoliaSearch\Api\Data\IndexOptionsInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterfaceFactory;
-use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Service\Product\IndexOptionsBuilder;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterfaceFactory;
@@ -23,16 +22,12 @@ use Magento\Framework\Search\RequestInterface;
 
 class QueryMapper
 {
-    /** @var bool  */
-    public const USE_INSTANTSEARCH_PAGING = false; // experimental flag
-
     public function __construct(
         protected QueryMapperResultInterfaceFactory $queryMapperResultFactory,
         protected SearchQueryInterfaceFactory       $searchQueryFactory,
         protected PaginationInfoInterfaceFactory    $paginationInfoFactory,
         protected ScopeResolverInterface            $scopeResolver,
-        protected IndexOptionsBuilder               $indexOptionsBuilder,
-        protected InstantSearchHelper               $instantSearchHelper,
+        protected IndexOptionsBuilder               $indexOptionsBuilder
     ) {}
 
     /**
@@ -78,19 +73,11 @@ class QueryMapper
     {
         $pageSize = $request->getSize() ?? PaginationInfo::DEFAULT_PAGE_SIZE;
         $offset = $request->getFrom() ?? 0;
-        $paginationInfo = $this->paginationInfoFactory->create([
+        return $this->paginationInfoFactory->create([
             'pageNumber' => floor($offset/$pageSize) + 1,
             'pageSize' => $pageSize,
             'offset' => $offset,
         ]);
-
-        // TODO: Should we sync with Algolia or make configurable?
-        // This choice can affect functionality of \Magento\Catalog\Helper\Product\ProductList::getAvailableLimit
-        // Requires a custom SearchResultApplier to update the final collection
-        if (self::USE_INSTANTSEARCH_PAGING) {
-            $paginationInfo->setPageSize($this->instantSearchHelper->getNumberOfProductResults($this->getStoreId($request)));
-        }
-        return $paginationInfo;
     }
 
     protected function buildQueryString(RequestInterface $request): string
