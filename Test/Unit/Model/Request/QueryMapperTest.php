@@ -110,6 +110,15 @@ class QueryMapperTest extends TestCase
         $this->queryMapper->process($request);
     }
 
+    public function testGetStoreId(): void
+    {
+        $request = $this->createMockRequest(5);
+
+        $result = $this->queryMapper->getStoreId($request);
+
+        $this->assertEquals(5, $result);
+    }
+
     public function testBuildIndexOptions(): void
     {
         $request = $this->createMockRequest();
