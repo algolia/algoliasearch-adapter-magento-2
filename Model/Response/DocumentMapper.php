@@ -17,7 +17,7 @@ class DocumentMapper
         $result = $searchResponse['results'][0] ?? []; // only ever expect a single result set
         $hits = $result['hits'] ?? [];
         $total = $result['nbHits'] ?? 0;
-        $totalPages = $result['nbPages'] ?? ceil($total / $pagination->getPageSize());
+        $totalPages = $result['nbPages'] ?? (int) ceil($total / $pagination->getPageSize());
         $pageSize = $result['hitsPerPage'] ?? $pagination->getPageSize();
         return $this->documentMapperResultFactory->create([
             'documents' => $this->buildDocuments($hits),
