@@ -76,8 +76,8 @@ class QueryMapper
     /** Extrapolate pagination info from Magento originated search request */
     protected function buildPaginationInfo(RequestInterface $request): PaginationInfoInterface
     {
-        $pageSize = $request->getSize();
-        $offset = $request->getFrom();
+        $pageSize = $request->getSize() ?? PaginationInfo::DEFAULT_PAGE_SIZE;
+        $offset = $request->getFrom() ?? 0;
         $paginationInfo = $this->paginationInfoFactory->create([
             'pageNumber' => floor($offset/$pageSize) + 1,
             'pageSize' => $pageSize,

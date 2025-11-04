@@ -40,31 +40,40 @@ class Adapter implements AdapterInterface
         $response = $this->connector->query($query->getSearchQuery());
         $result = $this->documentMapper->process($response, $query->getPaginationInfo());
 
-        // Mock response for aggregations and testing
-        // TODO: Implement Algolia aggregation builder
+        $mockData = $this->getMockData($request);
+
+        $data =  [
+            'documents' => $result->getDocuments(),
+            'aggregations' => $mockData['aggregations'],
+            'total' => $result->getTotalCount()
+        ];
+
+        // Temporarily using ElasticSearch DocumentFactory and AggregationFactory which are deprecated
+        // TODO: Implement new Algolia factories
+        return $this->responseFactory->create(
+            $data // $mockData
+        );
+    }
+
+    //
+
+    /**
+     * Create a mock response for aggregations and testing
+     * TODO: Implement Algolia aggregation builder
+     */
+    function getMockData(RequestInterface $request): array
+    {
         $queryLegacy = $this->mapper->buildQuery($request);
         $mockResponse = $this->getSampleResponseData($request);
         $mockDocuments = $mockResponse['hits']['hits'] ?? [];
         $mockTotal = $mockResponse['hits']['total']['value'] ?? 0;
         $this->aggregationBuilder->setQuery($this->queryContainerFactory->create(['query' => $queryLegacy]));
         $mockAggregations = $this->aggregationBuilder->build($request, $mockResponse);
-        $mockRawArray = [
+        return [
             'documents' => $mockDocuments,
             'aggregations' => $mockAggregations,
             'total' => $mockTotal
         ];
-        // End mocks
-
-        $rawArray =  [
-            'documents' => $result->getDocuments(),
-            'aggregations' => $mockAggregations,
-            'total' => $result->getTotalCount()
-        ];
-
-        // TODO: Implement Algolia response factory as needed
-        return $this->responseFactory->create(
-            $rawArray
-        );
     }
 
     /**
