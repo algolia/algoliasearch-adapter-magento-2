@@ -3,6 +3,7 @@
 namespace Algolia\SearchAdapter\Model;
 
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
+use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface;
 use Algolia\SearchAdapter\Model\Request\QueryMapper;
 use Algolia\SearchAdapter\Model\Response\DocumentMapper;
 use Algolia\SearchAdapter\Service\AlgoliaBackendConnector;
@@ -43,9 +44,9 @@ class Adapter implements AdapterInterface
         $mockData = $this->getMockData($request);
 
         $data =  [
-            'documents' => $result->getDocuments(),
-            'aggregations' => $mockData['aggregations'],
-            'total' => $result->getTotalCount()
+            DocumentMapperResultInterface::RESPONSE_KEY_DOCUMENTS => $result->getDocuments(),
+            DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS => $mockData[DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS],
+            DocumentMapperResultInterface::RESPONSE_KEY_TOTAL => $result->getTotalCount()
         ];
 
         // Temporarily using ElasticSearch DocumentFactory and AggregationFactory which are deprecated
@@ -70,9 +71,9 @@ class Adapter implements AdapterInterface
         $this->aggregationBuilder->setQuery($this->queryContainerFactory->create(['query' => $queryLegacy]));
         $mockAggregations = $this->aggregationBuilder->build($request, $mockResponse);
         return [
-            'documents' => $mockDocuments,
-            'aggregations' => $mockAggregations,
-            'total' => $mockTotal
+            DocumentMapperResultInterface::RESPONSE_KEY_DOCUMENTS => $mockDocuments,
+            DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS => $mockAggregations,
+            DocumentMapperResultInterface::RESPONSE_KEY_TOTAL => $mockTotal
         ];
     }
 

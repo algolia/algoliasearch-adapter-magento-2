@@ -4,6 +4,10 @@ namespace Algolia\SearchAdapter\Api\Data;
 
 interface DocumentMapperResultInterface
 {
+    public const RESPONSE_KEY_DOCUMENTS = 'documents';
+    public const RESPONSE_KEY_AGGREGATIONS = 'aggregations';
+    public const RESPONSE_KEY_TOTAL = 'total';
+
     public function getDocuments(): array;
     public function getTotalCount(): int;
     public function getTotalPages(): int;

@@ -73,7 +73,7 @@ class DocumentMapperResult implements DocumentMapperResultInterface
     public function toArray(): array
     {
         return [
-            'documents' => $this->getDocuments(),
+            DocumentMapperResultInterface::RESPONSE_KEY_DOCUMENTS => $this->getDocuments(),
             'totalCount' => $this->getTotalCount(),
             'totalPages' => $this->getTotalPages(),
             'pageSize' => $this->getPageSize(),
