@@ -22,6 +22,9 @@ use Magento\Framework\Search\Request\Query\MatchQuery;
 use Magento\Framework\Search\Request\QueryInterface as RequestQueryInterface;
 use Magento\Framework\Search\RequestInterface;
 
+/**
+ * QueryMapper is responsible for mapping the Magento search request to the Algolia search query 
+ */
 class QueryMapper
 {
     public function __construct(
@@ -33,6 +36,8 @@ class QueryMapper
     ) {}
 
     /**
+     * Process the search request and return the query mapper result
+     * The query mapper result contains the Algolia search query object and the derived pagination info
      * @throws NoSuchEntityException
      */
     public function process(RequestInterface $request): QueryMapperResultInterface
@@ -44,6 +49,9 @@ class QueryMapper
         ]);
     }
 
+    /**
+     * Get the store ID from the request
+     */
     public function getStoreId(RequestInterface $request): int
     {
         $dimension = current($request->getDimensions());
@@ -51,6 +59,7 @@ class QueryMapper
     }
 
     /**
+     * Build the Algolia search query object
      * @throws NoSuchEntityException
      */
     protected function buildQueryObject(RequestInterface $request, PaginationInfoInterface $pagination): SearchQueryInterface
@@ -63,6 +72,7 @@ class QueryMapper
     }
 
     /**
+     * Build the Algolia index options object
      * @throws NoSuchEntityException
      */
     protected function buildIndexOptions(RequestInterface $request): IndexOptionsInterface
@@ -70,7 +80,9 @@ class QueryMapper
         return $this->indexOptionsBuilder->buildEntityIndexOptions($this->getStoreId($request));
     }
 
-    /** Extrapolate pagination info from Magento originated search request */
+    /**
+     * Extrapolate pagination info from Magento originated search request
+     */
     protected function buildPaginationInfo(RequestInterface $request): PaginationInfoInterface
     {
         $pageSize = $request->getSize() ?? PaginationInfo::DEFAULT_PAGE_SIZE;
@@ -82,6 +94,9 @@ class QueryMapper
         ]);
     }
 
+    /**
+     * Build the Algolia search query string
+     */
     protected function buildQueryString(RequestInterface $request): string
     {
         $requestQuery = $request->getQuery();
@@ -93,6 +108,9 @@ class QueryMapper
         return $this->getSearchTermFromBoolQuery($requestQuery);
     }
 
+    /**
+     * Get the search term from the Magento originated boolean query
+     */
     protected function getSearchTermFromBoolQuery(BoolQuery $query): string
     {
         $should = $query->getShould();
@@ -105,6 +123,9 @@ class QueryMapper
         return $matchQuery->getValue();
     }
 
+    /**
+     * Build the Algolia search query parameters
+     */
     protected function buildParams(RequestInterface $request, PaginationInfoInterface $pagination): array
     {
         $params = [
@@ -117,46 +138,72 @@ class QueryMapper
             return $params;
         }
 
-        /** @var BoolQuery $requestQuery */
-        $this->applyCategoryFilter($params, $requestQuery);
-
-        $this->applyVisibilityFilter($params, $requestQuery);
+        $this->applyFilters($params, $requestQuery);
 
         return $params;
     }
 
+    /**
+     * Apply the filters to the Algolia search query parameters
+     */
+    protected function applyFilters(array &$params, BoolQuery $boolQuery): void
+    {
+        $this->applyCategoryFilter($params, $boolQuery);
+        $this->applyVisibilityFilters($params, $boolQuery);
+    }
+
+    /**
+     * Apply the category filter as a facet filter to the Algolia search query parameters
+     */
     protected function applyCategoryFilter(array &$params, BoolQuery $boolQuery): void
     {
-        $filterType = 'facetFilters';
         $category = $this->getParam($boolQuery, 'category');
         if ($category) {
-            if (!array_key_exists($filterType, $params)) {
-                $params[$filterType] = [];
-            }
-            $params[$filterType][] = "categoryIds:{$category}";
+            $this->applyFilter($params, 'facetFilters', "categoryIds:{$category}");
         }
     }
 
-    protected function applyVisibilityFilter(array &$params, BoolQuery $boolQuery): void
+    /**
+     * Apply visibility filters to the Algolia search query parameters
+     */
+    protected function applyVisibilityFilters(array &$params, BoolQuery $boolQuery): void
     {
-        $filterType = 'numericFilters';
         $visibility = $this->getParam($boolQuery, 'visibility');
         if ($visibility) {
             if (!is_array($visibility)) {
                 $visibility = [$visibility];
             }
-            if (!array_key_exists($filterType, $params)) {
-                $params[$filterType] = [];
-            }
             if (in_array(Visibility::VISIBILITY_IN_SEARCH, $visibility)) {
-                $params[$filterType][] = sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH);
+                $this->applyVisibilityFilter($params, ProductRecordFieldsInterface::VISIBILITY_SEARCH);
             }
             if (in_array(Visibility::VISIBILITY_IN_CATALOG, $visibility)) {
-                $params[$filterType][] = sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG);
+                $this->applyVisibilityFilter($params, ProductRecordFieldsInterface::VISIBILITY_CATALOG);
             }
         }
     }
 
+    /**
+     * Apply the visibility field as a numeric filter to the Algolia search query parameters
+     */
+    protected function applyVisibilityFilter(array &$params, string $visibilityFilterField): void
+    {
+        $this->applyFilter($params, 'numericFilters', sprintf('%s=1', $visibilityFilterField));
+    }
+
+    /**
+     * Apply a filter of a given type and value to the Algolia search query parameters array
+     */
+    protected function applyFilter(array &$params, string $filterType, string $filterValue): void
+    {
+        if (!array_key_exists($filterType, $params)) {
+            $params[$filterType] = [];
+        }
+        $params[$filterType][] = $filterValue;
+    }   
+
+    /**
+     * Get a parameter from the boolean query in the original Magento search request
+     */
     protected function getParam(BoolQuery $query, string $key): string|array|false
     {
         $must = $query->getMust();
