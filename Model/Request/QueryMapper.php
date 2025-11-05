@@ -5,11 +5,13 @@ namespace Algolia\SearchAdapter\Model\Request;
 use Algolia\AlgoliaSearch\Api\Data\IndexOptionsInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterfaceFactory;
+use Algolia\AlgoliaSearch\Api\Product\ProductRecordFieldsInterface;
 use Algolia\AlgoliaSearch\Service\Product\IndexOptionsBuilder;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterfaceFactory;
 use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface;
 use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterfaceFactory;
+use Magento\Catalog\Model\Product\Visibility;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\Request\Filter\Term;
@@ -116,37 +118,66 @@ class QueryMapper
         }
 
         /** @var BoolQuery $requestQuery */
-        $category = $this->getParam($requestQuery, 'category');
-        if ($category) {
-            $params['facetFilters'] = "categoryIds:{$category}";
-        }
+        $this->applyCategoryFilter($params, $requestQuery);
 
-        // TODO: Implement visibility filters
+        $this->applyVisibilityFilter($params, $requestQuery);
 
         return $params;
     }
 
-    protected function getParam(BoolQuery $query, string $key): string
+    protected function applyCategoryFilter(array &$params, BoolQuery $boolQuery): void
+    {
+        $filterType = 'facetFilters';
+        $category = $this->getParam($boolQuery, 'category');
+        if ($category) {
+            if (!array_key_exists($filterType, $params)) {
+                $params[$filterType] = [];
+            }
+            $params[$filterType][] = "categoryIds:{$category}";
+        }
+    }
+
+    protected function applyVisibilityFilter(array &$params, BoolQuery $boolQuery): void
+    {
+        $filterType = 'numericFilters';
+        $visibility = $this->getParam($boolQuery, 'visibility');
+        if ($visibility) {
+            if (!is_array($visibility)) {
+                $visibility = [$visibility];
+            }
+            if (!array_key_exists($filterType, $params)) {
+                $params[$filterType] = [];
+            }
+            if (in_array(Visibility::VISIBILITY_IN_SEARCH, $visibility)) {
+                $params[$filterType][] = sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH);
+            }
+            if (in_array(Visibility::VISIBILITY_IN_CATALOG, $visibility)) {
+                $params[$filterType][] = sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG);
+            }
+        }
+    }
+
+    protected function getParam(BoolQuery $query, string $key): string|array|false
     {
         $must = $query->getMust();
         if (!array_key_exists($key, $must)) {
-            return '';
+            return false;
         }
         $filter = $must[$key];
         if ($filter->getType() !== RequestQueryInterface::TYPE_FILTER) {
-            return '';
+            return false;
         }
         /** @var FilterQuery $filter */
         if ($filter->getReferenceType() !== FilterQuery::REFERENCE_FILTER) {
-            return '';
+            return false;
         }
 
         $term = $filter->getReference();
         if ($term->getType() !== RequestFilterInterface::TYPE_TERM) {
-            return '';
+            return false;
         }
-        /** @var Term */
-        return $term->getValue() !== false ? $term->getValue() : '';
+
+        return $term->getValue();
     }
 
 }
