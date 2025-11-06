@@ -23,7 +23,7 @@ use Magento\Framework\Search\Request\QueryInterface as RequestQueryInterface;
 use Magento\Framework\Search\RequestInterface;
 
 /**
- * QueryMapper is responsible for mapping the Magento search request to the Algolia search query 
+ * QueryMapper is responsible for mapping the Magento search request to the Algolia search query
  */
 class QueryMapper
 {
@@ -138,6 +138,7 @@ class QueryMapper
             return $params;
         }
 
+        /** @var BoolQuery $requestQuery */
         $this->applyFilters($params, $requestQuery);
 
         return $params;
@@ -157,7 +158,7 @@ class QueryMapper
      */
     protected function applyCategoryFilter(array &$params, BoolQuery $boolQuery): void
     {
-        $category = $this->getParam($boolQuery, 'category');
+        $category = $this->getFilterParam($boolQuery, 'category');
         if ($category) {
             $this->applyFilter($params, 'facetFilters', sprintf('categoryIds:%u', $category));
         }
@@ -168,7 +169,7 @@ class QueryMapper
      */
     protected function applyVisibilityFilters(array &$params, BoolQuery $boolQuery): void
     {
-        $visibility = $this->getParam($boolQuery, 'visibility');
+        $visibility = $this->getFilterParam($boolQuery, 'visibility');
         if ($visibility) {
             if (!is_array($visibility)) {
                 $visibility = [$visibility];
@@ -199,12 +200,12 @@ class QueryMapper
             $params[$filterType] = [];
         }
         $params[$filterType][] = $filterValue;
-    }   
+    }
 
     /**
      * Get a parameter from the boolean query in the original Magento search request
      */
-    protected function getParam(BoolQuery $query, string $key): string|array|false
+    protected function getFilterParam(BoolQuery $query, string $key): string|array|false
     {
         $must = $query->getMust();
         if (!array_key_exists($key, $must)) {
