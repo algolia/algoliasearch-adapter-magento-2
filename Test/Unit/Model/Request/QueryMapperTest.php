@@ -72,10 +72,12 @@ class QueryMapperTest extends TestCase
         $boolQuery = $this->createMockBoolQuery();
         $request->method('getQuery')->willReturn($boolQuery);
 
-        $matchQuery = $this->createMockMatchQuery();
-        $boolQuery->method('getShould')->willReturn(['search' => $matchQuery]);
-        $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery()]);
-        $matchQuery->method('getValue')->willReturn('test search');
+        $boolQuery->method('getShould')->willReturn([
+            'search' => $this->createMockMatchQuery('test search')
+        ]);
+        $boolQuery->method('getMust')->willReturn([
+            'category' => $this->createMockFilterQuery()
+        ]);
 
         $this->indexOptionsBuilder->method('buildEntityIndexOptions')->with(1)->willReturn($this->indexOptions);
 
@@ -136,11 +138,11 @@ class QueryMapperTest extends TestCase
     {
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
-        $matchQuery = $this->createMockMatchQuery();
 
         $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getShould')->willReturn(['search' => $matchQuery]);
-        $matchQuery->method('getValue')->willReturn('test search');
+        $boolQuery->method('getShould')->willReturn([
+            'search' => $this->createMockMatchQuery('test search')
+        ]);
 
         $result = $this->invokeMethod($this->queryMapper, 'buildQueryString', [$request]);
 
@@ -163,10 +165,10 @@ class QueryMapperTest extends TestCase
     public function testGetSearchTermFromBoolQueryWithSearchTerm(): void
     {
         $boolQuery = $this->createMockBoolQuery();
-        $matchQuery = $this->createMockMatchQuery();
 
-        $boolQuery->method('getShould')->willReturn(['search' => $matchQuery]);
-        $matchQuery->method('getValue')->willReturn('test search');
+        $boolQuery->method('getShould')->willReturn([
+            'search' => $this->createMockMatchQuery('test search')
+        ]);
 
         $result = $this->invokeMethod($this->queryMapper, 'getSearchTermFromBoolQuery', [$boolQuery]);
 
@@ -661,9 +663,13 @@ class QueryMapperTest extends TestCase
         return $boolQuery;
     }
 
-    private function createMockMatchQuery(): MatchQuery|MockObject
+    private function createMockMatchQuery(?string $query = null): MatchQuery|MockObject
     {
-        return $this->createMock(MatchQuery::class);
+        $matchQuery = $this->createMock(MatchQuery::class);
+        if ($query) {
+            $matchQuery->method('getValue')->willReturn($query);
+        }
+        return $matchQuery;
     }
 
     /** Create mock filter with nested mock term  */
