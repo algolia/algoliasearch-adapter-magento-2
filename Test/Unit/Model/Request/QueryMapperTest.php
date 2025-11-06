@@ -74,7 +74,7 @@ class QueryMapperTest extends TestCase
 
         $matchQuery = $this->createMockMatchQuery();
         $boolQuery->method('getShould')->willReturn(['search' => $matchQuery]);
-        $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery(true)]);
+        $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery()]);
         $matchQuery->method('getValue')->willReturn('test search');
 
         $this->indexOptionsBuilder->method('buildEntityIndexOptions')->with(1)->willReturn($this->indexOptions);
@@ -199,16 +199,9 @@ class QueryMapperTest extends TestCase
     {
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
-        $filterQuery = $this->createMockFilterQuery();
-        $termFilter = $this->createMockTermFilter();
 
         $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getMust')->willReturn(['category' => $filterQuery]);
-
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getValue')->willReturn('12');
+        $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery('12')]);
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
@@ -263,15 +256,8 @@ class QueryMapperTest extends TestCase
     public function testGetFilterParamWithValidFilter(): void
     {
         $boolQuery = $this->createMockBoolQuery();
-        $filterQuery = $this->createMockFilterQuery();
-        $termFilter = $this->createMockTermFilter();
 
-        $boolQuery->method('getMust')->willReturn(['category' => $filterQuery]);
-
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getValue')->willReturn('12');
+        $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery('12')]);
 
         $result = $this->invokeMethod($this->queryMapper, 'getFilterParam', [$boolQuery, 'category']);
 
@@ -305,7 +291,7 @@ class QueryMapperTest extends TestCase
     public function testGetFilterParamWithNonReferenceFilter(): void
     {
         $boolQuery = $this->createMockBoolQuery();
-        $filterQuery = $this->createMockFilterQuery(true);
+        $filterQuery = $this->createMockFilterQuery();
 
         $boolQuery->method('getMust')->willReturn(['category' => $filterQuery]);
 
@@ -320,15 +306,8 @@ class QueryMapperTest extends TestCase
     public function testGetFilterParamWithFalseValue(): void
     {
         $boolQuery = $this->createMockBoolQuery();
-        $filterQuery = $this->createMockFilterQuery();
-        $termFilter = $this->createMockTermFilter();
 
-        $boolQuery->method('getMust')->willReturn(['category' => $filterQuery]);
-
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getValue')->willReturn(false);
+        $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery(false)]);
 
         $result = $this->invokeMethod($this->queryMapper, 'getFilterParam', [$boolQuery, 'category']);
 
@@ -339,16 +318,11 @@ class QueryMapperTest extends TestCase
     {
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
-        $filterQuery = $this->createMockFilterQuery();
-        $termFilter = $this->createMockTermFilter();
 
         $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
-
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getValue')->willReturn(Visibility::VISIBILITY_IN_SEARCH);
+        $boolQuery->method('getMust')->willReturn([
+            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_SEARCH)
+        ]);
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
@@ -366,16 +340,11 @@ class QueryMapperTest extends TestCase
     {
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
-        $filterQuery = $this->createMockFilterQuery();
-        $termFilter = $this->createMockTermFilter();
 
         $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
-
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getValue')->willReturn(Visibility::VISIBILITY_IN_CATALOG);
+        $boolQuery->method('getMust')->willReturn([
+            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_CATALOG)
+        ]);
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
@@ -393,19 +362,13 @@ class QueryMapperTest extends TestCase
     {
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
-        $filterQuery = $this->createMockFilterQuery();
-        $termFilter = $this->createMockTermFilter();
-
-        $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
-
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getValue')->willReturn([
+        $filterQuery = $this->createMockFilterQuery([
             Visibility::VISIBILITY_IN_SEARCH,
             Visibility::VISIBILITY_IN_CATALOG
         ]);
+
+        $request->method('getQuery')->willReturn($boolQuery);
+        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
@@ -426,24 +389,12 @@ class QueryMapperTest extends TestCase
     {
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
-        $categoryFilterQuery = $this->createMockFilterQuery();
-        $categoryTermFilter = $this->createMockTermFilter();
-        $visibilityFilterQuery = $this->createMockFilterQuery();
-        $visibilityTermFilter = $this->createMockTermFilter();
 
         $request->method('getQuery')->willReturn($boolQuery);
         $boolQuery->method('getMust')->willReturn([
-            'category' => $categoryFilterQuery,
-            'visibility' => $visibilityFilterQuery
+            'category' => $this->createMockFilterQuery('12'),
+            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_SEARCH)
         ]);
-
-        $categoryFilterQuery->method('getReference')->willReturn($categoryTermFilter);
-        $categoryTermFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $categoryTermFilter->method('getValue')->willReturn('12');
-
-        $visibilityFilterQuery->method('getReference')->willReturn($visibilityTermFilter);
-        $visibilityTermFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $visibilityTermFilter->method('getValue')->willReturn(Visibility::VISIBILITY_IN_SEARCH);
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
@@ -462,16 +413,8 @@ class QueryMapperTest extends TestCase
     {
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
-        $filterQuery = $this->createMockFilterQuery();
-        $termFilter = $this->createMockTermFilter();
-
         $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
-
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getValue')->willReturn(1);
+        $boolQuery->method('getMust')->willReturn(['visibility' => $this->createMockFilterQuery(1)]);
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
@@ -506,15 +449,10 @@ class QueryMapperTest extends TestCase
     public function testApplyVisibilityFiltersWithInSearchSingleValue(): void
     {
         $boolQuery = $this->createMockBoolQuery();
-        $filterQuery = $this->createMockFilterQuery();
-        $termFilter = $this->createMockTermFilter();
 
-        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
-
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getValue')->willReturn(Visibility::VISIBILITY_IN_SEARCH);
+        $boolQuery->method('getMust')->willReturn([
+            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_SEARCH)
+        ]);
 
         $params = [];
 
@@ -528,15 +466,10 @@ class QueryMapperTest extends TestCase
     public function testApplyVisibilityFiltersWithInCatalogSingleValue(): void
     {
         $boolQuery = $this->createMockBoolQuery();
-        $filterQuery = $this->createMockFilterQuery();
-        $termFilter = $this->createMockTermFilter();
 
-        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
-
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getValue')->willReturn(Visibility::VISIBILITY_IN_CATALOG);
+        $boolQuery->method('getMust')->willReturn([
+            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_CATALOG)
+        ]);
 
         $params = [];
 
@@ -550,18 +483,13 @@ class QueryMapperTest extends TestCase
     public function testApplyVisibilityFiltersWithBothValuesArray(): void
     {
         $boolQuery = $this->createMockBoolQuery();
-        $filterQuery = $this->createMockFilterQuery();
-        $termFilter = $this->createMockTermFilter();
-
-        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
-
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getValue')->willReturn([
+        $filterQuery = $this->createMockFilterQuery([
             Visibility::VISIBILITY_IN_SEARCH,
             Visibility::VISIBILITY_IN_CATALOG
         ]);
+        $termFilter = $this->createMockTermFilter();
+
+        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
 
         $params = [];
 
@@ -591,15 +519,8 @@ class QueryMapperTest extends TestCase
     public function testApplyVisibilityFiltersWithFalseVisibilityParam(): void
     {
         $boolQuery = $this->createMockBoolQuery();
-        $filterQuery = $this->createMockFilterQuery();
-        $termFilter = $this->createMockTermFilter();
 
-        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
-
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getValue')->willReturn(false);
+        $boolQuery->method('getMust')->willReturn(['visibility' => $this->createMockFilterQuery(false)]);
 
         $params = [];
 
@@ -664,23 +585,11 @@ class QueryMapperTest extends TestCase
     public function testApplyFilters(): void
     {
         $boolQuery = $this->createMockBoolQuery();
-        $categoryFilterQuery = $this->createMockFilterQuery();
-        $categoryTermFilter = $this->createMockTermFilter();
-        $visibilityFilterQuery = $this->createMockFilterQuery();
-        $visibilityTermFilter = $this->createMockTermFilter();
 
         $boolQuery->method('getMust')->willReturn([
-            'category' => $categoryFilterQuery,
-            'visibility' => $visibilityFilterQuery
+            'category' => $this->createMockFilterQuery('12'),
+            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_SEARCH)
         ]);
-
-        $categoryFilterQuery->method('getReference')->willReturn($categoryTermFilter);
-        $categoryTermFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $categoryTermFilter->method('getValue')->willReturn('12');
-
-        $visibilityFilterQuery->method('getReference')->willReturn($visibilityTermFilter);
-        $visibilityTermFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $visibilityTermFilter->method('getValue')->willReturn(Visibility::VISIBILITY_IN_SEARCH);
 
         $params = [];
 
@@ -757,19 +666,32 @@ class QueryMapperTest extends TestCase
         return $this->createMock(MatchQuery::class);
     }
 
-    private function createMockFilterQuery(bool $emptyMock = false): FilterQuery|MockObject
+    /** Create mock filter with nested mock term  */
+    // TODO: Vet all usages of this method
+    private function createMockFilterQuery(mixed $value = null): FilterQuery|MockObject
     {
         $filterQuery = $this->createMock(FilterQuery::class);
-        if (!$emptyMock) {
-            $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
-            $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+        if ($value === null) {
+            return $filterQuery;
         }
+        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
+        $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+
+        $termFilter = $this->createMockTermFilter($value);
+        $filterQuery->method('getReference')->willReturn($termFilter);
+
         return $filterQuery;
     }
 
-    private function createMockTermFilter(): Term|MockObject
+    // TODO: Vet all usages of this method
+    private function createMockTermFilter(mixed $value = null): Term|MockObject
     {
-        return $this->createMock(Term::class);
+        $termFilter = $this->createMock(Term::class);
+        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
+        if ($value !== null) {
+            $termFilter->method('getValue')->willReturn($value);
+        }
+        return $termFilter;
     }
 
     public static function paginationDataProvider(): array
