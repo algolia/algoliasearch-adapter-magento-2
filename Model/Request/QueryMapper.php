@@ -159,7 +159,7 @@ class QueryMapper
     {
         $category = $this->getParam($boolQuery, 'category');
         if ($category) {
-            $this->applyFilter($params, 'facetFilters', "categoryIds:{$category}");
+            $this->applyFilter($params, 'facetFilters', sprintf('categoryIds:%u', $category));
         }
     }
 

@@ -88,10 +88,10 @@ class QueryMapperTest extends TestCase
 
     public function testProcessThrowsNoSuchEntityException(): void
     {
-        $request = $this->createMockRequest('invalid');
+        $request = $this->createMockRequest('invalid-id');
         $request->method('getQuery')->willReturn($this->createGenericMockQuery());
 
-        $this->scopeResolver->method('getScope')->with('invalid')
+        $this->scopeResolver->method('getScope')->with('invalid-id')
             ->willThrowException(new NoSuchEntityException(__('Invalid scope')));
 
         $this->expectException(NoSuchEntityException::class);
@@ -220,7 +220,7 @@ class QueryMapperTest extends TestCase
         $this->assertEquals([
             'hitsPerPage' => 20,
             'page' => 0,
-            'facetFilters' => 'categoryIds:12'
+            'facetFilters' => ['categoryIds:12']
         ], $result);
     }
 
