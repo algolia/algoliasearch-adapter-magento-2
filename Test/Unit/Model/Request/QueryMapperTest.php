@@ -5,6 +5,7 @@ namespace Algolia\SearchAdapter\Test\Unit\Model\Request;
 use Algolia\AlgoliaSearch\Api\Data\IndexOptionsInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterfaceFactory;
+use Algolia\AlgoliaSearch\Api\Product\ProductRecordFieldsInterface;
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\AlgoliaSearch\Service\Product\IndexOptionsBuilder;
 use Algolia\AlgoliaSearch\Test\TestCase;
@@ -14,6 +15,7 @@ use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface;
 use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterfaceFactory;
 use Algolia\SearchAdapter\Model\Request\PaginationInfo;
 use Algolia\SearchAdapter\Model\Request\QueryMapper;
+use Magento\Catalog\Model\Product\Visibility;
 use Magento\Framework\App\ScopeInterface;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -342,7 +344,396 @@ class QueryMapperTest extends TestCase
         $this->assertEquals('', $result);
     }
 
-        /**
+    public function testBuildParamsWithVisibilityFilterInSearchOnly(): void
+    {
+        $request = $this->createMockRequest();
+        $boolQuery = $this->createMockBoolQuery();
+        $filterQuery = $this->createMockFilterQuery();
+        $termFilter = $this->createMockTermFilter();
+
+        $request->method('getQuery')->willReturn($boolQuery);
+        $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
+        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
+
+        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
+        $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+        $filterQuery->method('getReference')->willReturn($termFilter);
+
+        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
+        $termFilter->method('getValue')->willReturn(Visibility::VISIBILITY_IN_SEARCH);
+
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildParams', [$request, $this->paginationInfo]);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0,
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
+        ], $result);
+    }
+
+    public function testBuildParamsWithVisibilityFilterInCatalogOnly(): void
+    {
+        $request = $this->createMockRequest();
+        $boolQuery = $this->createMockBoolQuery();
+        $filterQuery = $this->createMockFilterQuery();
+        $termFilter = $this->createMockTermFilter();
+
+        $request->method('getQuery')->willReturn($boolQuery);
+        $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
+        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
+
+        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
+        $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+        $filterQuery->method('getReference')->willReturn($termFilter);
+
+        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
+        $termFilter->method('getValue')->willReturn(Visibility::VISIBILITY_IN_CATALOG);
+
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildParams', [$request, $this->paginationInfo]);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0,
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)]
+        ], $result);
+    }
+
+    public function testBuildParamsWithVisibilityFilterBothValues(): void
+    {
+        $request = $this->createMockRequest();
+        $boolQuery = $this->createMockBoolQuery();
+        $filterQuery = $this->createMockFilterQuery();
+        $termFilter = $this->createMockTermFilter();
+
+        $request->method('getQuery')->willReturn($boolQuery);
+        $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
+        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
+
+        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
+        $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+        $filterQuery->method('getReference')->willReturn($termFilter);
+
+        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
+        $termFilter->method('getValue')->willReturn([
+            Visibility::VISIBILITY_IN_SEARCH,
+            Visibility::VISIBILITY_IN_CATALOG
+        ]);
+
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildParams', [$request, $this->paginationInfo]);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0,
+            'numericFilters' => [
+                sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH),
+                sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)
+            ]
+        ], $result);
+    }
+
+    public function testBuildParamsWithCategoryAndVisibilityFilters(): void
+    {
+        $request = $this->createMockRequest();
+        $boolQuery = $this->createMockBoolQuery();
+        $categoryFilterQuery = $this->createMockFilterQuery();
+        $categoryTermFilter = $this->createMockTermFilter();
+        $visibilityFilterQuery = $this->createMockFilterQuery();
+        $visibilityTermFilter = $this->createMockTermFilter();
+
+        $request->method('getQuery')->willReturn($boolQuery);
+        $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
+        $boolQuery->method('getMust')->willReturn([
+            'category' => $categoryFilterQuery,
+            'visibility' => $visibilityFilterQuery
+        ]);
+
+        $categoryFilterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
+        $categoryFilterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+        $categoryFilterQuery->method('getReference')->willReturn($categoryTermFilter);
+        $categoryTermFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
+        $categoryTermFilter->method('getValue')->willReturn('12');
+
+        $visibilityFilterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
+        $visibilityFilterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+        $visibilityFilterQuery->method('getReference')->willReturn($visibilityTermFilter);
+        $visibilityTermFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
+        $visibilityTermFilter->method('getValue')->willReturn(Visibility::VISIBILITY_IN_SEARCH);
+
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildParams', [$request, $this->paginationInfo]);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0,
+            'facetFilters' => ['categoryIds:12'],
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
+        ], $result);
+    }
+
+    public function testBuildParamsWithVisibilityFilterNonMatchingValue(): void
+    {
+        $request = $this->createMockRequest();
+        $boolQuery = $this->createMockBoolQuery();
+        $filterQuery = $this->createMockFilterQuery();
+        $termFilter = $this->createMockTermFilter();
+
+        $request->method('getQuery')->willReturn($boolQuery);
+        $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
+        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
+
+        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
+        $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+        $filterQuery->method('getReference')->willReturn($termFilter);
+
+        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
+        $termFilter->method('getValue')->willReturn(1);
+
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildParams', [$request, $this->paginationInfo]);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0
+        ], $result);
+    }
+
+    public function testBuildParamsWithoutVisibilityFilter(): void
+    {
+        $request = $this->createMockRequest();
+        $boolQuery = $this->createMockBoolQuery();
+
+        $request->method('getQuery')->willReturn($boolQuery);
+        $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
+        $boolQuery->method('getMust')->willReturn(['other' => 'value']);
+
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildParams', [$request, $this->paginationInfo]);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0
+        ], $result);
+    }
+
+    public function testApplyVisibilityFiltersWithInSearchSingleValue(): void
+    {
+        $boolQuery = $this->createMockBoolQuery();
+        $filterQuery = $this->createMockFilterQuery();
+        $termFilter = $this->createMockTermFilter();
+
+        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
+
+        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
+        $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+        $filterQuery->method('getReference')->willReturn($termFilter);
+
+        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
+        $termFilter->method('getValue')->willReturn(Visibility::VISIBILITY_IN_SEARCH);
+
+        $params = [];
+
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilters', [&$params, $boolQuery]);
+
+        $this->assertEquals([
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
+        ], $params);
+    }
+
+    public function testApplyVisibilityFiltersWithInCatalogSingleValue(): void
+    {
+        $boolQuery = $this->createMockBoolQuery();
+        $filterQuery = $this->createMockFilterQuery();
+        $termFilter = $this->createMockTermFilter();
+
+        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
+
+        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
+        $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+        $filterQuery->method('getReference')->willReturn($termFilter);
+
+        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
+        $termFilter->method('getValue')->willReturn(Visibility::VISIBILITY_IN_CATALOG);
+
+        $params = [];
+
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilters', [&$params, $boolQuery]);
+
+        $this->assertEquals([
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)]
+        ], $params);
+    }
+
+    public function testApplyVisibilityFiltersWithBothValuesArray(): void
+    {
+        $boolQuery = $this->createMockBoolQuery();
+        $filterQuery = $this->createMockFilterQuery();
+        $termFilter = $this->createMockTermFilter();
+
+        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
+
+        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
+        $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+        $filterQuery->method('getReference')->willReturn($termFilter);
+
+        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
+        $termFilter->method('getValue')->willReturn([
+            Visibility::VISIBILITY_IN_SEARCH,
+            Visibility::VISIBILITY_IN_CATALOG
+        ]);
+
+        $params = [];
+
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilters', [&$params, $boolQuery]);
+
+        $this->assertEquals([
+            'numericFilters' => [
+                sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH),
+                sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)
+            ]
+        ], $params);
+    }
+
+    public function testApplyVisibilityFiltersWithNoVisibilityParam(): void
+    {
+        $boolQuery = $this->createMockBoolQuery();
+
+        $boolQuery->method('getMust')->willReturn(['other' => 'value']);
+
+        $params = [];
+
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilters', [&$params, $boolQuery]);
+
+        $this->assertEquals([], $params);
+    }
+
+    public function testApplyVisibilityFiltersWithFalseVisibilityParam(): void
+    {
+        $boolQuery = $this->createMockBoolQuery();
+        $filterQuery = $this->createMockFilterQuery();
+        $termFilter = $this->createMockTermFilter();
+
+        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
+
+        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
+        $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+        $filterQuery->method('getReference')->willReturn($termFilter);
+
+        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
+        $termFilter->method('getValue')->willReturn(false);
+
+        $params = [];
+
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilters', [&$params, $boolQuery]);
+
+        $this->assertEquals([], $params);
+    }
+
+    public function testApplyVisibilityFiltersWithArrayNonMatchingValues(): void
+    {
+        $boolQuery = $this->createMockBoolQuery();
+        $filterQuery = $this->createMockFilterQuery();
+        $termFilter = $this->createMockTermFilter();
+
+        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
+
+        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
+        $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+        $filterQuery->method('getReference')->willReturn($termFilter);
+
+        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
+        $termFilter->method('getValue')->willReturn([1, 4]);
+
+        $params = [];
+
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilters', [&$params, $boolQuery]);
+
+        $this->assertEquals([], $params);
+    }
+
+    public function testApplyVisibilityFilter(): void
+    {
+        $params = [];
+
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilter', [
+            &$params,
+            ProductRecordFieldsInterface::VISIBILITY_SEARCH
+        ]);
+
+        $this->assertEquals([
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
+        ], $params);
+    }
+
+    public function testApplyVisibilityFilterWithExistingNumericFilters(): void
+    {
+        $params = [
+            'numericFilters' => ['price>100']
+        ];
+
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilter', [
+            &$params,
+            ProductRecordFieldsInterface::VISIBILITY_CATALOG
+        ]);
+
+        $this->assertEquals([
+            'numericFilters' => [
+                'price>100',
+                sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)
+            ]
+        ], $params);
+    }
+
+    public function testApplyFilters(): void
+    {
+        $boolQuery = $this->createMockBoolQuery();
+        $categoryFilterQuery = $this->createMockFilterQuery();
+        $categoryTermFilter = $this->createMockTermFilter();
+        $visibilityFilterQuery = $this->createMockFilterQuery();
+        $visibilityTermFilter = $this->createMockTermFilter();
+
+        $boolQuery->method('getMust')->willReturn([
+            'category' => $categoryFilterQuery,
+            'visibility' => $visibilityFilterQuery
+        ]);
+
+        $categoryFilterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
+        $categoryFilterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+        $categoryFilterQuery->method('getReference')->willReturn($categoryTermFilter);
+        $categoryTermFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
+        $categoryTermFilter->method('getValue')->willReturn('12');
+
+        $visibilityFilterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
+        $visibilityFilterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+        $visibilityFilterQuery->method('getReference')->willReturn($visibilityTermFilter);
+        $visibilityTermFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
+        $visibilityTermFilter->method('getValue')->willReturn(Visibility::VISIBILITY_IN_SEARCH);
+
+        $params = [];
+
+        $this->invokeMethod($this->queryMapper, 'applyFilters', [&$params, $boolQuery]);
+
+        $this->assertEquals([
+            'facetFilters' => ['categoryIds:12'],
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
+        ], $params);
+    }
+
+    /**
      * @dataProvider paginationDataProvider
      */
     public function testBuildPaginationInfo(int $size, int $from, int $page): void
