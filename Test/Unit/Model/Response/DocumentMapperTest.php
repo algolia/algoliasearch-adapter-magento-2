@@ -3,48 +3,46 @@
 namespace Algolia\SearchAdapter\Test\Unit\Model\Response;
 
 use Algolia\SearchAdapter\Model\Response\DocumentMapper;
+use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface;
+use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterfaceFactory;
+use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 use Algolia\AlgoliaSearch\Test\TestCase;
+use PHPUnit\Framework\MockObject\MockObject;
 
 class DocumentMapperTest extends TestCase
 {
     private DocumentMapper $documentMapper;
+    private DocumentMapperResultInterfaceFactory|MockObject $documentMapperResultFactory;
+    private DocumentMapperResultInterface|MockObject $documentMapperResult;
+    private PaginationInfoInterface|MockObject $pagination;
 
     protected function setUp(): void
     {
-        $this->documentMapper = new DocumentMapper();
+        $this->documentMapperResultFactory = $this->createMock(DocumentMapperResultInterfaceFactory::class);
+        $this->documentMapperResult = $this->createMock(DocumentMapperResultInterface::class);
+        $this->pagination = $this->createMock(PaginationInfoInterface::class);
+
+        $this->documentMapper = new DocumentMapper(
+            $this->documentMapperResultFactory
+        );
     }
 
-    public function testBuildDocumentsWithEmptyResponse(): void
+    public function testBuildDocumentsWithEmptyHits(): void
     {
-        $searchResponse = [];
-        $result = $this->documentMapper->buildDocuments($searchResponse);
+        $hits = [];
+        $result = $this->invokeMethod($this->documentMapper, 'buildDocuments', [$hits]);
 
         $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
 
-    public function testBuildDocumentsWithEmptyResults(): void
+    public function testBuildDocumentsWithSingleHit(): void
     {
-        $searchResponse = ['results' => []];
-        $result = $this->documentMapper->buildDocuments($searchResponse);
-
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
-    }
-
-    public function testBuildDocumentsWithSingleResult(): void
-    {
-        $searchResponse = [
-            'results' => [
-                [
-                    'hits' => [
-                        ['objectID' => 'product_123']
-                    ]
-                ]
-            ]
+        $hits = [
+            ['objectID' => 'product_123']
         ];
 
-        $result = $this->documentMapper->buildDocuments($searchResponse);
+        $result = $this->invokeMethod($this->documentMapper, 'buildDocuments', [$hits]);
 
         $this->assertCount(1, $result);
         $this->assertEquals([
@@ -56,25 +54,15 @@ class DocumentMapperTest extends TestCase
         ], $result[0]);
     }
 
-    public function testBuildDocumentsWithMultipleResults(): void
+    public function testBuildDocumentsWithMultipleHits(): void
     {
-        $searchResponse = [
-            'results' => [
-                [
-                    'hits' => [
-                        ['objectID' => 'product_123'],
-                        ['objectID' => 'product_456']
-                    ]
-                ],
-                [
-                    'hits' => [
-                        ['objectID' => 'product_789']
-                    ]
-                ]
-            ]
+        $hits = [
+            ['objectID' => 'product_123'],
+            ['objectID' => 'product_456'],
+            ['objectID' => 'product_789']
         ];
 
-        $result = $this->documentMapper->buildDocuments($searchResponse);
+        $result = $this->invokeMethod($this->documentMapper, 'buildDocuments', [$hits]);
 
         $this->assertCount(3, $result);
 
@@ -106,175 +94,206 @@ class DocumentMapperTest extends TestCase
         ], $result[2]);
     }
 
-    public function testBuildDocumentsWithEmptyHits(): void
-    {
-        $searchResponse = [
-            'results' => [
-                [
-                    'hits' => []
-                ]
-            ]
-        ];
-
-        $result = $this->documentMapper->buildDocuments($searchResponse);
-
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
-    }
-
-    public function testBuildDocumentsWithMissingHitsKey(): void
-    {
-        $searchResponse = [
-            'results' => [
-                [
-                    'someOtherKey' => 'value'
-                ]
-            ]
-        ];
-
-        $result = $this->documentMapper->buildDocuments($searchResponse);
-
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
-    }
-
-    public function testExtractHitsWithEmptyResponse(): void
+    public function testProcessWithEmptyResponse(): void
     {
         $searchResponse = [];
-        $result = $this->invokeMethod($this->documentMapper, 'extractHits', [$searchResponse]);
+        $this->pagination->method('getPageNumber')->willReturn(1);
+        $this->pagination->method('getPageSize')->willReturn(20);
 
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        $this->documentMapperResultFactory
+            ->expects($this->once())
+            ->method('create')
+            ->with([
+                'documents' => [],
+                'totalCount' => 0,
+                'totalPages' => 0,
+                'pageSize' => 20,
+                'currentPage' => 1
+            ])
+            ->willReturn($this->documentMapperResult);
+
+        $result = $this->documentMapper->process($searchResponse, $this->pagination);
+
+        $this->assertSame($this->documentMapperResult, $result);
     }
 
-    public function testExtractHitsWithEmptyResults(): void
+    public function testProcessWithEmptyResults(): void
     {
         $searchResponse = ['results' => []];
-        $result = $this->invokeMethod($this->documentMapper, 'extractHits', [$searchResponse]);
+        $this->pagination->method('getPageNumber')->willReturn(1);
+        $this->pagination->method('getPageSize')->willReturn(20);
 
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        $this->documentMapperResultFactory
+            ->expects($this->once())
+            ->method('create')
+            ->with([
+                'documents' => [],
+                'totalCount' => 0,
+                'totalPages' => 0,
+                'pageSize' => 20,
+                'currentPage' => 1
+            ])
+            ->willReturn($this->documentMapperResult);
+
+        $result = $this->documentMapper->process($searchResponse, $this->pagination);
+
+        $this->assertSame($this->documentMapperResult, $result);
     }
 
-    public function testExtractHitsWithSingleResult(): void
+    public function testProcessWithSingleHit(): void
     {
         $searchResponse = [
             'results' => [
                 [
                     'hits' => [
-                        ['objectID' => 'product_123', 'name' => 'Test Product']
-                    ]
+                        ['objectID' => 'product_123']
+                    ],
+                    'nbHits' => 1,
+                    'nbPages' => 1,
+                    'hitsPerPage' => 20
                 ]
             ]
         ];
+        $this->pagination->method('getPageNumber')->willReturn(1);
+        $this->pagination->method('getPageSize')->willReturn(20);
 
-        $result = $this->invokeMethod($this->documentMapper, 'extractHits', [$searchResponse]);
+        $this->documentMapperResultFactory
+            ->expects($this->once())
+            ->method('create')
+            ->with($this->callback(function ($data) {
+                return $data['totalCount'] === 1
+                    && $data['totalPages'] === 1
+                    && $data['pageSize'] === 20
+                    && $data['currentPage'] === 1
+                    && count($data['documents']) === 1
+                    && $data['documents'][0]['fields']['_id'][0] === 'product_123';
+            }))
+            ->willReturn($this->documentMapperResult);
 
-        $this->assertCount(1, $result);
-        $this->assertEquals([
-            'objectID' => 'product_123',
-            'name' => 'Test Product'
-        ], $result[0]);
+        $result = $this->documentMapper->process($searchResponse, $this->pagination);
+
+        $this->assertSame($this->documentMapperResult, $result);
     }
 
-    public function testExtractHitsWithMultipleResults(): void
+    public function testProcessWithMultipleHits(): void
     {
         $searchResponse = [
             'results' => [
                 [
                     'hits' => [
-                        ['objectID' => 'product_123', 'name' => 'Product 1'],
-                        ['objectID' => 'product_456', 'name' => 'Product 2']
-                    ]
-                ],
+                        ['objectID' => 'product_123'],
+                        ['objectID' => 'product_456']
+                    ],
+                    'nbHits' => 2,
+                    'nbPages' => 1,
+                    'hitsPerPage' => 20
+                ]
+            ]
+        ];
+        $this->pagination->method('getPageNumber')->willReturn(1);
+        $this->pagination->method('getPageSize')->willReturn(20);
+
+        $this->documentMapperResultFactory
+            ->expects($this->once())
+            ->method('create')
+            ->with($this->callback(function ($data) {
+                return $data['totalCount'] === 2
+                    && count($data['documents']) === 2
+                    && $data['documents'][0]['fields']['_id'][0] === 'product_123'
+                    && $data['documents'][1]['fields']['_id'][0] === 'product_456';
+            }))
+            ->willReturn($this->documentMapperResult);
+
+        $result = $this->documentMapper->process($searchResponse, $this->pagination);
+
+        $this->assertSame($this->documentMapperResult, $result);
+    }
+
+    public function testProcessWithMultiplePages(): void
+    {
+        $searchResponse = [
+            'results' => [
                 [
                     'hits' => [
-                        ['objectID' => 'product_789', 'name' => 'Product 3']
+                        ['objectID' => 'product_19'],
+                        ['objectID' => 'product_20'],
+                        ['objectID' => 'product_21'],
+                        ['objectID' => 'product_22'],
+                        ['objectID' => 'product_23'],
+                        ['objectID' => 'product_24'],
+                        ['objectID' => 'product_25'],
+                        ['objectID' => 'product_26'],
+                        ['objectID' => 'product_27'],
+                    ],
+                    'nbHits' => 32,
+                    'nbPages' => 4,
+                    'hitsPerPage' => 9
+                ]
+            ]
+        ];
+        $this->pagination->method('getPageNumber')->willReturn(3);
+        $this->pagination->method('getPageSize')->willReturn(9);
+
+        $this->documentMapperResultFactory
+            ->expects($this->once())
+            ->method('create')
+            ->with($this->callback(function ($data) {
+                return $data['totalCount'] === 32
+                    && count($data['documents']) === 9
+                    && $data['totalPages'] === 4
+                    && $data['pageSize'] === 9
+                    && $data['currentPage'] === 3
+                    && $data['documents'][0]['fields']['_id'][0] === 'product_19'
+                    && $data['documents'][8]['fields']['_id'][0] === 'product_27';
+            }))
+            ->willReturn($this->documentMapperResult);
+
+        $result = $this->documentMapper->process($searchResponse, $this->pagination);
+
+        $this->assertSame($this->documentMapperResult, $result);
+    }
+
+    public function testProcessWithMissingPaginationFields(): void
+    {
+        $searchResponse = [
+            'results' => [
+                [
+                    'hits' => [
+                        ['objectID' => 'product_123']
                     ]
                 ]
             ]
         ];
+        $this->pagination->method('getPageNumber')->willReturn(2);
+        $this->pagination->method('getPageSize')->willReturn(10);
 
-        $result = $this->invokeMethod($this->documentMapper, 'extractHits', [$searchResponse]);
+        $this->documentMapperResultFactory
+            ->expects($this->once())
+            ->method('create')
+            ->with($this->callback(function ($data) {
+                return $data['totalCount'] === 0
+                    && $data['totalPages'] === 0
+                    && $data['pageSize'] === 10
+                    && $data['currentPage'] === 2
+                    && count($data['documents']) === 1
+                    && $data['documents'][0]['fields']['_id'][0] === 'product_123';
+            }))
+            ->willReturn($this->documentMapperResult);
 
-        $this->assertCount(3, $result);
-        $this->assertEquals([
-            'objectID' => 'product_123',
-            'name' => 'Product 1'
-        ], $result[0]);
-        $this->assertEquals([
-            'objectID' => 'product_456',
-            'name' => 'Product 2'
-        ], $result[1]);
-        $this->assertEquals([
-            'objectID' => 'product_789',
-            'name' => 'Product 3'
-        ], $result[2]);
-    }
+        $result = $this->documentMapper->process($searchResponse, $this->pagination);
 
-    public function testExtractHitsWithEmptyHits(): void
-    {
-        $searchResponse = [
-            'results' => [
-                [
-                    'hits' => []
-                ]
-            ]
-        ];
-
-        $result = $this->invokeMethod($this->documentMapper, 'extractHits', [$searchResponse]);
-
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
-    }
-
-    public function testExtractHitsWithMissingHitsKey(): void
-    {
-        $searchResponse = [
-            'results' => [
-                [
-                    'someOtherKey' => 'value'
-                ]
-            ]
-        ];
-
-        $result = $this->invokeMethod($this->documentMapper, 'extractHits', [$searchResponse]);
-
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
-    }
-
-    public function testExtractHitsWithNullHits(): void
-    {
-        $searchResponse = [
-            'results' => [
-                [
-                    'hits' => null
-                ]
-            ]
-        ];
-
-        $result = $this->invokeMethod($this->documentMapper, 'extractHits', [$searchResponse]);
-
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        $this->assertSame($this->documentMapperResult, $result);
     }
 
     public function testBuildDocumentsSortOrderIncrement(): void
     {
-        $searchResponse = [
-            'results' => [
-                [
-                    'hits' => [
-                        ['objectID' => 'product_1'],
-                        ['objectID' => 'product_2'],
-                        ['objectID' => 'product_3']
-                    ]
-                ]
-            ]
+        $hits = [
+            ['objectID' => 'product_1'],
+            ['objectID' => 'product_2'],
+            ['objectID' => 'product_3']
         ];
 
-        $result = $this->documentMapper->buildDocuments($searchResponse);
+        $result = $this->invokeMethod($this->documentMapper, 'buildDocuments', [$hits]);
 
         $this->assertCount(3, $result);
         $this->assertEquals(1, $result[0]['sort'][0]);

@@ -2,9 +2,33 @@
 
 namespace Algolia\SearchAdapter\Model\Response;
 
+use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface;
+use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterfaceFactory;
+use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
+
 class DocumentMapper
 {
-    public function buildDocuments(array $searchResponse): array
+    public function __construct(
+        protected DocumentMapperResultInterfaceFactory $documentMapperResultFactory,
+    ) {}
+
+    public function process(array $searchResponse, PaginationInfoInterface $pagination): DocumentMapperResultInterface
+    {
+        $result = $searchResponse['results'][0] ?? []; // only ever expect a single result set
+        $hits = $result['hits'] ?? [];
+        $total = $result['nbHits'] ?? 0;
+        $totalPages = $result['nbPages'] ?? (int) ceil($total / $pagination->getPageSize());
+        $pageSize = $result['hitsPerPage'] ?? $pagination->getPageSize();
+        return $this->documentMapperResultFactory->create([
+            'documents' => $this->buildDocuments($hits),
+            'totalCount' => $total,
+            'totalPages' => $totalPages,
+            'pageSize' => $pageSize,
+            'currentPage' => $pagination->getPageNumber()
+        ]);
+    }
+
+    protected function buildDocuments(array $hits): array
     {
         $i = 0;
         return array_map(
@@ -17,18 +41,20 @@ class DocumentMapper
                     'sort' => [ ++$i, $hit['objectID'] ]
                 ];
             },
-            $this->extractHits($searchResponse)
+            $hits
         );
     }
 
-    protected function extractHits(array $searchResponse): array
+    /** Intended for broader search scope against Algolia without paging - will likely be removed */
+    protected function getPagedHits(
+        array $hits,
+        PaginationInfoInterface $pagination
+    ): array
     {
-        $hits = [];
-        foreach ($searchResponse['results'] ?? [] as $result) {
-            foreach ($result['hits'] ?? [] as $hit) {
-                $hits[] = $hit;
-            }
-        }
-        return $hits;
+        return array_slice(
+            $hits,
+            $pagination->getOffset(),
+            $pagination->getPageSize()
+        );
     }
 }

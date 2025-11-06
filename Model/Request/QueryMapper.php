@@ -5,7 +5,12 @@ namespace Algolia\SearchAdapter\Model\Request;
 use Algolia\AlgoliaSearch\Api\Data\IndexOptionsInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterfaceFactory;
+use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Service\Product\IndexOptionsBuilder;
+use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
+use Algolia\SearchAdapter\Api\Data\PaginationInfoInterfaceFactory;
+use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface;
+use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterfaceFactory;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\Request\Filter\Term;
@@ -18,35 +23,77 @@ use Magento\Framework\Search\RequestInterface;
 
 class QueryMapper
 {
+    /** @var bool  */
+    public const USE_INSTANTSEARCH_PAGING = false; // experimental flag
+
     public function __construct(
-        protected SearchQueryInterfaceFactory $searchQueryFactory,
-        protected ScopeResolverInterface      $scopeResolver,
-        protected IndexOptionsBuilder         $indexOptionsBuilder,
+        protected QueryMapperResultInterfaceFactory $queryMapperResultFactory,
+        protected SearchQueryInterfaceFactory       $searchQueryFactory,
+        protected PaginationInfoInterfaceFactory    $paginationInfoFactory,
+        protected ScopeResolverInterface            $scopeResolver,
+        protected IndexOptionsBuilder               $indexOptionsBuilder,
+        protected InstantSearchHelper               $instantSearchHelper,
     ) {}
 
     /**
      * @throws NoSuchEntityException
      */
-    public function buildQuery(RequestInterface $request): SearchQueryInterface
+    public function process(RequestInterface $request): QueryMapperResultInterface
+    {
+        $pagination = $this->buildPaginationInfo($request);
+        return $this->queryMapperResultFactory->create([
+            'searchQuery' => $this->buildQueryObject($request, $pagination),
+            'paginationInfo' => $pagination,
+        ]);
+    }
+
+    public function getStoreId(RequestInterface $request): int
+    {
+        $dimension = current($request->getDimensions());
+        return $this->scopeResolver->getScope($dimension->getValue())->getId();
+    }
+
+    /**
+     * @throws NoSuchEntityException
+     */
+    protected function buildQueryObject(RequestInterface $request, PaginationInfoInterface $pagination): SearchQueryInterface
     {
         return $this->searchQueryFactory->create([
-            'indexOptions' => $this->getIndexOptions($request),
-            'query' => $this->getQuery($request),
-            'params' => $this->getParams($request),
+            'query' => $this->buildQueryString($request),
+            'params' => $this->buildParams($request, $pagination),
+            'indexOptions' => $this->buildIndexOptions($request)
         ]);
     }
 
     /**
      * @throws NoSuchEntityException
      */
-    protected function getIndexOptions(RequestInterface $request): IndexOptionsInterface
+    protected function buildIndexOptions(RequestInterface $request): IndexOptionsInterface
     {
-        $dimension = current($request->getDimensions());
-        $storeId = $this->scopeResolver->getScope($dimension->getValue())->getId();
-        return $this->indexOptionsBuilder->buildEntityIndexOptions($storeId);
+        return $this->indexOptionsBuilder->buildEntityIndexOptions($this->getStoreId($request));
     }
 
-    protected function getQuery(RequestInterface $request): string
+    /** Extrapolate pagination info from Magento originated search request */
+    protected function buildPaginationInfo(RequestInterface $request): PaginationInfoInterface
+    {
+        $pageSize = $request->getSize() ?? PaginationInfo::DEFAULT_PAGE_SIZE;
+        $offset = $request->getFrom() ?? 0;
+        $paginationInfo = $this->paginationInfoFactory->create([
+            'pageNumber' => floor($offset/$pageSize) + 1,
+            'pageSize' => $pageSize,
+            'offset' => $offset,
+        ]);
+
+        // TODO: Should we sync with Algolia or make configurable?
+        // This choice can affect functionality of \Magento\Catalog\Helper\Product\ProductList::getAvailableLimit
+        // Requires a custom SearchResultApplier to update the final collection
+        if (self::USE_INSTANTSEARCH_PAGING) {
+            $paginationInfo->setPageSize($this->instantSearchHelper->getNumberOfProductResults($this->getStoreId($request)));
+        }
+        return $paginationInfo;
+    }
+
+    protected function buildQueryString(RequestInterface $request): string
     {
         $requestQuery = $request->getQuery();
         if ($requestQuery->getType() !== RequestQueryInterface::TYPE_BOOL) {
@@ -69,9 +116,13 @@ class QueryMapper
         return $matchQuery->getValue();
     }
 
-    protected function getParams(RequestInterface $request): array
+    protected function buildParams(RequestInterface $request, PaginationInfoInterface $pagination): array
     {
-        $params = [];
+        $params = [
+            'hitsPerPage' => $pagination->getPageSize(),
+            'page' => $pagination->getPageNumber() - 1 # Algolia pages are 0-based, Magento 1-based
+        ];
+
         $requestQuery = $request->getQuery();
         if ($requestQuery->getType() !== RequestQueryInterface::TYPE_BOOL) {
             return $params;

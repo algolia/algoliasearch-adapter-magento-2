@@ -3,8 +3,9 @@
 namespace Algolia\SearchAdapter\Model;
 
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
+use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface;
 use Algolia\SearchAdapter\Model\Request\QueryMapper;
-use Algolia\SearchAdapter\Model\Response\DocumentMapper;;
+use Algolia\SearchAdapter\Model\Response\DocumentMapper;
 use Algolia\SearchAdapter\Service\AlgoliaBackendConnector;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\AdapterInterface;
@@ -36,30 +37,44 @@ class Adapter implements AdapterInterface
      */
     public function query(RequestInterface $request): QueryResponse
     {
+        $query = $this->queryMapper->process($request);
+        $response = $this->connector->query($query->getSearchQuery());
+        $result = $this->documentMapper->process($response, $query->getPaginationInfo());
+
+        $mockData = $this->getMockData($request);
+
+        $data =  [
+            DocumentMapperResultInterface::RESPONSE_KEY_DOCUMENTS => $result->getDocuments(),
+            DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS => $mockData[DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS],
+            DocumentMapperResultInterface::RESPONSE_KEY_TOTAL => $result->getTotalCount()
+        ];
+
+        // Temporarily using ElasticSearch DocumentFactory and AggregationFactory which are deprecated
+        // TODO: Implement new Algolia factories
+        return $this->responseFactory->create(
+            $data // $mockData
+        );
+    }
+
+    //
+
+    /**
+     * Create a mock response for aggregations and testing
+     * TODO: Implement Algolia aggregation builder
+     */
+    function getMockData(RequestInterface $request): array
+    {
         $queryLegacy = $this->mapper->buildQuery($request);
-        $query = $this->queryMapper->buildQuery($request);
-
-        $response = $this->connector->query($query);
-
-        $documents = $this->documentMapper->buildDocuments($response);
-
-        // Mock response for aggregations and testing
-        // TODO: Implement Algolia aggregation builder
         $mockResponse = $this->getSampleResponseData($request);
         $mockDocuments = $mockResponse['hits']['hits'] ?? [];
         $mockTotal = $mockResponse['hits']['total']['value'] ?? 0;
         $this->aggregationBuilder->setQuery($this->queryContainerFactory->create(['query' => $queryLegacy]));
         $mockAggregations = $this->aggregationBuilder->build($request, $mockResponse);
-        // End mocks
-
-        // TODO: Implement Algolia response factory as needed
-        return $this->responseFactory->create(
-            [
-                'documents' => $documents,
-                'aggregations' => $mockAggregations,
-                'total' => count($documents),
-            ]
-        );
+        return [
+            DocumentMapperResultInterface::RESPONSE_KEY_DOCUMENTS => $mockDocuments,
+            DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS => $mockAggregations,
+            DocumentMapperResultInterface::RESPONSE_KEY_TOTAL => $mockTotal
+        ];
     }
 
     /**

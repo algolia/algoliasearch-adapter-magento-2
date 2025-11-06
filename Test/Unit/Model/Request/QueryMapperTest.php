@@ -6,9 +6,15 @@ use Algolia\AlgoliaSearch\Api\Data\IndexOptionsInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterfaceFactory;
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
+use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Service\Product\IndexOptionsBuilder;
+use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
+use Algolia\SearchAdapter\Api\Data\PaginationInfoInterfaceFactory;
+use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface;
+use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterfaceFactory;
 use Algolia\SearchAdapter\Model\Request\QueryMapper;
 use Algolia\AlgoliaSearch\Test\TestCase;
+use Algolia\SearchAdapter\Model\Request\PaginationInfo;
 use Magento\Framework\App\ScopeInterface;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -25,110 +31,101 @@ use PHPUnit\Framework\MockObject\MockObject;
 class QueryMapperTest extends TestCase
 {
     private QueryMapper $queryMapper;
+    private QueryMapperResultInterfaceFactory|MockObject $queryMapperResultFactory;
     private SearchQueryInterfaceFactory|MockObject $searchQueryFactory;
+    private PaginationInfoInterfaceFactory|MockObject $paginationInfoFactory;
     private ScopeResolverInterface|MockObject $scopeResolver;
     private IndexOptionsBuilder|MockObject $indexOptionsBuilder;
+    private InstantSearchHelper|MockObject $instantSearchHelper;
+    private QueryMapperResultInterface|MockObject $queryMapperResult;
     private SearchQueryInterface|MockObject $searchQuery;
+    private PaginationInfoInterface|MockObject $paginationInfo;
     private IndexOptionsInterface|MockObject $indexOptions;
     private ScopeInterface|MockObject $scope;
 
     protected function setUp(): void
     {
+        $this->queryMapperResultFactory = $this->createMock(QueryMapperResultInterfaceFactory::class);
         $this->searchQueryFactory = $this->createMock(SearchQueryInterfaceFactory::class);
+        $this->paginationInfoFactory = $this->createPaginationInfoFactoryMock();
         $this->scopeResolver = $this->createMock(ScopeResolverInterface::class);
         $this->indexOptionsBuilder = $this->createMock(IndexOptionsBuilder::class);
+        $this->instantSearchHelper = $this->createMock(InstantSearchHelper::class);
+        $this->queryMapperResult = $this->createMock(QueryMapperResultInterface::class);
         $this->searchQuery = $this->createMock(SearchQueryInterface::class);
+        $this->paginationInfo = $this->createMock(PaginationInfoInterface::class);
         $this->indexOptions = $this->createMock(IndexOptionsInterface::class);
         $this->scope = $this->createMock(ScopeInterface::class);
 
         $this->queryMapper = new QueryMapper(
+            $this->queryMapperResultFactory,
             $this->searchQueryFactory,
+            $this->paginationInfoFactory,
             $this->scopeResolver,
-            $this->indexOptionsBuilder
+            $this->indexOptionsBuilder,
+            $this->instantSearchHelper,
         );
     }
 
-    public function testBuildQuerySuccess(): void
+    public function testProcessSuccess(): void
     {
         $request = $this->createMockRequest();
-        $dimension = $this->createMockDimension();
-        $boolQuery = $this->createMockBoolQuery();
-        $matchQuery = $this->createMockMatchQuery();
 
-        $request->method('getDimensions')->willReturn([$dimension]);
+        $boolQuery = $this->createMockBoolQuery();
         $request->method('getQuery')->willReturn($boolQuery);
 
-        $dimension->method('getValue')->willReturn('default');
-        $this->scopeResolver->method('getScope')->with('default')->willReturn($this->scope);
-        $this->scope->method('getId')->willReturn(1);
+        $matchQuery = $this->createMockMatchQuery();
+        $boolQuery->method('getShould')->willReturn(['search' => $matchQuery]);
+        $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery()]);
+        $matchQuery->method('getValue')->willReturn('test search');
 
         $this->indexOptionsBuilder->method('buildEntityIndexOptions')->with(1)->willReturn($this->indexOptions);
 
-        $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
-        $boolQuery->method('getShould')->willReturn(['search' => $matchQuery]);
-        $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery()]);
-
-        $matchQuery->method('getValue')->willReturn('test search');
-
         $this->searchQueryFactory->method('create')->willReturn($this->searchQuery);
 
-        $result = $this->queryMapper->buildQuery($request);
+        $this->queryMapperResultFactory->method('create')->willReturn($this->queryMapperResult);
 
-        $this->assertSame($this->searchQuery, $result);
+        $result = $this->queryMapper->process($request);
+
+        $this->assertSame($this->queryMapperResult, $result);
     }
 
-    public function testBuildQueryThrowsNoSuchEntityException(): void
+    public function testProcessThrowsNoSuchEntityException(): void
     {
-        $request = $this->createMockRequest();
-        $dimension = $this->createMockDimension();
-
-        $request->method('getDimensions')->willReturn([$dimension]);
-        $dimension->method('getValue')->willReturn('invalid');
+        $request = $this->createMockRequest('invalid');
+        $request->method('getQuery')->willReturn($this->createGenericMockQuery());
 
         $this->scopeResolver->method('getScope')->with('invalid')
             ->willThrowException(new NoSuchEntityException(__('Invalid scope')));
 
         $this->expectException(NoSuchEntityException::class);
-        $this->queryMapper->buildQuery($request);
+        $this->queryMapper->process($request);
     }
 
-    public function testBuildQueryThrowsAlgoliaException(): void
+    public function testProcessThrowsAlgoliaException(): void
     {
         $request = $this->createMockRequest();
-        $dimension = $this->createMockDimension();
-
-        $request->method('getDimensions')->willReturn([$dimension]);
-        $dimension->method('getValue')->willReturn('default');
-
-        $this->scopeResolver->method('getScope')->with('default')->willReturn($this->scope);
-        $this->scope->method('getId')->willReturn(1);
+        $request->method('getQuery')->willReturn($this->createGenericMockQuery());
 
         $this->indexOptionsBuilder->method('buildEntityIndexOptions')->with(1)
             ->willThrowException(new AlgoliaException('Algolia error'));
 
         $this->expectException(AlgoliaException::class);
-        $this->queryMapper->buildQuery($request);
+        $this->queryMapper->process($request);
     }
 
-    public function testGetIndexOptions(): void
+    public function testBuildIndexOptions(): void
     {
         $request = $this->createMockRequest();
-        $dimension = $this->createMockDimension();
-
-        $request->method('getDimensions')->willReturn([$dimension]);
-        $dimension->method('getValue')->willReturn('default');
-
-        $this->scopeResolver->method('getScope')->with('default')->willReturn($this->scope);
-        $this->scope->method('getId')->willReturn(1);
 
         $this->indexOptionsBuilder->method('buildEntityIndexOptions')->with(1)->willReturn($this->indexOptions);
 
-        $result = $this->invokeMethod($this->queryMapper, 'getIndexOptions', [$request]);
+        $result = $this->invokeMethod($this->queryMapper, 'buildIndexOptions', [$request]);
 
         $this->assertSame($this->indexOptions, $result);
     }
 
-    public function testGetQueryWithBoolQuery(): void
+    public function testBuildQueryStringWithBoolQuery(): void
     {
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
@@ -139,12 +136,12 @@ class QueryMapperTest extends TestCase
         $boolQuery->method('getShould')->willReturn(['search' => $matchQuery]);
         $matchQuery->method('getValue')->willReturn('test search');
 
-        $result = $this->invokeMethod($this->queryMapper, 'getQuery', [$request]);
+        $result = $this->invokeMethod($this->queryMapper, 'buildQueryString', [$request]);
 
         $this->assertEquals('test search', $result);
     }
 
-    public function testGetQueryWithNonBoolQuery(): void
+    public function testBuildQueryStringWithNonBoolQuery(): void
     {
         $request = $this->createMockRequest();
         $nonBoolQuery = $this->createMock(RequestQueryInterface::class);
@@ -152,7 +149,7 @@ class QueryMapperTest extends TestCase
         $request->method('getQuery')->willReturn($nonBoolQuery);
         $nonBoolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_MATCH);
 
-        $result = $this->invokeMethod($this->queryMapper, 'getQuery', [$request]);
+        $result = $this->invokeMethod($this->queryMapper, 'buildQueryString', [$request]);
 
         $this->assertEquals('', $result);
     }
@@ -192,7 +189,7 @@ class QueryMapperTest extends TestCase
         $this->assertEquals('', $result);
     }
 
-    public function testGetParamsWithCategoryFilter(): void
+    public function testBuildParamsWithCategoryFilter(): void
     {
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
@@ -210,12 +207,19 @@ class QueryMapperTest extends TestCase
         $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
         $termFilter->method('getValue')->willReturn('12');
 
-        $result = $this->invokeMethod($this->queryMapper, 'getParams', [$request]);
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
 
-        $this->assertEquals(['facetFilters' => 'categoryIds:12'], $result);
+        $result = $this->invokeMethod($this->queryMapper, 'buildParams', [$request, $this->paginationInfo]);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0,
+            'facetFilters' => 'categoryIds:12'
+        ], $result);
     }
 
-    public function testGetParamsWithNonBoolQuery(): void
+    public function testBuildParamsWithNonBoolQuery(): void
     {
         $request = $this->createMockRequest();
         $nonBoolQuery = $this->createMock(RequestQueryInterface::class);
@@ -223,12 +227,18 @@ class QueryMapperTest extends TestCase
         $request->method('getQuery')->willReturn($nonBoolQuery);
         $nonBoolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_MATCH);
 
-        $result = $this->invokeMethod($this->queryMapper, 'getParams', [$request]);
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
 
-        $this->assertEquals([], $result);
+        $result = $this->invokeMethod($this->queryMapper, 'buildParams', [$request, $this->paginationInfo]);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0
+        ], $result);
     }
 
-    public function testGetParamsWithoutCategoryFilter(): void
+    public function testBuildParamsWithoutCategoryFilter(): void
     {
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
@@ -237,9 +247,15 @@ class QueryMapperTest extends TestCase
         $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
         $boolQuery->method('getMust')->willReturn(['other' => 'value']);
 
-        $result = $this->invokeMethod($this->queryMapper, 'getParams', [$request]);
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
 
-        $this->assertEquals([], $result);
+        $result = $this->invokeMethod($this->queryMapper, 'buildParams', [$request, $this->paginationInfo]);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0
+        ], $result);
     }
 
     public function testGetParamWithValidFilter(): void
@@ -321,19 +337,64 @@ class QueryMapperTest extends TestCase
         $this->assertEquals('', $result);
     }
 
-    private function createMockRequest(): RequestInterface|MockObject
+        /**
+     * @dataProvider paginationDataProvider
+     */
+    public function testBuildPaginationInfo(int $size, int $from, int $page): void
     {
-        return $this->createMock(RequestInterface::class);
+        $request = $this->createMockRequest();
+        $request->method('getSize')->willReturn($size);
+        $request->method('getFrom')->willReturn($from);
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildPaginationInfo', [$request]);
+
+        $this->assertSame($size, $result->getPageSize());
+        $this->assertSame($from, $result->getOffset());
+        $this->assertSame($page, $result->getPageNumber());
     }
 
-    private function createMockDimension(): Dimension|MockObject
+    private function createPaginationInfoFactoryMock(): PaginationInfoInterfaceFactory|MockObject
     {
-        return $this->createMock(Dimension::class);
+        $factory = $this->createMock(PaginationInfoInterfaceFactory::class);
+        $factory->method('create')
+            ->willReturnCallback(function(array $data = []) {
+               return new PaginationInfo(
+                   $data['pageNumber'],
+                   $data['pageSize'],
+                   $data['offset']
+               );
+            });
+        return $factory;
+    }
+
+    private function createMockRequest(string $storeId = "1"): RequestInterface|MockObject
+    {
+        $request = $this->createMock(RequestInterface::class);
+        $dimension = $this->createMockDimension($storeId);
+        $request->method('getDimensions')->willReturn([$dimension]);
+
+        return $request;
+    }
+
+    private function createMockDimension(string $storeId = "1"): Dimension|MockObject
+    {
+        $dimension = $this->createMock(Dimension::class);
+        $dimension->method('getValue')->willReturn($storeId);
+        $this->scopeResolver->method('getScope')->with($storeId)->willReturn($this->scope);
+        $this->scope->method('getId')->willReturn((int) $storeId);
+        return $dimension;
+    }
+
+    private function createGenericMockQuery(): RequestQueryInterface|MockObject
+    {
+        return $this->createMock(RequestQueryInterface::class);
     }
 
     private function createMockBoolQuery(): BoolQuery|MockObject
     {
-        return $this->createMock(BoolQuery::class);
+        $boolQuery = $this->createMock(BoolQuery::class);
+        $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
+        return $boolQuery;
     }
 
     private function createMockMatchQuery(): MatchQuery|MockObject
@@ -349,5 +410,127 @@ class QueryMapperTest extends TestCase
     private function createMockTermFilter(): Term|MockObject
     {
         return $this->createMock(Term::class);
+    }
+
+    public static function paginationDataProvider(): array
+    {
+        return [
+            // Standard page sizes 
+            [
+                'size' => 12,
+                'from' => 0,
+                'page' => 1
+            ],
+            [
+                'size' => 24,
+                'from' => 0,
+                'page' => 1
+            ],
+            [
+                'size' => 36,
+                'from' => 0,
+                'page' => 1
+            ],
+            [
+                'size' => 12,
+                'from' => 12,
+                'page' => 2
+            ],
+            
+            [
+                'size' => 24,
+                'from' => 24,
+                'page' => 2
+            ],
+            [
+                'size' => 36,
+                'from' => 36,
+                'page' => 2
+            ],
+            [
+                'size' => 12,
+                'from' => 24,
+                'page' => 3
+            ],
+            [
+                'size' => 24,
+                'from' => 48,
+                'page' => 3
+            ],
+            [
+                'size' => 12,
+                'from' => 60,
+                'page' => 6
+            ],
+            [
+                'size' => 24,
+                'from' => 120,
+                'page' => 6
+            ],
+            // Edge cases - very small page size
+            [
+                'size' => 1,
+                'from' => 0,
+                'page' => 1
+            ],
+            [
+                'size' => 1,
+                'from' => 5,
+                'page' => 6
+            ],
+            [
+                'size' => 1,
+                'from' => 10,
+                'page' => 11
+            ],
+            // Edge cases - very large page size
+            [
+                'size' => 100,
+                'from' => 0,
+                'page' => 1
+            ],
+            [
+                'size' => 100,
+                'from' => 100,
+                'page' => 2
+            ],
+            [
+                'size' => 100,
+                'from' => 500,
+                'page' => 6
+            ],
+            // Edge cases - non-standard offsets (offsets that don't align perfectly)
+            [
+                'size' => 12,
+                'from' => 13,
+                'page' => 2
+            ],
+            [
+                'size' => 20,
+                'from' => 25,
+                'page' => 2
+            ],
+            [
+                'size' => 24,
+                'from' => 50,
+                'page' => 3
+            ],
+            // Edge cases - large offsets
+            [
+                'size' => 12,
+                'from' => 1200,
+                'page' => 101
+            ],
+            [
+                'size' => 20,
+                'from' => 2000,
+                'page' => 101
+            ],
+            [
+                'size' => 24,
+                'from' => 2400,
+                'page' => 101
+            ]
+        ];
     }
 }
