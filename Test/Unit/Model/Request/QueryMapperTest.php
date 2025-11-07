@@ -5,16 +5,17 @@ namespace Algolia\SearchAdapter\Test\Unit\Model\Request;
 use Algolia\AlgoliaSearch\Api\Data\IndexOptionsInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterface;
 use Algolia\AlgoliaSearch\Api\Data\SearchQueryInterfaceFactory;
+use Algolia\AlgoliaSearch\Api\Product\ProductRecordFieldsInterface;
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
-use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Service\Product\IndexOptionsBuilder;
+use Algolia\AlgoliaSearch\Test\TestCase;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterfaceFactory;
 use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface;
 use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterfaceFactory;
-use Algolia\SearchAdapter\Model\Request\QueryMapper;
-use Algolia\AlgoliaSearch\Test\TestCase;
 use Algolia\SearchAdapter\Model\Request\PaginationInfo;
+use Algolia\SearchAdapter\Model\Request\QueryMapper;
+use Magento\Catalog\Model\Product\Visibility;
 use Magento\Framework\App\ScopeInterface;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -36,7 +37,6 @@ class QueryMapperTest extends TestCase
     private PaginationInfoInterfaceFactory|MockObject $paginationInfoFactory;
     private ScopeResolverInterface|MockObject $scopeResolver;
     private IndexOptionsBuilder|MockObject $indexOptionsBuilder;
-    private InstantSearchHelper|MockObject $instantSearchHelper;
     private QueryMapperResultInterface|MockObject $queryMapperResult;
     private SearchQueryInterface|MockObject $searchQuery;
     private PaginationInfoInterface|MockObject $paginationInfo;
@@ -50,7 +50,6 @@ class QueryMapperTest extends TestCase
         $this->paginationInfoFactory = $this->createPaginationInfoFactoryMock();
         $this->scopeResolver = $this->createMock(ScopeResolverInterface::class);
         $this->indexOptionsBuilder = $this->createMock(IndexOptionsBuilder::class);
-        $this->instantSearchHelper = $this->createMock(InstantSearchHelper::class);
         $this->queryMapperResult = $this->createMock(QueryMapperResultInterface::class);
         $this->searchQuery = $this->createMock(SearchQueryInterface::class);
         $this->paginationInfo = $this->createMock(PaginationInfoInterface::class);
@@ -62,8 +61,7 @@ class QueryMapperTest extends TestCase
             $this->searchQueryFactory,
             $this->paginationInfoFactory,
             $this->scopeResolver,
-            $this->indexOptionsBuilder,
-            $this->instantSearchHelper,
+            $this->indexOptionsBuilder
         );
     }
 
@@ -74,10 +72,12 @@ class QueryMapperTest extends TestCase
         $boolQuery = $this->createMockBoolQuery();
         $request->method('getQuery')->willReturn($boolQuery);
 
-        $matchQuery = $this->createMockMatchQuery();
-        $boolQuery->method('getShould')->willReturn(['search' => $matchQuery]);
-        $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery()]);
-        $matchQuery->method('getValue')->willReturn('test search');
+        $boolQuery->method('getShould')->willReturn([
+            'search' => $this->createMockMatchQuery('test search')
+        ]);
+        $boolQuery->method('getMust')->willReturn([
+            'category' => $this->createMockFilterQuery()
+        ]);
 
         $this->indexOptionsBuilder->method('buildEntityIndexOptions')->with(1)->willReturn($this->indexOptions);
 
@@ -92,10 +92,10 @@ class QueryMapperTest extends TestCase
 
     public function testProcessThrowsNoSuchEntityException(): void
     {
-        $request = $this->createMockRequest('invalid');
+        $request = $this->createMockRequest('invalid-id');
         $request->method('getQuery')->willReturn($this->createGenericMockQuery());
 
-        $this->scopeResolver->method('getScope')->with('invalid')
+        $this->scopeResolver->method('getScope')->with('invalid-id')
             ->willThrowException(new NoSuchEntityException(__('Invalid scope')));
 
         $this->expectException(NoSuchEntityException::class);
@@ -114,6 +114,15 @@ class QueryMapperTest extends TestCase
         $this->queryMapper->process($request);
     }
 
+    public function testGetStoreId(): void
+    {
+        $request = $this->createMockRequest(5);
+
+        $result = $this->queryMapper->getStoreId($request);
+
+        $this->assertEquals(5, $result);
+    }
+
     public function testBuildIndexOptions(): void
     {
         $request = $this->createMockRequest();
@@ -129,12 +138,11 @@ class QueryMapperTest extends TestCase
     {
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
-        $matchQuery = $this->createMockMatchQuery();
 
         $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
-        $boolQuery->method('getShould')->willReturn(['search' => $matchQuery]);
-        $matchQuery->method('getValue')->willReturn('test search');
+        $boolQuery->method('getShould')->willReturn([
+            'search' => $this->createMockMatchQuery('test search')
+        ]);
 
         $result = $this->invokeMethod($this->queryMapper, 'buildQueryString', [$request]);
 
@@ -157,10 +165,10 @@ class QueryMapperTest extends TestCase
     public function testGetSearchTermFromBoolQueryWithSearchTerm(): void
     {
         $boolQuery = $this->createMockBoolQuery();
-        $matchQuery = $this->createMockMatchQuery();
 
-        $boolQuery->method('getShould')->willReturn(['search' => $matchQuery]);
-        $matchQuery->method('getValue')->willReturn('test search');
+        $boolQuery->method('getShould')->willReturn([
+            'search' => $this->createMockMatchQuery('test search')
+        ]);
 
         $result = $this->invokeMethod($this->queryMapper, 'getSearchTermFromBoolQuery', [$boolQuery]);
 
@@ -193,19 +201,9 @@ class QueryMapperTest extends TestCase
     {
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
-        $filterQuery = $this->createMockFilterQuery();
-        $termFilter = $this->createMockTermFilter();
 
         $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
-        $boolQuery->method('getMust')->willReturn(['category' => $filterQuery]);
-
-        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
-        $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getValue')->willReturn('12');
+        $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery('12')]);
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
@@ -215,7 +213,7 @@ class QueryMapperTest extends TestCase
         $this->assertEquals([
             'hitsPerPage' => 20,
             'page' => 0,
-            'facetFilters' => 'categoryIds:12'
+            'facetFilters' => ['categoryIds:12']
         ], $result);
     }
 
@@ -244,7 +242,6 @@ class QueryMapperTest extends TestCase
         $boolQuery = $this->createMockBoolQuery();
 
         $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
         $boolQuery->method('getMust')->willReturn(['other' => 'value']);
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
@@ -258,38 +255,29 @@ class QueryMapperTest extends TestCase
         ], $result);
     }
 
-    public function testGetParamWithValidFilter(): void
+    public function testGetFilterParamWithValidFilter(): void
     {
         $boolQuery = $this->createMockBoolQuery();
-        $filterQuery = $this->createMockFilterQuery();
-        $termFilter = $this->createMockTermFilter();
 
-        $boolQuery->method('getMust')->willReturn(['category' => $filterQuery]);
+        $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery('12')]);
 
-        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
-        $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getValue')->willReturn('12');
-
-        $result = $this->invokeMethod($this->queryMapper, 'getParam', [$boolQuery, 'category']);
+        $result = $this->invokeMethod($this->queryMapper, 'getFilterParam', [$boolQuery, 'category']);
 
         $this->assertEquals('12', $result);
     }
 
-    public function testGetParamWithMissingKey(): void
+    public function testGetFilterParamWithMissingKey(): void
     {
         $boolQuery = $this->createMockBoolQuery();
 
         $boolQuery->method('getMust')->willReturn(['other' => 'value']);
 
-        $result = $this->invokeMethod($this->queryMapper, 'getParam', [$boolQuery, 'category']);
+        $result = $this->invokeMethod($this->queryMapper, 'getFilterParam', [$boolQuery, 'category']);
 
         $this->assertEquals('', $result);
     }
 
-    public function testGetParamWithNonFilterType(): void
+    public function testGetFilterParamWithNonFilterType(): void
     {
         $boolQuery = $this->createMockBoolQuery();
         $nonFilterQuery = $this->createMock(RequestQueryInterface::class);
@@ -297,12 +285,12 @@ class QueryMapperTest extends TestCase
         $boolQuery->method('getMust')->willReturn(['category' => $nonFilterQuery]);
         $nonFilterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_MATCH);
 
-        $result = $this->invokeMethod($this->queryMapper, 'getParam', [$boolQuery, 'category']);
+        $result = $this->invokeMethod($this->queryMapper, 'getFilterParam', [$boolQuery, 'category']);
 
         $this->assertEquals('', $result);
     }
 
-    public function testGetParamWithNonReferenceFilter(): void
+    public function testGetFilterParamWithNonReferenceFilter(): void
     {
         $boolQuery = $this->createMockBoolQuery();
         $filterQuery = $this->createMockFilterQuery();
@@ -312,32 +300,310 @@ class QueryMapperTest extends TestCase
         $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
         $filterQuery->method('getReferenceType')->willReturn('other');
 
-        $result = $this->invokeMethod($this->queryMapper, 'getParam', [$boolQuery, 'category']);
+        $result = $this->invokeMethod($this->queryMapper, 'getFilterParam', [$boolQuery, 'category']);
 
         $this->assertEquals('', $result);
     }
 
-    public function testGetParamWithFalseValue(): void
+    public function testGetFilterParamWithFalseValue(): void
+    {
+        $boolQuery = $this->createMockBoolQuery();
+
+        $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery(false)]);
+
+        $result = $this->invokeMethod($this->queryMapper, 'getFilterParam', [$boolQuery, 'category']);
+
+        $this->assertEquals('', $result);
+    }
+
+    public function testBuildParamsWithVisibilityFilterInSearchOnly(): void
+    {
+        $request = $this->createMockRequest();
+        $boolQuery = $this->createMockBoolQuery();
+
+        $request->method('getQuery')->willReturn($boolQuery);
+        $boolQuery->method('getMust')->willReturn([
+            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_SEARCH)
+        ]);
+
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildParams', [$request, $this->paginationInfo]);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0,
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
+        ], $result);
+    }
+
+    public function testBuildParamsWithVisibilityFilterInCatalogOnly(): void
+    {
+        $request = $this->createMockRequest();
+        $boolQuery = $this->createMockBoolQuery();
+
+        $request->method('getQuery')->willReturn($boolQuery);
+        $boolQuery->method('getMust')->willReturn([
+            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_CATALOG)
+        ]);
+
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildParams', [$request, $this->paginationInfo]);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0,
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)]
+        ], $result);
+    }
+
+    public function testBuildParamsWithVisibilityFilterBothValues(): void
+    {
+        $request = $this->createMockRequest();
+        $boolQuery = $this->createMockBoolQuery();
+        $filterQuery = $this->createMockFilterQuery([
+            Visibility::VISIBILITY_IN_SEARCH,
+            Visibility::VISIBILITY_IN_CATALOG
+        ]);
+
+        $request->method('getQuery')->willReturn($boolQuery);
+        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
+
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildParams', [$request, $this->paginationInfo]);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0,
+            'numericFilters' => [
+                sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH),
+                sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)
+            ]
+        ], $result);
+    }
+
+    public function testBuildParamsWithCategoryAndVisibilityFilters(): void
+    {
+        $request = $this->createMockRequest();
+        $boolQuery = $this->createMockBoolQuery();
+
+        $request->method('getQuery')->willReturn($boolQuery);
+        $boolQuery->method('getMust')->willReturn([
+            'category' => $this->createMockFilterQuery('12'),
+            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_SEARCH)
+        ]);
+
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildParams', [$request, $this->paginationInfo]);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0,
+            'facetFilters' => ['categoryIds:12'],
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
+        ], $result);
+    }
+
+    public function testBuildParamsWithVisibilityFilterNonMatchingValue(): void
+    {
+        $request = $this->createMockRequest();
+        $boolQuery = $this->createMockBoolQuery();
+        $request->method('getQuery')->willReturn($boolQuery);
+        $boolQuery->method('getMust')->willReturn(['visibility' => $this->createMockFilterQuery(1)]);
+
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildParams', [$request, $this->paginationInfo]);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0
+        ], $result);
+    }
+
+    public function testBuildParamsWithoutVisibilityFilter(): void
+    {
+        $request = $this->createMockRequest();
+        $boolQuery = $this->createMockBoolQuery();
+
+        $request->method('getQuery')->willReturn($boolQuery);
+        $boolQuery->method('getMust')->willReturn(['other' => 'value']);
+
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildParams', [$request, $this->paginationInfo]);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0
+        ], $result);
+    }
+
+    public function testApplyVisibilityFiltersWithInSearchSingleValue(): void
+    {
+        $boolQuery = $this->createMockBoolQuery();
+
+        $boolQuery->method('getMust')->willReturn([
+            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_SEARCH)
+        ]);
+
+        $params = [];
+
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilters', [&$params, $boolQuery]);
+
+        $this->assertEquals([
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
+        ], $params);
+    }
+
+    public function testApplyVisibilityFiltersWithInCatalogSingleValue(): void
+    {
+        $boolQuery = $this->createMockBoolQuery();
+
+        $boolQuery->method('getMust')->willReturn([
+            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_CATALOG)
+        ]);
+
+        $params = [];
+
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilters', [&$params, $boolQuery]);
+
+        $this->assertEquals([
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)]
+        ], $params);
+    }
+
+    public function testApplyVisibilityFiltersWithBothValuesArray(): void
+    {
+        $boolQuery = $this->createMockBoolQuery();
+        $filterQuery = $this->createMockFilterQuery([
+            Visibility::VISIBILITY_IN_SEARCH,
+            Visibility::VISIBILITY_IN_CATALOG
+        ]);
+        $termFilter = $this->createMockTermFilter();
+
+        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
+
+        $params = [];
+
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilters', [&$params, $boolQuery]);
+
+        $this->assertEquals([
+            'numericFilters' => [
+                sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH),
+                sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)
+            ]
+        ], $params);
+    }
+
+    public function testApplyVisibilityFiltersWithNoVisibilityParam(): void
+    {
+        $boolQuery = $this->createMockBoolQuery();
+
+        $boolQuery->method('getMust')->willReturn(['other' => 'value']);
+
+        $params = [];
+
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilters', [&$params, $boolQuery]);
+
+        $this->assertEquals([], $params);
+    }
+
+    public function testApplyVisibilityFiltersWithFalseVisibilityParam(): void
+    {
+        $boolQuery = $this->createMockBoolQuery();
+
+        $boolQuery->method('getMust')->willReturn(['visibility' => $this->createMockFilterQuery(false)]);
+
+        $params = [];
+
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilters', [&$params, $boolQuery]);
+
+        $this->assertEquals([], $params);
+    }
+
+    public function testApplyVisibilityFiltersWithArrayNonMatchingValues(): void
     {
         $boolQuery = $this->createMockBoolQuery();
         $filterQuery = $this->createMockFilterQuery();
         $termFilter = $this->createMockTermFilter();
 
-        $boolQuery->method('getMust')->willReturn(['category' => $filterQuery]);
+        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
 
-        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
-        $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
         $filterQuery->method('getReference')->willReturn($termFilter);
 
         $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getValue')->willReturn(false);
+        $termFilter->method('getValue')->willReturn([1, 4]);
 
-        $result = $this->invokeMethod($this->queryMapper, 'getParam', [$boolQuery, 'category']);
+        $params = [];
 
-        $this->assertEquals('', $result);
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilters', [&$params, $boolQuery]);
+
+        $this->assertEquals([], $params);
     }
 
-        /**
+    public function testApplyVisibilityFilter(): void
+    {
+        $params = [];
+
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilter', [
+            &$params,
+            ProductRecordFieldsInterface::VISIBILITY_SEARCH
+        ]);
+
+        $this->assertEquals([
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
+        ], $params);
+    }
+
+    public function testApplyVisibilityFilterWithExistingNumericFilters(): void
+    {
+        $params = [
+            'numericFilters' => ['price>100']
+        ];
+
+        $this->invokeMethod($this->queryMapper, 'applyVisibilityFilter', [
+            &$params,
+            ProductRecordFieldsInterface::VISIBILITY_CATALOG
+        ]);
+
+        $this->assertEquals([
+            'numericFilters' => [
+                'price>100',
+                sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)
+            ]
+        ], $params);
+    }
+
+    public function testApplyFilters(): void
+    {
+        $boolQuery = $this->createMockBoolQuery();
+
+        $boolQuery->method('getMust')->willReturn([
+            'category' => $this->createMockFilterQuery('12'),
+            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_SEARCH)
+        ]);
+
+        $params = [];
+
+        $this->invokeMethod($this->queryMapper, 'applyFilters', [&$params, $boolQuery]);
+
+        $this->assertEquals([
+            'facetFilters' => ['categoryIds:12'],
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
+        ], $params);
+    }
+
+    /**
      * @dataProvider paginationDataProvider
      */
     public function testBuildPaginationInfo(int $size, int $from, int $page): void
@@ -397,25 +663,47 @@ class QueryMapperTest extends TestCase
         return $boolQuery;
     }
 
-    private function createMockMatchQuery(): MatchQuery|MockObject
+    private function createMockMatchQuery(?string $query = null): MatchQuery|MockObject
     {
-        return $this->createMock(MatchQuery::class);
+        $matchQuery = $this->createMock(MatchQuery::class);
+        if ($query) {
+            $matchQuery->method('getValue')->willReturn($query);
+        }
+        return $matchQuery;
     }
 
-    private function createMockFilterQuery(): FilterQuery|MockObject
+    /** Create mock filter with nested mock term  */
+    // TODO: Vet all usages of this method
+    private function createMockFilterQuery(mixed $value = null): FilterQuery|MockObject
     {
-        return $this->createMock(FilterQuery::class);
+        $filterQuery = $this->createMock(FilterQuery::class);
+        if ($value === null) {
+            return $filterQuery;
+        }
+        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
+        $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
+
+        $termFilter = $this->createMockTermFilter($value);
+        $filterQuery->method('getReference')->willReturn($termFilter);
+
+        return $filterQuery;
     }
 
-    private function createMockTermFilter(): Term|MockObject
+    // TODO: Vet all usages of this method
+    private function createMockTermFilter(mixed $value = null): Term|MockObject
     {
-        return $this->createMock(Term::class);
+        $termFilter = $this->createMock(Term::class);
+        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
+        if ($value !== null) {
+            $termFilter->method('getValue')->willReturn($value);
+        }
+        return $termFilter;
     }
 
     public static function paginationDataProvider(): array
     {
         return [
-            // Standard page sizes 
+            // Standard page sizes
             [
                 'size' => 12,
                 'from' => 0,
@@ -436,7 +724,7 @@ class QueryMapperTest extends TestCase
                 'from' => 12,
                 'page' => 2
             ],
-            
+
             [
                 'size' => 24,
                 'from' => 24,
