@@ -2,7 +2,9 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <type name="Magento\Framework\View\Element\Template">
-        <plugin name="custom_sorter_template"
-                type="Algolia\SearchAdapter\Plugin\View\TemplatePlugin" />
+        <plugin name="algolia_template_handler" type="Algolia\SearchAdapter\Plugin\View\TemplatePlugin" />
+    </type>
+    <type name="\Magento\Catalog\Block\Product\ProductList\Toolbar">
+        <plugin name="algolia_toolbar" type="Algolia\SearchAdapter\Plugin\View\ToolbarPlugin" />
     </type>
 </config>

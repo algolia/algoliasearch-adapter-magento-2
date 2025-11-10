@@ -4,7 +4,7 @@
     <preference for="Algolia\SearchAdapter\Api\Data\PaginationInfoInterface" type="Algolia\SearchAdapter\Model\Request\PaginationInfo" />
     <preference for="Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface" type="Algolia\SearchAdapter\Model\Request\QueryMapperResult" />
     <preference for="Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface" type="Algolia\SearchAdapter\Model\Response\DocumentMapperResult" />
-    
+
     <type name="Magento\Search\Model\EngineResolver">
         <arguments>
             <argument name="engines" xsi:type="array">
@@ -73,10 +73,18 @@
         </arguments>
     </virtualType>
 
+    <virtualType name="algoliaSearchCriteriaResolverFactory" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection\SearchCriteriaResolverFactory">
+        <arguments>
+            <argument name="instanceName" xsi:type="string">Algolia\SearchAdapter\Model\ResourceModel\Fulltext\Collection\SearchCriteriaResolver</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Search -->
     <!-- TODO: Implement resolvers / appliers as needed -->
     <virtualType name="algoliaFulltextSearchCollection" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection">
         <arguments>
             <argument name="searchRequestName" xsi:type="string">quick_search_container</argument>
+            <argument name="searchCriteriaResolverFactory" xsi:type="object">algoliaSearchCriteriaResolverFactory</argument>
             <argument name="totalRecordsResolverFactory" xsi:type="object">algoliaTotalRecordsResolver\Factory</argument>
         </arguments>
     </virtualType>
@@ -91,6 +99,7 @@
     <virtualType name="algoliaCategoryCollection" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection">
         <arguments>
             <argument name="searchRequestName" xsi:type="string">catalog_view_container</argument>
+            <argument name="searchCriteriaResolverFactory" xsi:type="object">algoliaSearchCriteriaResolverFactory</argument>
             <argument name="totalRecordsResolverFactory" xsi:type="object">algoliaTotalRecordsResolver\Factory</argument>
         </arguments>
     </virtualType>
