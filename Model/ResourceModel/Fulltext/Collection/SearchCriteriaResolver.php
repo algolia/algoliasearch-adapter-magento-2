@@ -1,6 +1,8 @@
 <?php
 namespace Algolia\SearchAdapter\Model\ResourceModel\Fulltext\Collection;
 
+use Algolia\SearchAdapter\Registry\SortState;
+use Algolia\SearchAdapter\ViewModel\Sorter;
 use Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection\SearchCriteriaResolverInterface;
 use Magento\Framework\Api\Search\SearchCriteriaBuilder;
 use Magento\Framework\Api\Search\SearchCriteria;
@@ -14,11 +16,12 @@ class SearchCriteriaResolver implements SearchCriteriaResolverInterface
 {
     public function __construct(
         protected SearchCriteriaBuilder $builder,
-        protected SortOrderBuilder $sortOrderBuilder,
-        protected string $searchRequestName,
-        protected int $currentPage,
-        protected int $size,
-        protected ?array $orders = null
+        protected SortOrderBuilder      $sortOrderBuilder,
+        protected SortState             $sortState,
+        protected string                $searchRequestName,
+        protected int                   $currentPage,
+        protected int                   $size,
+        protected ?array                $orders = null
     ) {}
 
     /**
@@ -28,12 +31,21 @@ class SearchCriteriaResolver implements SearchCriteriaResolverInterface
     {
         $searchCriteria = $this->builder->create();
         $searchCriteria->setRequestName($this->searchRequestName);
-        $searchCriteria->setSortOrders($this->transformSortParams($this->orders));
         $searchCriteria->setCurrentPage($this->currentPage - 1);
         if ($this->size) {
             $searchCriteria->setPageSize($this->size);
         }
+
+        $this->applySorting($searchCriteria);
+
         return $searchCriteria;
+    }
+
+    protected function applySorting(SearchCriteria $searchCriteria): void
+    {
+        $sortOrders = $this->transformSortParams($this->orders);
+        $searchCriteria->setSortOrders($sortOrders);
+        $this->sortState->set(reset($sortOrders)); // maintain a single sort fallback due to core api instability
     }
 
     /** We only care about Algolia sorting params - parse and filter out the rest  */
@@ -50,7 +62,7 @@ class SearchCriteriaResolver implements SearchCriteriaResolverInterface
 
     protected function parseSortParam(string $param): ?SortOrder
     {
-        $parts = explode(\Algolia\SearchAdapter\ViewModel\Sorter::SORT_PARAM_DELIMITER, $param);
+        $parts = explode(Sorter::SORT_PARAM_DELIMITER, $param);
         if (count($parts) < 2) {
             return null;
         }

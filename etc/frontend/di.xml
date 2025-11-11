@@ -7,7 +7,4 @@
     <type name="\Magento\Catalog\Block\Product\ProductList\Toolbar">
         <plugin name="algolia_toolbar" type="Algolia\SearchAdapter\Plugin\View\ToolbarPlugin" />
     </type>
-    <type name="\Magento\Framework\Search\Request\Builder">
-        <plugin name="algolia_request_builder" type="Algolia\SearchAdapter\Plugin\Search\RequestBuilderPlugin" />
-    </type>
 </config>
