@@ -4,20 +4,23 @@ namespace Algolia\SearchAdapter\ViewModel;
 
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
+use Magento\Store\Model\StoreManagerInterface;
 
 class Sorter implements ArgumentInterface
 {
     public const SORT_PARAM_DELIMITER = '~';
     public const SORT_PARAM_DEFAULT = 'relevance';
     public function __construct(
+        protected StoreManagerInterface $storeManager,
         protected InstantSearchHelper $instantSearchHelper,
     ) {}
 
     public function getSortingOptions(): array
     {
+        $storeId = $this->storeManager->getStore()->getId();
         return [
             ['key' => self::SORT_PARAM_DEFAULT, 'label' => __('Relevance') ],
-            ...$this->transformSortingOptions($this->instantSearchHelper->getSorting())
+            ...$this->transformSortingOptions($this->instantSearchHelper->getSorting($storeId))
         ];
     }
 
