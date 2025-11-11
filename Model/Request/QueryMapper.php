@@ -12,6 +12,7 @@ use Algolia\SearchAdapter\Api\Data\PaginationInfoInterfaceFactory;
 use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface;
 use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterfaceFactory;
 use Magento\Catalog\Model\Product\Visibility;
+use Magento\Framework\Api\SortOrder;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\Request\Filter\Term;
@@ -77,7 +78,31 @@ class QueryMapper
      */
     protected function buildIndexOptions(RequestInterface $request): IndexOptionsInterface
     {
-        return $this->indexOptionsBuilder->buildEntityIndexOptions($this->getStoreId($request));
+        $storeId = $this->getStoreId($request);
+        $sort = $this->getSort($request);
+        return $sort
+            ? $this->indexOptionsBuilder->buildReplicaIndexOptions($storeId, $sort[SortOrder::FIELD], $sort[SortOrder::DIRECTION])
+            : $this->indexOptionsBuilder->buildEntityIndexOptions($storeId);
+    }
+
+    /**
+     * @return array<string,string>|null
+     */
+    protected function getSort(RequestInterface $request): ?array
+    {
+        // Magento has identified this as a deprecated method but it is used by Elasticsearch and OpenSearch
+        // To maintain compatibility we are safely calling this method until it is removed at a future time
+        if (!method_exists($request, 'getSort')) {
+            return null;
+        }
+
+        $sort = $request->getSort();
+        if (empty($sort)) {
+            return null;
+        }
+
+        // only single sort supported
+        return reset($sort);
     }
 
     /**
