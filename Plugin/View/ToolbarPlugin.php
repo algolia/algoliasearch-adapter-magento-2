@@ -16,6 +16,7 @@ class ToolbarPlugin
         protected ConfigHelper $configHelper,
     ) {}
 
+    /** Handles the Algolia sort param independently of Magento core sort params  */
     public function aroundGetCurrentOrder(Toolbar $subject, callable $proceed): ?string
     {
         if (!$this->configHelper->isAlgoliaEngineSelected()) {
@@ -30,6 +31,7 @@ class ToolbarPlugin
         $order = $this->toolbarMemorizer->getOrder();
 
         if ($this->toolbarMemorizer->isMemorizingAllowed()) {
+            // Algolia uses a composite sort param (field~direction)
             $this->httpContext->setValue(ToolbarModel::ORDER_PARAM_NAME, $order, null);
         }
 
