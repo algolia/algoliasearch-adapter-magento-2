@@ -3,7 +3,6 @@
 namespace Algolia\SearchAdapter\Registry;
 
 use Magento\Framework\Api\SortOrder;
-use Magento\Framework\Api\SortOrderBuilder;
 
 /**
  * There is no sort handling contract in \Magento\Framework\Search\RequestInterface
@@ -15,19 +14,15 @@ use Magento\Framework\Api\SortOrderBuilder;
  */
 class SortState
 {
-    private ?SortOrder $sortOrder;
-
-    public function __construct(
-        protected SortOrderBuilder $sortOrderBuilder,
-    ) {}
+    private ?SortOrder $sortOrder = null;
 
     public function set(SortOrder $sortOrder): void
     {
         $this->sortOrder = $sortOrder;
     }
 
-    public function get(): SortOrder
+    public function get(): ?SortOrder
     {
-        return $this->sortOrder ?? $this->sortOrderBuilder->create();
+        return $this->sortOrder;
     }
 }

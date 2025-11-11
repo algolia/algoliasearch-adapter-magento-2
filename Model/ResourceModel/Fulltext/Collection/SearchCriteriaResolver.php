@@ -45,7 +45,9 @@ class SearchCriteriaResolver implements SearchCriteriaResolverInterface
     {
         $sortOrders = $this->transformSortParams($this->orders);
         $searchCriteria->setSortOrders($sortOrders);
-        $this->sortState->set(reset($sortOrders)); // maintain a single sort fallback due to core api instability
+        if (count($sortOrders)) {
+            $this->sortState->set(reset($sortOrders)); // maintain a single sort fallback due to core api instability
+        }
     }
 
     /** We only care about Algolia sorting params - parse and filter out the rest  */
