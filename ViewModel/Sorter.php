@@ -34,10 +34,15 @@ class Sorter implements ArgumentInterface
     {
         return array_values(array_map(
             fn($sort) => [
-                'key' => $sort['attribute'] . self::SORT_PARAM_DELIMITER . $sort['sort'],
+                'key' => $sort['attribute'] . $this->getSortParamDelimiter() . $sort['sort'],
                 'label' => $sort['sortLabel']
             ],
             $sortingOptions
         ));
+    }
+
+    public function getSortParamDelimiter(): string
+    {
+        return self::SORT_PARAM_DELIMITER;
     }
 }

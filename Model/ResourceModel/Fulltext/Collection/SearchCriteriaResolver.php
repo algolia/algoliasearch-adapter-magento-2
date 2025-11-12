@@ -2,7 +2,7 @@
 namespace Algolia\SearchAdapter\Model\ResourceModel\Fulltext\Collection;
 
 use Algolia\SearchAdapter\Registry\SortState;
-use Algolia\SearchAdapter\ViewModel\Sorter;
+use Algolia\SearchAdapter\ViewModel\Sorter as SorterViewModel;
 use Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection\SearchCriteriaResolverInterface;
 use Magento\Framework\Api\Search\SearchCriteriaBuilder;
 use Magento\Framework\Api\Search\SearchCriteria;
@@ -18,6 +18,7 @@ class SearchCriteriaResolver implements SearchCriteriaResolverInterface
         protected SearchCriteriaBuilder $builder,
         protected SortOrderBuilder      $sortOrderBuilder,
         protected SortState             $sortState,
+        protected SorterViewModel       $sorterViewModel,
         protected string                $searchRequestName,
         protected int                   $currentPage,
         protected int                   $size,
@@ -57,14 +58,14 @@ class SearchCriteriaResolver implements SearchCriteriaResolverInterface
         }
         return array_values(
             array_filter(
-                array_map([$this, 'parseSortParam'], array_keys($orders)
+                array_map([$this, 'parseSortParam'], array_keys($orders))
             )
-        ));
+        );
     }
 
     protected function parseSortParam(string $param): ?SortOrder
     {
-        $parts = explode(Sorter::SORT_PARAM_DELIMITER, $param);
+        $parts = explode($this->sorterViewModel->getSortParamDelimiter(), $param);
         if (count($parts) < 2) {
             return null;
         }

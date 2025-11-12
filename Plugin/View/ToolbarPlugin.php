@@ -10,6 +10,8 @@ use Magento\Framework\App\Http\Context;
 
 class ToolbarPlugin
 {
+    protected const CURRENT_SORT_ORDER = '_algolia_current_order';
+
     public function __construct(
         protected ToolbarMemorizer $toolbarMemorizer,
         protected Context $httpContext,
@@ -23,7 +25,7 @@ class ToolbarPlugin
             return $proceed();
         }
 
-        $order = $subject->getData('_algolia_current_order');
+        $order = $subject->getData(self::CURRENT_SORT_ORDER);
         if ($order) {
             return $order;
         }
@@ -35,7 +37,7 @@ class ToolbarPlugin
             $this->httpContext->setValue(ToolbarModel::ORDER_PARAM_NAME, $order, null);
         }
 
-        $subject->setData('_algolia_current_order', $order);
+        $subject->setData(self::CURRENT_SORT_ORDER, $order);
         return $order;
     }
 }
