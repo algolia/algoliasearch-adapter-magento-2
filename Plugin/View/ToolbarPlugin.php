@@ -7,6 +7,7 @@ use Magento\Catalog\Block\Product\ProductList\Toolbar;
 use Magento\Catalog\Model\Product\ProductList\Toolbar as ToolbarModel;
 use Magento\Catalog\Model\Product\ProductList\ToolbarMemorizer;
 use Magento\Framework\App\Http\Context;
+use Magento\Framework\View\Element\Template;
 
 class ToolbarPlugin
 {
@@ -17,6 +18,20 @@ class ToolbarPlugin
         protected Context $httpContext,
         protected ConfigHelper $configHelper,
     ) {}
+
+    public function beforeGetTemplateFile(Toolbar $subject, ?string $template = null)
+    {
+        if (
+            // Intercept only sorter.phtml
+            $template === 'Magento_Catalog::product/list/toolbar/sorter.phtml'
+            &&
+            $this->configHelper->isAlgoliaEngineSelected()
+        ) {
+            $template = 'Algolia_SearchAdapter::product/list/toolbar/sorter.phtml';
+        }
+
+        return [$template];
+    }
 
     /** Handles the Algolia sort param independently of Magento core sort params  */
     public function aroundGetCurrentOrder(Toolbar $subject, callable $proceed): ?string
