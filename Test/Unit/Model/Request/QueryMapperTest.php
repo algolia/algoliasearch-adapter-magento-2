@@ -15,7 +15,10 @@ use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface;
 use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterfaceFactory;
 use Algolia\SearchAdapter\Model\Request\PaginationInfo;
 use Algolia\SearchAdapter\Model\Request\QueryMapper;
+use Algolia\SearchAdapter\Registry\SortState;
 use Magento\Catalog\Model\Product\Visibility;
+use Magento\Framework\Api\SortOrder;
+use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Framework\App\ScopeInterface;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -37,6 +40,8 @@ class QueryMapperTest extends TestCase
     private PaginationInfoInterfaceFactory|MockObject $paginationInfoFactory;
     private ScopeResolverInterface|MockObject $scopeResolver;
     private IndexOptionsBuilder|MockObject $indexOptionsBuilder;
+    private SortState|MockObject $sortState;
+    private SortOrderBuilder|MockObject $sortOrderBuilder;
     private QueryMapperResultInterface|MockObject $queryMapperResult;
     private SearchQueryInterface|MockObject $searchQuery;
     private PaginationInfoInterface|MockObject $paginationInfo;
@@ -50,6 +55,8 @@ class QueryMapperTest extends TestCase
         $this->paginationInfoFactory = $this->createPaginationInfoFactoryMock();
         $this->scopeResolver = $this->createMock(ScopeResolverInterface::class);
         $this->indexOptionsBuilder = $this->createMock(IndexOptionsBuilder::class);
+        $this->sortState = $this->createMock(SortState::class);
+        $this->sortOrderBuilder = $this->createMock(SortOrderBuilder::class);
         $this->queryMapperResult = $this->createMock(QueryMapperResultInterface::class);
         $this->searchQuery = $this->createMock(SearchQueryInterface::class);
         $this->paginationInfo = $this->createMock(PaginationInfoInterface::class);
@@ -61,7 +68,9 @@ class QueryMapperTest extends TestCase
             $this->searchQueryFactory,
             $this->paginationInfoFactory,
             $this->scopeResolver,
-            $this->indexOptionsBuilder
+            $this->indexOptionsBuilder,
+            $this->sortState,
+            $this->sortOrderBuilder
         );
     }
 
@@ -123,15 +132,141 @@ class QueryMapperTest extends TestCase
         $this->assertEquals(5, $result);
     }
 
-    public function testBuildIndexOptions(): void
+    public function testBuildIndexOptionsWithoutAnySort(): void
     {
-        $request = $this->createMockRequest();
+        $request = $this->createMockRequest(1);
 
-        $this->indexOptionsBuilder->method('buildEntityIndexOptions')->with(1)->willReturn($this->indexOptions);
+        $this->sortState->expects($this->once())->method('get')->willReturn(null);
+        $this->indexOptionsBuilder->expects($this->never())->method('buildReplicaIndexOptions');
+        $this->indexOptionsBuilder
+            ->expects($this->once())
+            ->method('buildEntityIndexOptions')
+            ->with(1)
+            ->willReturn($this->indexOptions);
 
         $result = $this->invokeMethod($this->queryMapper, 'buildIndexOptions', [$request]);
 
         $this->assertSame($this->indexOptions, $result);
+    }
+
+    public function testBuildIndexOptionsWithoutSortOnRequest(): void
+    {
+        $request = $this->createMockRequest(1);
+
+        $this->sortState
+            ->expects($this->once())
+            ->method('get')
+            ->willReturn($this->createMockSortOrder('foo', SortOrder::SORT_ASC));
+        $this->indexOptionsBuilder->expects($this->never())->method('buildEntityIndexOptions');
+        $this->indexOptionsBuilder
+            ->expects($this->once())
+            ->method('buildReplicaIndexOptions')
+            ->with(1, 'foo', SortOrder::SORT_ASC)
+            ->willReturn($this->indexOptions);;
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildIndexOptions', [$request]);
+
+        $this->assertSame($this->indexOptions, $result);
+    }
+
+    public function testBuildIndexOptionsWithSortOnRequest(): void
+    {
+        $request = $this->createMockRequestWithGetSort([
+            [
+                SortOrder::FIELD => 'price',
+                SortOrder::DIRECTION => SortOrder::SORT_ASC
+            ]
+        ]);
+
+        $this->setupMockSortOrderBuilder('price', SortOrder::SORT_ASC);
+
+        $this->indexOptionsBuilder->expects($this->never())->method('buildEntityIndexOptions');
+        $this->indexOptionsBuilder
+            ->expects($this->once())
+            ->method('buildReplicaIndexOptions')
+            ->with(1, 'price', SortOrder::SORT_ASC)
+            ->willReturn($this->indexOptions);
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildIndexOptions', [$request]);
+
+        $this->assertSame($this->indexOptions, $result);
+    }
+
+    public function testBuildIndexOptionsWithSortFromState(): void
+    {
+        $request = $this->createMockRequest(1);
+
+        $this->sortState
+            ->expects($this->once())
+            ->method('get')
+            ->willReturn($this->createMockSortOrder('name', SortOrder::SORT_ASC));
+        $this->indexOptionsBuilder->expects($this->never())->method('buildEntityIndexOptions');
+        $this->indexOptionsBuilder
+            ->expects($this->once())
+            ->method('buildReplicaIndexOptions')
+            ->with(1, 'name', SortOrder::SORT_ASC)
+            ->willReturn($this->indexOptions);;
+
+        $result = $this->invokeMethod($this->queryMapper, 'buildIndexOptions', [$request]);
+
+        $this->assertSame($this->indexOptions, $result);
+    }
+
+    public function testGetSortWithRequestWithoutGetSortMethod(): void
+    {
+        $request = $this->createMockRequest(1);
+
+        $sortOrder = $this->createMock(SortOrder::class);
+        $this->sortState->method('get')->willReturn($sortOrder);
+
+        $result = $this->invokeMethod($this->queryMapper, 'getSort', [$request]);
+
+        $this->assertSame($sortOrder, $result);
+    }
+
+    public function testGetSortWithRequestWithGetSortMethodReturningSort(): void
+    {
+        $request = $this->createMockRequestWithGetSort([
+            [
+                SortOrder::FIELD => 'price',
+                SortOrder::DIRECTION => SortOrder::SORT_ASC
+            ]
+        ]);
+
+        $sortOrder = $this->setupMockSortOrderBuilder('price', SortOrder::SORT_ASC);
+
+        $result = $this->invokeMethod($this->queryMapper, 'getSort', [$request]);
+
+        $this->assertSame($sortOrder, $result);
+    }
+
+    public function testGetSortWithRequestWithGetSortMethodReturningEmptyArray(): void
+    {
+        $request = $this->createMockRequestWithGetSort([]);
+
+        $result = $this->invokeMethod($this->queryMapper, 'getSort', [$request]);
+
+        $this->assertNull($result);
+    }
+
+    public function testGetSortWithRequestWithGetSortMethodReturningMultipleSorts(): void
+    {
+        $request = $this->createMockRequestWithGetSort([
+            [
+                SortOrder::FIELD => 'price',
+                SortOrder::DIRECTION => SortOrder::SORT_ASC
+            ],
+            [
+                SortOrder::FIELD => 'name',
+                SortOrder::DIRECTION => SortOrder::SORT_DESC
+            ]
+        ]);
+
+        $sortOrder = $this->setupMockSortOrderBuilder('price', SortOrder::SORT_ASC);
+
+        $result = $this->invokeMethod($this->queryMapper, 'getSort', [$request]);
+
+        $this->assertSame($sortOrder, $result);
     }
 
     public function testBuildQueryStringWithBoolQuery(): void
@@ -673,7 +808,6 @@ class QueryMapperTest extends TestCase
     }
 
     /** Create mock filter with nested mock term  */
-    // TODO: Vet all usages of this method
     private function createMockFilterQuery(mixed $value = null): FilterQuery|MockObject
     {
         $filterQuery = $this->createMock(FilterQuery::class);
@@ -689,7 +823,6 @@ class QueryMapperTest extends TestCase
         return $filterQuery;
     }
 
-    // TODO: Vet all usages of this method
     private function createMockTermFilter(mixed $value = null): Term|MockObject
     {
         $termFilter = $this->createMock(Term::class);
@@ -698,6 +831,37 @@ class QueryMapperTest extends TestCase
             $termFilter->method('getValue')->willReturn($value);
         }
         return $termFilter;
+    }
+
+    private function createMockRequestWithGetSort(array $sortData, string $storeId = "1"): RequestInterface|MockObject
+    {
+        $request = $this->getMockBuilder(RequestInterface::class)
+            ->onlyMethods(['getName', 'getIndex', 'getDimensions', 'getAggregation', 'getQuery', 'getFrom', 'getSize'])
+            ->addMethods(['getSort'])
+            ->getMock();
+
+        $dimension = $this->createMockDimension($storeId);
+        $request->method('getDimensions')->willReturn([$dimension]);
+        $request->method('getSort')->willReturn($sortData);
+
+        return $request;
+    }
+
+    private function createMockSortOrder(string $field, string $direction = SortOrder::SORT_ASC): SortOrder|MockObject
+    {
+        $sortOrder = $this->createMock(SortOrder::class);
+        $sortOrder->method('getField')->willReturn($field);
+        $sortOrder->method('getDirection')->willReturn($direction);
+        return $sortOrder;
+    }
+
+    private function setupMockSortOrderBuilder(?string $field = null, string $direction = SortOrder::SORT_ASC): SortOrder|MockObject
+    {
+        $sortOrder = $this->createMockSortOrder($field, $direction);
+        $this->sortOrderBuilder->expects($this->once())->method('create')->willReturn($sortOrder);
+        $this->sortOrderBuilder->expects($this->once())->method('setField')->with($field)->willReturnSelf();
+        $this->sortOrderBuilder->expects($this->once())->method('setDirection')->with($direction)->willReturnSelf();
+        return $sortOrder;
     }
 
     public static function paginationDataProvider(): array

@@ -11,7 +11,10 @@ use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterfaceFactory;
 use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface;
 use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterfaceFactory;
+use Algolia\SearchAdapter\Registry\SortState;
 use Magento\Catalog\Model\Product\Visibility;
+use Magento\Framework\Api\SortOrder;
+use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\Request\Filter\Term;
@@ -32,7 +35,9 @@ class QueryMapper
         protected SearchQueryInterfaceFactory       $searchQueryFactory,
         protected PaginationInfoInterfaceFactory    $paginationInfoFactory,
         protected ScopeResolverInterface            $scopeResolver,
-        protected IndexOptionsBuilder               $indexOptionsBuilder
+        protected IndexOptionsBuilder               $indexOptionsBuilder,
+        protected SortState                         $sortState,
+        protected SortOrderBuilder                  $sortOrderBuilder,
     ) {}
 
     /**
@@ -77,7 +82,31 @@ class QueryMapper
      */
     protected function buildIndexOptions(RequestInterface $request): IndexOptionsInterface
     {
-        return $this->indexOptionsBuilder->buildEntityIndexOptions($this->getStoreId($request));
+        $storeId = $this->getStoreId($request);
+        $sort = $this->getSort($request);
+        return $sort
+            ? $this->indexOptionsBuilder->buildReplicaIndexOptions($storeId, $sort->getField(), $sort->getDirection())
+            : $this->indexOptionsBuilder->buildEntityIndexOptions($storeId);
+    }
+
+    protected function getSort(RequestInterface $request): ?SortOrder
+    {
+        // Magento has identified this as a deprecated method but it is used by Elasticsearch and OpenSearch
+        // To maintain compatibility we are safely calling this method until it is removed at a future time
+        if (!method_exists($request, 'getSort')) {
+            return $this->sortState->get();
+        }
+
+        $sort = $request->getSort(); // returns an array of sorts
+        if (empty($sort)) {
+            return null;
+        }
+
+        $singleSort = reset($sort); // only single sort supported
+        return $this->sortOrderBuilder
+            ->setField($singleSort[SortOrder::FIELD])
+            ->setDirection($singleSort[SortOrder::DIRECTION])
+            ->create();
     }
 
     /**
