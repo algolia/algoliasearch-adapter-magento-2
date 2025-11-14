@@ -41,11 +41,9 @@ class Adapter implements AdapterInterface
         $response = $this->connector->query($query->getSearchQuery());
         $result = $this->documentMapper->process($response, $query->getPaginationInfo());
 
-        $mockData = $this->getMockData($request);
-
         $data =  [
             DocumentMapperResultInterface::RESPONSE_KEY_DOCUMENTS => $result->getDocuments(),
-            DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS => $mockData[DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS],
+            DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS => $this->getMockAggregations($request),
             DocumentMapperResultInterface::RESPONSE_KEY_TOTAL => $result->getTotalCount()
         ];
 
@@ -56,25 +54,16 @@ class Adapter implements AdapterInterface
         );
     }
 
-    //
-
     /**
      * Create a mock response for aggregations and testing
      * TODO: Implement Algolia aggregation builder
      */
-    function getMockData(RequestInterface $request): array
+    function getMockAggregations(RequestInterface $request): array
     {
         $queryLegacy = $this->mapper->buildQuery($request);
         $mockResponse = $this->getSampleResponseData($request);
-        $mockDocuments = $mockResponse['hits']['hits'] ?? [];
-        $mockTotal = $mockResponse['hits']['total']['value'] ?? 0;
         $this->aggregationBuilder->setQuery($this->queryContainerFactory->create(['query' => $queryLegacy]));
-        $mockAggregations = $this->aggregationBuilder->build($request, $mockResponse);
-        return [
-            DocumentMapperResultInterface::RESPONSE_KEY_DOCUMENTS => $mockDocuments,
-            DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS => $mockAggregations,
-            DocumentMapperResultInterface::RESPONSE_KEY_TOTAL => $mockTotal
-        ];
+        return $this->aggregationBuilder->build($request, $mockResponse);
     }
 
     /**
@@ -973,18 +962,5 @@ class Adapter implements AdapterInterface
                         ),
                 ),
         );
-    }
-
-    private function rawEmptySearchProvider(): array
-    {
-        return [
-            "hits" => [
-                "hits" => []
-            ],
-            "aggregations" => [
-                "price_bucket" => [],
-                "category_bucket" => ["buckets" => []],
-            ]
-        ];
     }
 }
