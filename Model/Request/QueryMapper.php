@@ -12,9 +12,9 @@ use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface;
 use Algolia\SearchAdapter\Api\Data\QueryMapperResultInterfaceFactory;
 use Algolia\SearchAdapter\Registry\SortState;
 use Algolia\SearchAdapter\Service\QueryParamBuilder;
+use Algolia\SearchAdapter\Service\StoreIdResolver;
 use Magento\Framework\Api\SortOrder;
 use Magento\Framework\Api\SortOrderBuilder;
-use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\Request\Query\BoolExpression as BoolQuery;
@@ -31,7 +31,7 @@ class QueryMapper
         protected QueryMapperResultInterfaceFactory $queryMapperResultFactory,
         protected SearchQueryInterfaceFactory       $searchQueryFactory,
         protected PaginationInfoInterfaceFactory    $paginationInfoFactory,
-        protected ScopeResolverInterface            $scopeResolver,
+        protected StoreIdResolver                   $storeIdResolver,
         protected IndexOptionsBuilder               $indexOptionsBuilder,
         protected SortState                         $sortState,
         protected SortOrderBuilder                  $sortOrderBuilder,
@@ -53,15 +53,6 @@ class QueryMapper
     }
 
     /**
-     * Get the store ID from the request
-     */
-    public function getStoreId(RequestInterface $request): int
-    {
-        $dimension = current($request->getDimensions());
-        return $this->scopeResolver->getScope($dimension->getValue())->getId();
-    }
-
-    /**
      * Build the Algolia search query object
      * @throws NoSuchEntityException|LocalizedException
      */
@@ -80,7 +71,7 @@ class QueryMapper
      */
     protected function buildIndexOptions(RequestInterface $request): IndexOptionsInterface
     {
-        $storeId = $this->getStoreId($request);
+        $storeId = $this->storeIdResolver->getStoreId($request);
         $sort = $this->getSort($request);
         return $sort
             ? $this->indexOptionsBuilder->buildReplicaIndexOptions($storeId, $sort->getField(), $sort->getDirection())
