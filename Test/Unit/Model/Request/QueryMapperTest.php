@@ -77,7 +77,7 @@ class QueryMapperTest extends TestCase
 
     public function testProcessSuccess(): void
     {
-        $request = $this->createMockRequest();
+        $request = $this->createMockRequestWithStore();
 
         $boolQuery = $this->createMockBoolQuery();
         $request->method('getQuery')->willReturn($boolQuery);
@@ -100,7 +100,7 @@ class QueryMapperTest extends TestCase
 
     public function testProcessThrowsNoSuchEntityException(): void
     {
-        $request = $this->createMockRequest('invalid-id');
+        $request = $this->createMockRequestWithStore('invalid-id');
         $request->method('getQuery')->willReturn($this->createGenericMockQuery());
 
         $this->scopeResolver->method('getScope')->with('invalid-id')
@@ -112,7 +112,7 @@ class QueryMapperTest extends TestCase
 
     public function testProcessThrowsAlgoliaException(): void
     {
-        $request = $this->createMockRequest();
+        $request = $this->createMockRequestWithStore();
         $request->method('getQuery')->willReturn($this->createGenericMockQuery());
 
         $this->indexOptionsBuilder->method('buildEntityIndexOptions')->with(1)
@@ -124,7 +124,7 @@ class QueryMapperTest extends TestCase
 
     public function testGetStoreId(): void
     {
-        $request = $this->createMockRequest(5);
+        $request = $this->createMockRequestWithStore(5);
 
         $result = $this->queryMapper->getStoreId($request);
 
@@ -133,7 +133,7 @@ class QueryMapperTest extends TestCase
 
     public function testBuildIndexOptionsWithoutAnySort(): void
     {
-        $request = $this->createMockRequest(1);
+        $request = $this->createMockRequestWithStore(1);
 
         $this->sortState->expects($this->once())->method('get')->willReturn(null);
         $this->indexOptionsBuilder->expects($this->never())->method('buildReplicaIndexOptions');
@@ -150,7 +150,7 @@ class QueryMapperTest extends TestCase
 
     public function testBuildIndexOptionsWithoutSortOnRequest(): void
     {
-        $request = $this->createMockRequest(1);
+        $request = $this->createMockRequestWithStore(1);
 
         $this->sortState
             ->expects($this->once())
@@ -193,7 +193,7 @@ class QueryMapperTest extends TestCase
 
     public function testBuildIndexOptionsWithSortFromState(): void
     {
-        $request = $this->createMockRequest(1);
+        $request = $this->createMockRequestWithStore(1);
 
         $this->sortState
             ->expects($this->once())
@@ -213,7 +213,7 @@ class QueryMapperTest extends TestCase
 
     public function testGetSortWithRequestWithoutGetSortMethod(): void
     {
-        $request = $this->createMockRequest(1);
+        $request = $this->createMockRequestWithStore(1);
 
         $sortOrder = $this->createMock(SortOrder::class);
         $this->sortState->method('get')->willReturn($sortOrder);
@@ -270,7 +270,7 @@ class QueryMapperTest extends TestCase
 
     public function testBuildQueryStringWithBoolQuery(): void
     {
-        $request = $this->createMockRequest();
+        $request = $this->createMockRequestWithStore();
         $boolQuery = $this->createMockBoolQuery();
 
         $request->method('getQuery')->willReturn($boolQuery);
@@ -285,7 +285,7 @@ class QueryMapperTest extends TestCase
 
     public function testBuildQueryStringWithNonBoolQuery(): void
     {
-        $request = $this->createMockRequest();
+        $request = $this->createMockRequestWithStore();
         $nonBoolQuery = $this->createMock(RequestQueryInterface::class);
 
         $request->method('getQuery')->willReturn($nonBoolQuery);
@@ -336,7 +336,7 @@ class QueryMapperTest extends TestCase
      */
     public function testBuildPaginationInfo(int $size, int $from, int $page): void
     {
-        $request = $this->createMockRequest();
+        $request = $this->createMockRequestWithStore();
         $request->method('getSize')->willReturn($size);
         $request->method('getFrom')->willReturn($from);
 
@@ -361,9 +361,9 @@ class QueryMapperTest extends TestCase
         return $factory;
     }
 
-    private function createMockRequest(string $storeId = "1"): RequestInterface|MockObject
+    private function createMockRequestWithStore(string $storeId = "1"): RequestInterface|MockObject
     {
-        $request = $this->createMock(RequestInterface::class);
+        $request = $this->createMockRequest();
         $dimension = $this->createMockDimension($storeId);
         $request->method('getDimensions')->willReturn([$dimension]);
 
