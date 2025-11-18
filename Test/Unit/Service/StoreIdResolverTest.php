@@ -23,24 +23,16 @@ class StoreIdResolverTest extends TestCase
         $this->storeIdResolver = new StoreIdResolver($this->scopeResolver);
     }
 
-    public function testGetStoreIdWithDefaultStore(): void
+    /**
+     * @dataProvider multiStoreDataProvider
+     */
+    public function testGetStoreId(int $storeId): void
     {
-        $request = $this->createMockRequestWithStore(1);
-
+        $request = $this->createMockRequestWithStore($storeId);
         $result = $this->storeIdResolver->getStoreId($request);
-
-        $this->assertEquals(1, $result);
+        $this->assertEquals($storeId, $result, "Failed for store ID: $storeId");
     }
-
-    public function testGetStoreIdWithSpecificStore(): void
-    {
-        $request = $this->createMockRequestWithStore(5);
-
-        $result = $this->storeIdResolver->getStoreId($request);
-
-        $this->assertEquals(5, $result);
-    }
-
+    
     public function testGetStoreIdWithInvalidStore(): void
     {
         $request = $this->createMock(RequestInterface::class);
@@ -77,6 +69,17 @@ class StoreIdResolverTest extends TestCase
         });
         
         return $dimension;
+    }
+
+    public static function multiStoreDataProvider(): array
+    {
+        return [
+            [ 'storeId' => 1 ], 
+            [ 'storeId' => 3 ], 
+            [ 'storeId' => 7 ], 
+            [ 'storeId' => 10 ], 
+            [ 'storeId' => 100 ]
+        ];
     }
 }
 
