@@ -3,9 +3,11 @@
 namespace Algolia\SearchAdapter\Test\Unit\Service;
 
 use Algolia\AlgoliaSearch\Api\Product\ProductRecordFieldsInterface;
+use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Test\TestCase;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 use Algolia\SearchAdapter\Service\QueryParamBuilder;
+use Algolia\SearchAdapter\Service\StoreIdResolver;
 use Algolia\SearchAdapter\Test\Traits\QueryTestTrait;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\Framework\Search\Request\FilterInterface as RequestFilterInterface;
@@ -17,10 +19,17 @@ class QueryParamBuilderTest extends TestCase
     use QueryTestTrait;
     private QueryParamBuilder $queryParamBuilder;
     private PaginationInfoInterface|MockObject $paginationInfo;
+    private InstantSearchHelper|MockObject $instantSearchHelper;
+    private StoreIdResolver|MockObject $storeIdResolver;
 
     protected function setUp(): void
     {
-        $this->queryParamBuilder = new QueryParamBuilder();
+        $this->instantSearchHelper = $this->createMock(InstantSearchHelper::class);
+        $this->storeIdResolver = $this->createMock(StoreIdResolver::class);
+        $this->queryParamBuilder = new QueryParamBuilder(
+            $this->instantSearchHelper,
+            $this->storeIdResolver
+        );
         $this->paginationInfo = $this->createMock(PaginationInfoInterface::class);
     }
 

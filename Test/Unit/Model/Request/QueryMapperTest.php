@@ -16,6 +16,7 @@ use Algolia\SearchAdapter\Model\Request\PaginationInfo;
 use Algolia\SearchAdapter\Model\Request\QueryMapper;
 use Algolia\SearchAdapter\Registry\SortState;
 use Algolia\SearchAdapter\Service\QueryParamBuilder;
+use Algolia\SearchAdapter\Service\StoreIdResolver;
 use Algolia\SearchAdapter\Test\Traits\QueryTestTrait;
 use Magento\Framework\Api\SortOrder;
 use Magento\Framework\Api\SortOrderBuilder;
@@ -36,7 +37,7 @@ class QueryMapperTest extends TestCase
     private QueryMapperResultInterfaceFactory|MockObject $queryMapperResultFactory;
     private SearchQueryInterfaceFactory|MockObject $searchQueryFactory;
     private PaginationInfoInterfaceFactory|MockObject $paginationInfoFactory;
-    private ScopeResolverInterface|MockObject $scopeResolver;
+    private StoreIdResolver|MockObject $storeIdResolver;
     private IndexOptionsBuilder|MockObject $indexOptionsBuilder;
     private SortState|MockObject $sortState;
     private SortOrderBuilder|MockObject $sortOrderBuilder;
@@ -45,6 +46,7 @@ class QueryMapperTest extends TestCase
     private SearchQueryInterface|MockObject $searchQuery;
     private PaginationInfoInterface|MockObject $paginationInfo;
     private IndexOptionsInterface|MockObject $indexOptions;
+    private ScopeResolverInterface|MockObject $scopeResolver;
     private ScopeInterface|MockObject $scope;
 
     protected function setUp(): void
@@ -52,7 +54,7 @@ class QueryMapperTest extends TestCase
         $this->queryMapperResultFactory = $this->createMock(QueryMapperResultInterfaceFactory::class);
         $this->searchQueryFactory = $this->createMock(SearchQueryInterfaceFactory::class);
         $this->paginationInfoFactory = $this->createPaginationInfoFactoryMock();
-        $this->scopeResolver = $this->createMock(ScopeResolverInterface::class);
+        $this->storeIdResolver = $this->createMock(StoreIdResolver::class);
         $this->indexOptionsBuilder = $this->createMock(IndexOptionsBuilder::class);
         $this->sortState = $this->createMock(SortState::class);
         $this->sortOrderBuilder = $this->createMock(SortOrderBuilder::class);
@@ -61,13 +63,14 @@ class QueryMapperTest extends TestCase
         $this->searchQuery = $this->createMock(SearchQueryInterface::class);
         $this->paginationInfo = $this->createMock(PaginationInfoInterface::class);
         $this->indexOptions = $this->createMock(IndexOptionsInterface::class);
+        $this->scopeResolver = $this->createMock(ScopeResolverInterface::class);
         $this->scope = $this->createMock(ScopeInterface::class);
 
         $this->queryMapper = new QueryMapper(
             $this->queryMapperResultFactory,
             $this->searchQueryFactory,
             $this->paginationInfoFactory,
-            $this->scopeResolver,
+            $this->storeIdResolver,
             $this->indexOptionsBuilder,
             $this->sortState,
             $this->sortOrderBuilder,
@@ -100,10 +103,10 @@ class QueryMapperTest extends TestCase
 
     public function testProcessThrowsNoSuchEntityException(): void
     {
-        $request = $this->createMockRequestWithStore('invalid-id');
+        $request = $this->createMock(RequestInterface::class);
         $request->method('getQuery')->willReturn($this->createGenericMockQuery());
 
-        $this->scopeResolver->method('getScope')->with('invalid-id')
+        $this->storeIdResolver->method('getStoreId')->with($request)
             ->willThrowException(new NoSuchEntityException(__('Invalid scope')));
 
         $this->expectException(NoSuchEntityException::class);
@@ -120,15 +123,6 @@ class QueryMapperTest extends TestCase
 
         $this->expectException(AlgoliaException::class);
         $this->queryMapper->process($request);
-    }
-
-    public function testGetStoreId(): void
-    {
-        $request = $this->createMockRequestWithStore(5);
-
-        $result = $this->queryMapper->getStoreId($request);
-
-        $this->assertEquals(5, $result);
     }
 
     public function testBuildIndexOptionsWithoutAnySort(): void
@@ -361,33 +355,22 @@ class QueryMapperTest extends TestCase
         return $factory;
     }
 
-    private function createMockRequestWithStore(string $storeId = "1"): RequestInterface|MockObject
+    private function createMockRequestWithStore(int $storeId = 1): RequestInterface|MockObject
     {
         $request = $this->createMockRequest();
-        $dimension = $this->createMockDimension($storeId);
-        $request->method('getDimensions')->willReturn([$dimension]);
+        $this->storeIdResolver->method('getStoreId')->with($request)->willReturn($storeId);
 
         return $request;
     }
 
-    private function createMockDimension(string $storeId = "1"): Dimension|MockObject
-    {
-        $dimension = $this->createMock(Dimension::class);
-        $dimension->method('getValue')->willReturn($storeId);
-        $this->scopeResolver->method('getScope')->with($storeId)->willReturn($this->scope);
-        $this->scope->method('getId')->willReturn((int) $storeId);
-        return $dimension;
-    }
-
-    private function createMockRequestWithGetSort(array $sortData, string $storeId = "1"): RequestInterface|MockObject
+    private function createMockRequestWithGetSort(array $sortData, int $storeId = 1): RequestInterface|MockObject
     {
         $request = $this->getMockBuilder(RequestInterface::class)
             ->onlyMethods(['getName', 'getIndex', 'getDimensions', 'getAggregation', 'getQuery', 'getFrom', 'getSize'])
             ->addMethods(['getSort'])
             ->getMock();
 
-        $dimension = $this->createMockDimension($storeId);
-        $request->method('getDimensions')->willReturn([$dimension]);
+        $this->storeIdResolver->method('getStoreId')->with($request)->willReturn($storeId);
         $request->method('getSort')->willReturn($sortData);
 
         return $request;
