@@ -6,17 +6,15 @@ use Algolia\AlgoliaSearch\Api\Product\ProductRecordFieldsInterface;
 use Algolia\AlgoliaSearch\Test\TestCase;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 use Algolia\SearchAdapter\Service\QueryParamBuilder;
+use Algolia\SearchAdapter\Test\Traits\QueryTestTrait;
 use Magento\Catalog\Model\Product\Visibility;
-use Magento\Framework\Search\Request\Filter\Term;
 use Magento\Framework\Search\Request\FilterInterface as RequestFilterInterface;
-use Magento\Framework\Search\Request\Query\BoolExpression as BoolQuery;
-use Magento\Framework\Search\Request\Query\Filter as FilterQuery;
 use Magento\Framework\Search\Request\QueryInterface as RequestQueryInterface;
-use Magento\Framework\Search\RequestInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 
 class QueryParamBuilderTest extends TestCase
 {
+    use QueryTestTrait;
     private QueryParamBuilder $queryParamBuilder;
     private PaginationInfoInterface|MockObject $paginationInfo;
 
@@ -429,44 +427,6 @@ class QueryParamBuilderTest extends TestCase
             'facetFilters' => ['categoryIds:12'],
             'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
         ], $params);
-    }
-
-    private function createMockRequest(): RequestInterface|MockObject
-    {
-        return $this->createMock(RequestInterface::class);
-    }
-
-    private function createMockBoolQuery(): BoolQuery|MockObject
-    {
-        $boolQuery = $this->createMock(BoolQuery::class);
-        $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
-        return $boolQuery;
-    }
-
-    /** Create mock filter with nested mock term  */
-    private function createMockFilterQuery(mixed $value = null): FilterQuery|MockObject
-    {
-        $filterQuery = $this->createMock(FilterQuery::class);
-        if ($value === null) {
-            return $filterQuery;
-        }
-        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
-        $filterQuery->method('getReferenceType')->willReturn(FilterQuery::REFERENCE_FILTER);
-
-        $termFilter = $this->createMockTermFilter($value);
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        return $filterQuery;
-    }
-
-    private function createMockTermFilter(mixed $value = null): Term|MockObject
-    {
-        $termFilter = $this->createMock(Term::class);
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        if ($value !== null) {
-            $termFilter->method('getValue')->willReturn($value);
-        }
-        return $termFilter;
     }
 }
 

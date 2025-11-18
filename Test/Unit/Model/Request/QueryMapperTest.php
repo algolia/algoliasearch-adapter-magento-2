@@ -16,6 +16,7 @@ use Algolia\SearchAdapter\Model\Request\PaginationInfo;
 use Algolia\SearchAdapter\Model\Request\QueryMapper;
 use Algolia\SearchAdapter\Registry\SortState;
 use Algolia\SearchAdapter\Service\QueryParamBuilder;
+use Algolia\SearchAdapter\Test\Traits\QueryTestTrait;
 use Magento\Framework\Api\SortOrder;
 use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Framework\App\ScopeInterface;
@@ -30,6 +31,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class QueryMapperTest extends TestCase
 {
+    use QueryTestTrait;
     private QueryMapper $queryMapper;
     private QueryMapperResultInterfaceFactory|MockObject $queryMapperResultFactory;
     private SearchQueryInterfaceFactory|MockObject $searchQueryFactory;
@@ -375,27 +377,6 @@ class QueryMapperTest extends TestCase
         $this->scopeResolver->method('getScope')->with($storeId)->willReturn($this->scope);
         $this->scope->method('getId')->willReturn((int) $storeId);
         return $dimension;
-    }
-
-    private function createGenericMockQuery(): RequestQueryInterface|MockObject
-    {
-        return $this->createMock(RequestQueryInterface::class);
-    }
-
-    private function createMockBoolQuery(): BoolQuery|MockObject
-    {
-        $boolQuery = $this->createMock(BoolQuery::class);
-        $boolQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_BOOL);
-        return $boolQuery;
-    }
-
-    private function createMockMatchQuery(?string $query = null): MatchQuery|MockObject
-    {
-        $matchQuery = $this->createMock(MatchQuery::class);
-        if ($query) {
-            $matchQuery->method('getValue')->willReturn($query);
-        }
-        return $matchQuery;
     }
 
     private function createMockRequestWithGetSort(array $sortData, string $storeId = "1"): RequestInterface|MockObject
