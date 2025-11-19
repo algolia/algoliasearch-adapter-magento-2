@@ -5,6 +5,7 @@ namespace Algolia\SearchAdapter\Service;
 use Algolia\AlgoliaSearch\Api\Product\ProductRecordFieldsInterface;
 use Algolia\AlgoliaSearch\Api\Product\ReplicaManagerInterface;
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
+use Algolia\AlgoliaSearch\Service\PriceKeyResolver;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\Framework\Search\Request\FilterInterface as RequestFilterInterface;
@@ -18,6 +19,7 @@ class QueryParamBuilder
     public function __construct(
         protected InstantSearchHelper $instantSearchHelper,
         protected StoreIdResolver     $storeIdResolver,
+        protected PriceKeyResolver    $priceKeyResolver,
     ) {}
 
     /**
@@ -27,7 +29,8 @@ class QueryParamBuilder
     {
         $params = [
             'hitsPerPage' => $pagination->getPageSize(),
-            'page' => $pagination->getPageNumber() - 1 # Algolia pages are 0-based, Magento 1-based
+            'page' => $pagination->getPageNumber() - 1, # Algolia pages are 0-based, Magento 1-based
+            'facets' => $this->getFacets($request),
         ];
 
         $requestQuery = $request->getQuery();
@@ -45,9 +48,25 @@ class QueryParamBuilder
     {
         $storeId = $this->storeIdResolver->getStoreId($request);
         return array_map(
-            fn($facet) =>  $facet[ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME],
+            fn($facet) => $this->formatFacetParam(
+                $facet[ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME],
+                $storeId
+            ),
             $this->instantSearchHelper->getFacets($storeId)
         );
+    }
+
+    protected function formatFacetParam(string $facet, int $storeId): string
+    {
+        if ($facet === 'price') {
+            return $facet . $this->priceKeyResolver->getPriceKey($storeId);
+        }
+
+        if ($facet === 'categories') {
+            return 'categories.level0';
+        }
+
+        return $facet;
     }
 
     /**

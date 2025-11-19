@@ -3,7 +3,9 @@
 namespace Algolia\SearchAdapter\Test\Unit\Service;
 
 use Algolia\AlgoliaSearch\Api\Product\ProductRecordFieldsInterface;
+use Algolia\AlgoliaSearch\Api\Product\ReplicaManagerInterface;
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
+use Algolia\AlgoliaSearch\Service\PriceKeyResolver;
 use Algolia\AlgoliaSearch\Test\TestCase;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 use Algolia\SearchAdapter\Service\QueryParamBuilder;
@@ -21,14 +23,17 @@ class QueryParamBuilderTest extends TestCase
     private PaginationInfoInterface|MockObject $paginationInfo;
     private InstantSearchHelper|MockObject $instantSearchHelper;
     private StoreIdResolver|MockObject $storeIdResolver;
+    private PriceKeyResolver|MockObject $priceKeyResolver;
 
     protected function setUp(): void
     {
         $this->instantSearchHelper = $this->createMock(InstantSearchHelper::class);
         $this->storeIdResolver = $this->createMock(StoreIdResolver::class);
+        $this->priceKeyResolver = $this->createMock(PriceKeyResolver::class);
         $this->queryParamBuilder = new QueryParamBuilder(
             $this->instantSearchHelper,
-            $this->storeIdResolver
+            $this->storeIdResolver,
+            $this->priceKeyResolver
         );
         $this->paginationInfo = $this->createMock(PaginationInfoInterface::class);
     }
@@ -43,12 +48,16 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
+        
+        $this->storeIdResolver->method('getStoreId')->willReturn(1);
+        $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
         $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
 
         $this->assertEquals([
             'hitsPerPage' => 20,
             'page' => 0,
+            'facets' => [],
             'facetFilters' => ['categoryIds:12']
         ], $result);
     }
@@ -63,12 +72,16 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
+        
+        $this->storeIdResolver->method('getStoreId')->willReturn(1);
+        $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
         $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
 
         $this->assertEquals([
             'hitsPerPage' => 20,
-            'page' => 0
+            'page' => 0,
+            'facets' => []
         ], $result);
     }
 
@@ -82,12 +95,16 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
+        
+        $this->storeIdResolver->method('getStoreId')->willReturn(1);
+        $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
         $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
 
         $this->assertEquals([
             'hitsPerPage' => 20,
-            'page' => 0
+            'page' => 0,
+            'facets' => []
         ], $result);
     }
 
@@ -164,12 +181,16 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
+        
+        $this->storeIdResolver->method('getStoreId')->willReturn(1);
+        $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
         $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
 
         $this->assertEquals([
             'hitsPerPage' => 20,
             'page' => 0,
+            'facets' => [],
             'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
         ], $result);
     }
@@ -186,12 +207,16 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
+        
+        $this->storeIdResolver->method('getStoreId')->willReturn(1);
+        $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
         $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
 
         $this->assertEquals([
             'hitsPerPage' => 20,
             'page' => 0,
+            'facets' => [],
             'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)]
         ], $result);
     }
@@ -210,12 +235,16 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
+        
+        $this->storeIdResolver->method('getStoreId')->willReturn(1);
+        $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
         $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
 
         $this->assertEquals([
             'hitsPerPage' => 20,
             'page' => 0,
+            'facets' => [],
             'numericFilters' => [
                 sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH),
                 sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)
@@ -236,12 +265,16 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
+        
+        $this->storeIdResolver->method('getStoreId')->willReturn(1);
+        $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
         $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
 
         $this->assertEquals([
             'hitsPerPage' => 20,
             'page' => 0,
+            'facets' => [],
             'facetFilters' => ['categoryIds:12'],
             'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
         ], $result);
@@ -256,12 +289,16 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
+        
+        $this->storeIdResolver->method('getStoreId')->willReturn(1);
+        $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
         $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
 
         $this->assertEquals([
             'hitsPerPage' => 20,
-            'page' => 0
+            'page' => 0,
+            'facets' => []
         ], $result);
     }
 
@@ -275,12 +312,16 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
+        
+        $this->storeIdResolver->method('getStoreId')->willReturn(1);
+        $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
         $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
 
         $this->assertEquals([
             'hitsPerPage' => 20,
-            'page' => 0
+            'page' => 0,
+            'facets' => []
         ], $result);
     }
 
@@ -436,6 +477,190 @@ class QueryParamBuilderTest extends TestCase
             'facetFilters' => ['categoryIds:12'],
             'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
         ], $params);
+    }
+
+    /**
+     * @dataProvider facetFormattingDataProvider
+     */
+    public function testFormatFacetParam(string $facetName, ?string $priceKey, string $expected): void
+    {
+        $storeId = 1;
+        
+        if ($priceKey !== null) {
+            $this->priceKeyResolver->method('getPriceKey')->with($storeId)->willReturn($priceKey);
+        }
+
+        $result = $this->invokeMethod($this->queryParamBuilder, 'formatFacetParam', [$facetName, $storeId]);
+
+        $this->assertEquals($expected, $result);
+    }
+
+    public static function facetFormattingDataProvider(): array
+    {
+        return [
+            [
+                'facetName' => 'price',
+                'priceKey' => '.USD.default',
+                'expected' => 'price.USD.default'
+            ],
+            [
+                'facetName' => 'price',
+                'priceKey' => '.EUR.group_2',
+                'expected' => 'price.EUR.group_2'
+            ],
+            [
+                'facetName' => 'categories',
+                'priceKey' => null,
+                'expected' => 'categories.level0'
+            ],
+            [
+                'facetName' => 'color',
+                'priceKey' => null,
+                'expected' => 'color'
+            ],
+            [
+                'facetName' => 'size',
+                'priceKey' => null,
+                'expected' => 'size'
+            ]
+        ];
+    }
+
+    public function testGetFacetsWithEmptyConfig(): void
+    {
+        $request = $this->createMockRequest();
+
+        $this->storeIdResolver->method('getStoreId')->with($request)->willReturn(1);
+        $this->instantSearchHelper->method('getFacets')->with(1)->willReturn([]);
+
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacets', [$request]);
+
+        $this->assertEquals([], $result);
+    }
+
+    public function testGetFacetsWithPriceAndCategories(): void
+    {
+        $request = $this->createMockRequest();
+
+        $this->storeIdResolver->method('getStoreId')->with($request)->willReturn(1);
+        $this->instantSearchHelper->method('getFacets')->with(1)->willReturn([
+            [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'price'],
+            [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'categories']
+        ]);
+        $this->priceKeyResolver->method('getPriceKey')->with(1)->willReturn('.USD.default');
+
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacets', [$request]);
+
+        $this->assertEquals(['price.USD.default', 'categories.level0'], $result);
+    }
+
+    public function testGetFacetsWithAttributes(): void
+    {
+        $request = $this->createMockRequest();
+
+        $this->storeIdResolver->method('getStoreId')->with($request)->willReturn(1);
+        $this->instantSearchHelper->method('getFacets')->with(1)->willReturn([
+            [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'color'],
+            [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'size'],
+            [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'material']
+        ]);
+
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacets', [$request]);
+
+        $this->assertEquals(['color', 'size', 'material'], $result);
+    }
+
+    /**
+     * @dataProvider fullFacetScenarioDataProvider
+     */
+    public function testBuildWithFacets(
+        array $configuredFacets,
+        ?string $priceKey,
+        array $expectedFacets
+    ): void {
+        $storeId = 1;
+        $request = $this->createMockRequest();
+        $boolQuery = $this->createMockBoolQuery();
+
+        $request->method('getQuery')->willReturn($boolQuery);
+        $boolQuery->method('getMust')->willReturn([]);
+
+        $this->paginationInfo->method('getPageSize')->willReturn(20);
+        $this->paginationInfo->method('getPageNumber')->willReturn(1);
+
+        $this->storeIdResolver->method('getStoreId')->willReturn($storeId);
+        $this->instantSearchHelper->method('getFacets')->with($storeId)->willReturn($configuredFacets);
+
+        if ($priceKey !== null) {
+            $this->priceKeyResolver->method('getPriceKey')->with($storeId)->willReturn($priceKey);
+        }
+
+        $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
+
+        $this->assertEquals([
+            'hitsPerPage' => 20,
+            'page' => 0,
+            'facets' => $expectedFacets
+        ], $result);
+    }
+
+    public static function fullFacetScenarioDataProvider(): array
+    {
+        return [
+            [
+                'configuredFacets' => [
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'price']
+                ],
+                'priceKey' => '.USD.default',
+                'expectedFacets' => ['price.USD.default']
+            ],
+            [
+                'configuredFacets' => [
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'price']
+                ],
+                'priceKey' => '.EUR.group_2',
+                'expectedFacets' => ['price.EUR.group_2']
+            ],
+            [
+                'configuredFacets' => [
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'categories']
+                ],
+                'priceKey' => null,
+                'expectedFacets' => ['categories.level0']
+            ],
+            [
+                'configuredFacets' => [
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'color'],
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'size'],
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'material']
+                ],
+                'priceKey' => null,
+                'expectedFacets' => ['color', 'size', 'material']
+            ],
+            [
+                'configuredFacets' => [
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'price'],
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'categories'],
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'color'],
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'size'],
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'brand']
+                ],
+                'priceKey' => '.USD.default',
+                'expectedFacets' => ['price.USD.default', 'categories.level0', 'color', 'size', 'brand']
+            ],
+            [
+                'configuredFacets' => [
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'price'],
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'categories'],
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'color'],
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'size'],
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'material'],
+                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'brand']
+                ],
+                'priceKey' => '.GBP.group_5',
+                'expectedFacets' => ['price.GBP.group_5', 'categories.level0', 'color', 'size', 'material', 'brand']
+            ]
+        ];
     }
 }
 
