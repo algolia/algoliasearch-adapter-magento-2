@@ -480,9 +480,9 @@ class QueryParamBuilderTest extends TestCase
     }
 
     /**
-     * @dataProvider facetFormattingDataProvider
+     * @dataProvider facetTransformDataProvider
      */
-    public function testFormatFacetParam(string $facetName, ?string $priceKey, string $expected): void
+    public function testTransformFacetParam(string $facetName, ?string $priceKey, array $expected): void
     {
         $storeId = 1;
         
@@ -490,84 +490,142 @@ class QueryParamBuilderTest extends TestCase
             $this->priceKeyResolver->method('getPriceKey')->with($storeId)->willReturn($priceKey);
         }
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'formatFacetParam', [$facetName, $storeId]);
+        $result = $this->invokeMethod($this->queryParamBuilder, 'transformFacetParam', [$facetName, $storeId]);
 
         $this->assertEquals($expected, $result);
     }
 
-    public static function facetFormattingDataProvider(): array
+    public static function facetTransformDataProvider(): array
     {
         return [
             [
                 'facetName' => 'price',
                 'priceKey' => '.USD.default',
-                'expected' => 'price.USD.default'
+                'expected' => ['price.USD.default']
             ],
             [
                 'facetName' => 'price',
                 'priceKey' => '.EUR.group_2',
-                'expected' => 'price.EUR.group_2'
+                'expected' => ['price.EUR.group_2']
             ],
             [
                 'facetName' => 'categories',
                 'priceKey' => null,
-                'expected' => 'categories.level0'
+                'expected' => [
+                    'categories.level0',
+                    'categories.level1',
+                    'categories.level2',
+                    'categories.level3',
+                    'categories.level4',
+                    'categories.level5',
+                    'categories.level6',
+                    'categories.level7',
+                    'categories.level8',
+                    'categories.level9'
+                ]
             ],
             [
                 'facetName' => 'color',
                 'priceKey' => null,
-                'expected' => 'color'
+                'expected' => ['color']
             ],
             [
                 'facetName' => 'size',
                 'priceKey' => null,
-                'expected' => 'size'
+                'expected' => ['size']
             ]
         ];
     }
 
+    public function testSplitHierarchicalFacet(): void
+    {
+        $result = $this->invokeMethod($this->queryParamBuilder, 'splitHierarchicalFacet', ['categories']);
+
+        $expected = [
+            'categories.level0',
+            'categories.level1',
+            'categories.level2',
+            'categories.level3',
+            'categories.level4',
+            'categories.level5',
+            'categories.level6',
+            'categories.level7',
+            'categories.level8',
+            'categories.level9'
+        ];
+
+        $this->assertEquals($expected, $result);
+    }
+
     public function testGetFacetsWithEmptyConfig(): void
     {
-        $request = $this->createMockRequest();
+        $storeId = 1;
 
-        $this->storeIdResolver->method('getStoreId')->with($request)->willReturn(1);
-        $this->instantSearchHelper->method('getFacets')->with(1)->willReturn([]);
+        $this->instantSearchHelper->method('getFacets')->with($storeId)->willReturn([]);
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacets', [$request]);
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacets', [$storeId]);
 
         $this->assertEquals([], $result);
     }
 
     public function testGetFacetsWithPriceAndCategories(): void
     {
-        $request = $this->createMockRequest();
+        $storeId = 1;
 
-        $this->storeIdResolver->method('getStoreId')->with($request)->willReturn(1);
-        $this->instantSearchHelper->method('getFacets')->with(1)->willReturn([
+        $this->instantSearchHelper->method('getFacets')->with($storeId)->willReturn([
             [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'price'],
             [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'categories']
         ]);
-        $this->priceKeyResolver->method('getPriceKey')->with(1)->willReturn('.USD.default');
+        $this->priceKeyResolver->method('getPriceKey')->with($storeId)->willReturn('.USD.default');
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacets', [$request]);
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacets', [$storeId]);
 
-        $this->assertEquals(['price.USD.default', 'categories.level0'], $result);
+        $expected = [
+            'price.USD.default',
+            'categories.level0',
+            'categories.level1',
+            'categories.level2',
+            'categories.level3',
+            'categories.level4',
+            'categories.level5',
+            'categories.level6',
+            'categories.level7',
+            'categories.level8',
+            'categories.level9'
+        ];
+
+        $this->assertEquals($expected, $result);
     }
 
     public function testGetFacetsWithAttributes(): void
     {
-        $request = $this->createMockRequest();
+        $storeId = 1;
 
-        $this->storeIdResolver->method('getStoreId')->with($request)->willReturn(1);
-        $this->instantSearchHelper->method('getFacets')->with(1)->willReturn([
+        $this->instantSearchHelper->method('getFacets')->with($storeId)->willReturn([
             [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'color'],
             [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'size'],
             [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'material']
         ]);
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacets', [$request]);
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacets', [$storeId]);
 
         $this->assertEquals(['color', 'size', 'material'], $result);
+    }
+
+    public function testGetFacetsWithExceptionReturnsEmpty(): void
+    {
+        $storeId = 1;
+
+        $this->priceKeyResolver->method('getPriceKey')
+            ->willThrowException(new \Magento\Framework\Exception\NoSuchEntityException(__('Store not found')));
+
+        $this->instantSearchHelper->method('getFacets')->with($storeId)->willReturn([
+            [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'price']
+        ]);
+
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacets', [$storeId]);
+
+        $this->assertEquals([], $result);
     }
 
     /**
@@ -626,7 +684,18 @@ class QueryParamBuilderTest extends TestCase
                     [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'categories']
                 ],
                 'priceKey' => null,
-                'expectedFacets' => ['categories.level0']
+                'expectedFacets' => [
+                    'categories.level0',
+                    'categories.level1',
+                    'categories.level2',
+                    'categories.level3',
+                    'categories.level4',
+                    'categories.level5',
+                    'categories.level6',
+                    'categories.level7',
+                    'categories.level8',
+                    'categories.level9'
+                ]
             ],
             [
                 'configuredFacets' => [
@@ -646,7 +715,22 @@ class QueryParamBuilderTest extends TestCase
                     [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'brand']
                 ],
                 'priceKey' => '.USD.default',
-                'expectedFacets' => ['price.USD.default', 'categories.level0', 'color', 'size', 'brand']
+                'expectedFacets' => [
+                    'price.USD.default',
+                    'categories.level0',
+                    'categories.level1',
+                    'categories.level2',
+                    'categories.level3',
+                    'categories.level4',
+                    'categories.level5',
+                    'categories.level6',
+                    'categories.level7',
+                    'categories.level8',
+                    'categories.level9',
+                    'color',
+                    'size',
+                    'brand'
+                ]
             ],
             [
                 'configuredFacets' => [
@@ -658,7 +742,23 @@ class QueryParamBuilderTest extends TestCase
                     [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'brand']
                 ],
                 'priceKey' => '.GBP.group_5',
-                'expectedFacets' => ['price.GBP.group_5', 'categories.level0', 'color', 'size', 'material', 'brand']
+                'expectedFacets' => [
+                    'price.GBP.group_5',
+                    'categories.level0',
+                    'categories.level1',
+                    'categories.level2',
+                    'categories.level3',
+                    'categories.level4',
+                    'categories.level5',
+                    'categories.level6',
+                    'categories.level7',
+                    'categories.level8',
+                    'categories.level9',
+                    'color',
+                    'size',
+                    'material',
+                    'brand'
+                ]
             ]
         ];
     }

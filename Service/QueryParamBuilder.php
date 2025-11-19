@@ -8,6 +8,7 @@ use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Service\PriceKeyResolver;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 use Magento\Catalog\Model\Product\Visibility;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\Request\FilterInterface as RequestFilterInterface;
 use Magento\Framework\Search\Request\Query\BoolExpression as BoolQuery;
 use Magento\Framework\Search\Request\Query\Filter as FilterQuery;
@@ -16,6 +17,11 @@ use Magento\Framework\Search\RequestInterface;
 
 class QueryParamBuilder
 {
+    /** @var string  */
+    protected const FACET_PARAM_PRICE = 'price';
+    /** @var string  */
+    protected const FACET_PARAM_HIERARCHICAL = 'categories';
+
     public function __construct(
         protected InstantSearchHelper $instantSearchHelper,
         protected StoreIdResolver     $storeIdResolver,
@@ -24,13 +30,15 @@ class QueryParamBuilder
 
     /**
      * Build the Algolia search query parameters
+     * @throws NoSuchEntityException
      */
     public function build(RequestInterface $request, PaginationInfoInterface $pagination): array
     {
+        $storeId = $this->storeIdResolver->getStoreId($request);
         $params = [
             'hitsPerPage' => $pagination->getPageSize(),
             'page' => $pagination->getPageNumber() - 1, # Algolia pages are 0-based, Magento 1-based
-            'facets' => $this->getFacets($request),
+            'facets' => $this->getFacets($storeId),
         ];
 
         $requestQuery = $request->getQuery();
@@ -44,29 +52,52 @@ class QueryParamBuilder
         return $params;
     }
 
-    protected function getFacets(RequestInterface $request): array
+    protected function getFacets(int $storeId): array
     {
-        $storeId = $this->storeIdResolver->getStoreId($request);
-        return array_map(
-            fn($facet) => $this->formatFacetParam(
-                $facet[ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME],
-                $storeId
-            ),
-            $this->instantSearchHelper->getFacets($storeId)
-        );
+        try {
+            $facets = array_map(
+                fn($facet) => $this->transformFacetParam(
+                    $facet[ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME],
+                    $storeId
+                ),
+                $this->instantSearchHelper->getFacets($storeId)
+            );
+            // flatten all facets
+            return array_merge(...$facets);
+        } catch (NoSuchEntityException $e) {
+            return [];
+        }
     }
 
-    protected function formatFacetParam(string $facet, int $storeId): string
+    /**
+     * A single facet can be transformed to one or more facet attributes
+     *
+     * @return string[]
+     * @throws NoSuchEntityException
+     */
+    protected function transformFacetParam(string $facet, int $storeId): array
     {
-        if ($facet === 'price') {
-            return $facet . $this->priceKeyResolver->getPriceKey($storeId);
+        if ($facet === self::FACET_PARAM_PRICE) {
+            return [$facet . $this->priceKeyResolver->getPriceKey($storeId)];
         }
 
-        if ($facet === 'categories') {
-            return 'categories.level0';
+        if ($facet === self::FACET_PARAM_HIERARCHICAL) {
+            return $this->splitHierarchicalFacet(self::FACET_PARAM_HIERARCHICAL);
         }
 
-        return $facet;
+        return [$facet];
+    }
+
+    /*
+     * @return string[]
+     */
+    protected function splitHierarchicalFacet(string $facet): array
+    {
+        $hierarchy = [];
+        for ($level = 0; $level < 10; $level++) {
+            $hierarchy[] = "$facet.level$level";
+        }
+        return $hierarchy;
     }
 
     /**
