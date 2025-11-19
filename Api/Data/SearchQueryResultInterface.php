@@ -31,16 +31,16 @@ interface SearchQueryResultInterface
     /**
      * Get the total number of pages
      *
-     * @return int
+     * @return int|null
      */
-    public function getTotalPages(): int;
+    public function getTotalPages(): ?int;
 
     /**
      * Get the number of hits per page
      *
-     * @return int
+     * @return int|null
      */
-    public function getHitsPerPage(): int;
+    public function getHitsPerPage(): ?int;
 
     /**
      * Get the current page number (0-based, Algolia convention)
@@ -76,18 +76,18 @@ interface SearchQueryResultInterface
     /**
      * Set the total number of pages
      *
-     * @param int $totalPages
+     * @param int|null $totalPages
      * @return self
      */
-    public function setTotalPages(int $totalPages): self;
+    public function setTotalPages(?int $totalPages): self;
 
     /**
      * Set the number of hits per page
      *
-     * @param int $hitsPerPage
+     * @param int|null $hitsPerPage
      * @return self
      */
-    public function setHitsPerPage(int $hitsPerPage): self;
+    public function setHitsPerPage(?int $hitsPerPage): self;
 
     /**
      * Set the current page number

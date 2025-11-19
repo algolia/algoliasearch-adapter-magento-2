@@ -30,8 +30,8 @@ class SearchQueryResultFactory
             'hits'        => $result['hits'] ?? [],
             'facets'      => $result['facets'] ?? [],
             'totalHits'   => $result['nbHits'] ?? 0,
-            'totalPages'  => $result['nbPages'] ?? 0,
-            'hitsPerPage' => $result['hitsPerPage'] ?? 0,
+            'totalPages'  => $result['nbPages'] ?? null,
+            'hitsPerPage' => $result['hitsPerPage'] ?? null,
             'page'        => $result['page'] ?? 0,
         ]);
     }

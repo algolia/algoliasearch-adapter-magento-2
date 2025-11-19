@@ -6,6 +6,7 @@ use Algolia\SearchAdapter\Model\Response\DocumentMapper;
 use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface;
 use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterfaceFactory;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
+use Algolia\SearchAdapter\Api\Data\SearchQueryResultInterface;
 use Algolia\AlgoliaSearch\Test\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 
@@ -15,12 +16,14 @@ class DocumentMapperTest extends TestCase
     private DocumentMapperResultInterfaceFactory|MockObject $documentMapperResultFactory;
     private DocumentMapperResultInterface|MockObject $documentMapperResult;
     private PaginationInfoInterface|MockObject $pagination;
+    private SearchQueryResultInterface|MockObject $searchQueryResult;
 
     protected function setUp(): void
     {
         $this->documentMapperResultFactory = $this->createMock(DocumentMapperResultInterfaceFactory::class);
         $this->documentMapperResult = $this->createMock(DocumentMapperResultInterface::class);
         $this->pagination = $this->createMock(PaginationInfoInterface::class);
+        $this->searchQueryResult = $this->createMock(SearchQueryResultInterface::class);
 
         $this->documentMapper = new DocumentMapper(
             $this->documentMapperResultFactory
@@ -96,7 +99,11 @@ class DocumentMapperTest extends TestCase
 
     public function testProcessWithEmptyResponse(): void
     {
-        $searchResponse = [];
+        $this->searchQueryResult->method('getHits')->willReturn([]);
+        $this->searchQueryResult->method('getTotalHits')->willReturn(0);
+        $this->searchQueryResult->method('getTotalPages')->willReturn(null);
+        $this->searchQueryResult->method('getHitsPerPage')->willReturn(null);
+        
         $this->pagination->method('getPageNumber')->willReturn(1);
         $this->pagination->method('getPageSize')->willReturn(20);
 
@@ -112,14 +119,18 @@ class DocumentMapperTest extends TestCase
             ])
             ->willReturn($this->documentMapperResult);
 
-        $result = $this->documentMapper->process($searchResponse, $this->pagination);
+        $result = $this->documentMapper->process($this->searchQueryResult, $this->pagination);
 
         $this->assertSame($this->documentMapperResult, $result);
     }
 
     public function testProcessWithEmptyResults(): void
     {
-        $searchResponse = ['results' => []];
+        $this->searchQueryResult->method('getHits')->willReturn([]);
+        $this->searchQueryResult->method('getTotalHits')->willReturn(0);
+        $this->searchQueryResult->method('getTotalPages')->willReturn(null);
+        $this->searchQueryResult->method('getHitsPerPage')->willReturn(null);
+        
         $this->pagination->method('getPageNumber')->willReturn(1);
         $this->pagination->method('getPageSize')->willReturn(20);
 
@@ -135,25 +146,20 @@ class DocumentMapperTest extends TestCase
             ])
             ->willReturn($this->documentMapperResult);
 
-        $result = $this->documentMapper->process($searchResponse, $this->pagination);
+        $result = $this->documentMapper->process($this->searchQueryResult, $this->pagination);
 
         $this->assertSame($this->documentMapperResult, $result);
     }
 
     public function testProcessWithSingleHit(): void
     {
-        $searchResponse = [
-            'results' => [
-                [
-                    'hits' => [
-                        ['objectID' => 'product_123']
-                    ],
-                    'nbHits' => 1,
-                    'nbPages' => 1,
-                    'hitsPerPage' => 20
-                ]
-            ]
-        ];
+        $hits = [['objectID' => 'product_123']];
+        
+        $this->searchQueryResult->method('getHits')->willReturn($hits);
+        $this->searchQueryResult->method('getTotalHits')->willReturn(1);
+        $this->searchQueryResult->method('getTotalPages')->willReturn(1);
+        $this->searchQueryResult->method('getHitsPerPage')->willReturn(20);
+        
         $this->pagination->method('getPageNumber')->willReturn(1);
         $this->pagination->method('getPageSize')->willReturn(20);
 
@@ -170,26 +176,23 @@ class DocumentMapperTest extends TestCase
             }))
             ->willReturn($this->documentMapperResult);
 
-        $result = $this->documentMapper->process($searchResponse, $this->pagination);
+        $result = $this->documentMapper->process($this->searchQueryResult, $this->pagination);
 
         $this->assertSame($this->documentMapperResult, $result);
     }
 
     public function testProcessWithMultipleHits(): void
     {
-        $searchResponse = [
-            'results' => [
-                [
-                    'hits' => [
-                        ['objectID' => 'product_123'],
-                        ['objectID' => 'product_456']
-                    ],
-                    'nbHits' => 2,
-                    'nbPages' => 1,
-                    'hitsPerPage' => 20
-                ]
-            ]
+        $hits = [
+            ['objectID' => 'product_123'],
+            ['objectID' => 'product_456']
         ];
+        
+        $this->searchQueryResult->method('getHits')->willReturn($hits);
+        $this->searchQueryResult->method('getTotalHits')->willReturn(2);
+        $this->searchQueryResult->method('getTotalPages')->willReturn(1);
+        $this->searchQueryResult->method('getHitsPerPage')->willReturn(20);
+        
         $this->pagination->method('getPageNumber')->willReturn(1);
         $this->pagination->method('getPageSize')->willReturn(20);
 
@@ -204,33 +207,30 @@ class DocumentMapperTest extends TestCase
             }))
             ->willReturn($this->documentMapperResult);
 
-        $result = $this->documentMapper->process($searchResponse, $this->pagination);
+        $result = $this->documentMapper->process($this->searchQueryResult, $this->pagination);
 
         $this->assertSame($this->documentMapperResult, $result);
     }
 
     public function testProcessWithMultiplePages(): void
     {
-        $searchResponse = [
-            'results' => [
-                [
-                    'hits' => [
-                        ['objectID' => 'product_19'],
-                        ['objectID' => 'product_20'],
-                        ['objectID' => 'product_21'],
-                        ['objectID' => 'product_22'],
-                        ['objectID' => 'product_23'],
-                        ['objectID' => 'product_24'],
-                        ['objectID' => 'product_25'],
-                        ['objectID' => 'product_26'],
-                        ['objectID' => 'product_27'],
-                    ],
-                    'nbHits' => 32,
-                    'nbPages' => 4,
-                    'hitsPerPage' => 9
-                ]
-            ]
+        $hits = [
+            ['objectID' => 'product_19'],
+            ['objectID' => 'product_20'],
+            ['objectID' => 'product_21'],
+            ['objectID' => 'product_22'],
+            ['objectID' => 'product_23'],
+            ['objectID' => 'product_24'],
+            ['objectID' => 'product_25'],
+            ['objectID' => 'product_26'],
+            ['objectID' => 'product_27'],
         ];
+        
+        $this->searchQueryResult->method('getHits')->willReturn($hits);
+        $this->searchQueryResult->method('getTotalHits')->willReturn(32);
+        $this->searchQueryResult->method('getTotalPages')->willReturn(4);
+        $this->searchQueryResult->method('getHitsPerPage')->willReturn(9);
+        
         $this->pagination->method('getPageNumber')->willReturn(3);
         $this->pagination->method('getPageSize')->willReturn(9);
 
@@ -248,22 +248,20 @@ class DocumentMapperTest extends TestCase
             }))
             ->willReturn($this->documentMapperResult);
 
-        $result = $this->documentMapper->process($searchResponse, $this->pagination);
+        $result = $this->documentMapper->process($this->searchQueryResult, $this->pagination);
 
         $this->assertSame($this->documentMapperResult, $result);
     }
 
     public function testProcessWithMissingPaginationFields(): void
     {
-        $searchResponse = [
-            'results' => [
-                [
-                    'hits' => [
-                        ['objectID' => 'product_123']
-                    ]
-                ]
-            ]
-        ];
+        $hits = [['objectID' => 'product_123']];
+        
+        $this->searchQueryResult->method('getHits')->willReturn($hits);
+        $this->searchQueryResult->method('getTotalHits')->willReturn(1);
+        $this->searchQueryResult->method('getTotalPages')->willReturn(null);
+        $this->searchQueryResult->method('getHitsPerPage')->willReturn(null);
+        
         $this->pagination->method('getPageNumber')->willReturn(2);
         $this->pagination->method('getPageSize')->willReturn(10);
 
@@ -271,16 +269,16 @@ class DocumentMapperTest extends TestCase
             ->expects($this->once())
             ->method('create')
             ->with($this->callback(function ($data) {
-                return $data['totalCount'] === 0
-                    && $data['totalPages'] === 0
-                    && $data['pageSize'] === 10
+                return $data['totalCount'] === 1 
+                    && $data['totalPages'] === 1  // should fallback to pagination
+                    && $data['pageSize'] === 10  // should fallback to pagination
                     && $data['currentPage'] === 2
                     && count($data['documents']) === 1
                     && $data['documents'][0]['fields']['_id'][0] === 'product_123';
             }))
             ->willReturn($this->documentMapperResult);
 
-        $result = $this->documentMapper->process($searchResponse, $this->pagination);
+        $result = $this->documentMapper->process($this->searchQueryResult, $this->pagination);
 
         $this->assertSame($this->documentMapperResult, $result);
     }

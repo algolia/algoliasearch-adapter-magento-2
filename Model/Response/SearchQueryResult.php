@@ -13,8 +13,8 @@ class SearchQueryResult implements SearchQueryResultInterface
         protected array $hits = [],
         protected array $facets = [],
         protected int $totalHits = 0,
-        protected int $totalPages = 0,
-        protected int $hitsPerPage = 0,
+        protected ?int $totalPages = null,
+        protected ?int $hitsPerPage = null,
         protected int $page = 0,
     ) {}
 
@@ -51,23 +51,23 @@ class SearchQueryResult implements SearchQueryResultInterface
         return $this;
     }
 
-    public function getTotalPages(): int
+    public function getTotalPages(): ?int
     {
         return $this->totalPages;
     }
 
-    public function setTotalPages(int $totalPages): self
+    public function setTotalPages(?int $totalPages): self
     {
         $this->totalPages = $totalPages;
         return $this;
     }
 
-    public function getHitsPerPage(): int
+    public function getHitsPerPage(): ?int
     {
         return $this->hitsPerPage;
     }
 
-    public function setHitsPerPage(int $hitsPerPage): self
+    public function setHitsPerPage(?int $hitsPerPage): self
     {
         $this->hitsPerPage = $hitsPerPage;
         return $this;
