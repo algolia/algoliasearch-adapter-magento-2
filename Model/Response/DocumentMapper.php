@@ -5,6 +5,7 @@ namespace Algolia\SearchAdapter\Model\Response;
 use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface;
 use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterfaceFactory;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
+use Algolia\SearchAdapter\Api\Data\SearchQueryResultInterface;
 
 class DocumentMapper
 {
@@ -12,15 +13,13 @@ class DocumentMapper
         protected DocumentMapperResultInterfaceFactory $documentMapperResultFactory,
     ) {}
 
-    public function process(array $searchResponse, PaginationInfoInterface $pagination): DocumentMapperResultInterface
+    public function process(SearchQueryResultInterface $result, PaginationInfoInterface $pagination): DocumentMapperResultInterface
     {
-        $result = $searchResponse['results'][0] ?? []; // only ever expect a single result set
-        $hits = $result['hits'] ?? [];
-        $total = $result['nbHits'] ?? 0;
-        $totalPages = $result['nbPages'] ?? (int) ceil($total / $pagination->getPageSize());
-        $pageSize = $result['hitsPerPage'] ?? $pagination->getPageSize();
+        $total = $result->getTotalHits();
+        $totalPages = $result->getTotalPages() ?? (int) ceil($total / $pagination->getPageSize());
+        $pageSize = $result->getHitsPerPage() ?? $pagination->getPageSize();
         return $this->documentMapperResultFactory->create([
-            'documents' => $this->buildDocuments($hits),
+            'documents' => $this->buildDocuments($result->getHits()),
             'totalCount' => $total,
             'totalPages' => $totalPages,
             'pageSize' => $pageSize,

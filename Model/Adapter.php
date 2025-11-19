@@ -6,7 +6,10 @@ use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface;
 use Algolia\SearchAdapter\Model\Request\QueryMapper;
 use Algolia\SearchAdapter\Model\Response\DocumentMapper;
+use Algolia\SearchAdapter\Model\Response\SearchQueryResult;
+use Algolia\SearchAdapter\Model\Response\SearchQueryResultFactory;
 use Algolia\SearchAdapter\Service\AlgoliaBackendConnector;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\AdapterInterface;
 use Magento\Framework\Search\RequestInterface;
@@ -21,25 +24,27 @@ use Magento\Elasticsearch\ElasticAdapter\SearchAdapter\Mapper;
 class Adapter implements AdapterInterface
 {
     public function __construct(
-        protected AlgoliaBackendConnector $connector,
-        protected QueryMapper             $queryMapper,
-        protected DocumentMapper          $documentMapper,
-        protected ResponseFactory         $responseFactory,
-        protected AggregationBuilder      $aggregationBuilder,
-        protected QueryContainerFactory   $queryContainerFactory,
-        protected Mapper                  $mapper,
+        protected AlgoliaBackendConnector  $connector,
+        protected QueryMapper              $queryMapper,
+        protected DocumentMapper           $documentMapper,
+        protected SearchQueryResultFactory $searchQueryResultFactory,
+        protected ResponseFactory          $responseFactory,
+        protected AggregationBuilder       $aggregationBuilder,
+        protected QueryContainerFactory    $queryContainerFactory,
+        protected Mapper                   $mapper,
     ){}
 
     /**
      * @inheritDoc
      *
-     * @throws NoSuchEntityException|AlgoliaException
+     * @throws NoSuchEntityException|AlgoliaException|LocalizedException
      */
     public function query(RequestInterface $request): QueryResponse
     {
         $query = $this->queryMapper->process($request);
         $response = $this->connector->query($query->getSearchQuery());
-        $result = $this->documentMapper->process($response, $query->getPaginationInfo());
+        $search = $this->searchQueryResultFactory->create($response);
+        $result = $this->documentMapper->process($search, $query->getPaginationInfo());
 
         $data =  [
             DocumentMapperResultInterface::RESPONSE_KEY_DOCUMENTS => $result->getDocuments(),
