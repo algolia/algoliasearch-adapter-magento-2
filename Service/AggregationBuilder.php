@@ -3,17 +3,14 @@
 namespace Algolia\SearchAdapter\Service;
 
 use Algolia\SearchAdapter\Api\Data\SearchQueryResultInterface;
-use Magento\Catalog\Model\ProductFactory;
 use Magento\Catalog\Model\ResourceModel\Product;
 use Magento\Framework\Exception\LocalizedException;
-use Magento\Framework\Search\Adapter\Aggregation\AggregationResolverInterface;
 use Magento\Framework\Search\RequestInterface;
 
 class AggregationBuilder
 {
     public function __construct(
-        protected AggregationResolverInterface $aggregationResolver,
-        protected Product                      $productResource,
+        protected Product $productResource,
     ) {}
 
     /**
@@ -21,13 +18,13 @@ class AggregationBuilder
      */
     public function build(RequestInterface $request, SearchQueryResultInterface $result): array
     {
-        return $this->transformFacetsToBuckets($request, $result);
+        return $this->buildBuckets($request, $result);
     }
 
     /**
      * @throws LocalizedException
      */
-    public function transformFacetsToBuckets(RequestInterface $request, SearchQueryResultInterface $result): array
+    protected function buildRelevantBucks(RequestInterface $request, SearchQueryResultInterface $result): array
     {
         $buckets = [];
         foreach ($request->getAggregation() as $bucket) {
@@ -37,6 +34,28 @@ class AggregationBuilder
                     break;
                 }
             }
+        }
+        return $buckets;
+    }
+
+    /**
+     * @throws LocalizedException
+     */
+    protected function buildBuckets(RequestInterface $request, SearchQueryResultInterface $result): array
+    {
+        $facets = $result->getFacets();
+        $buckets = [];
+        foreach ($request->getAggregation() as $bucket) {
+            foreach ($result->getFacets() as $facet => $options) {
+                if ($bucket->getField() == $facet) {
+                    $buckets[$bucket->getName()] = $this->buildBucketData($facet, $options);
+                    break;
+                }
+            }
+            $fieldName = $bucket->getField();
+            $buckets[$bucket->getName()] = isset($facets[$fieldName])
+                ? $this->buildBucketData($fieldName, $facets[$fieldName])
+                : []; // we only care about Algolia facets - but the bucket must still be registered
         }
         return $buckets;
     }
