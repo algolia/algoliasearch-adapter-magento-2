@@ -5,7 +5,7 @@ namespace Algolia\SearchAdapter\Service;
 use Algolia\AlgoliaSearch\Api\Product\ProductRecordFieldsInterface;
 use Algolia\AlgoliaSearch\Api\Product\ReplicaManagerInterface;
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
-use Algolia\AlgoliaSearch\Service\PriceKeyResolver;
+use Algolia\AlgoliaSearch\Service\Product\PriceKeyResolver;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\Framework\Exception\NoSuchEntityException;
