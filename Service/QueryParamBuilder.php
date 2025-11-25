@@ -132,7 +132,7 @@ class QueryParamBuilder
      * @param int $storeId
      * @return void
      */
-    protected function applyFilters(array &$params, array $filters, int $storeId): void
+    protected function applyFilters(array &$params, array &$filters, int $storeId): void
     {
         $this->applyCategoryFilter($params, $filters);
         $this->applyVisibilityFilters($params, $filters);

@@ -8,6 +8,7 @@ use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Service\Product\PriceKeyResolver;
 use Algolia\AlgoliaSearch\Test\TestCase;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
+use Algolia\SearchAdapter\Service\FacetValueConverter;
 use Algolia\SearchAdapter\Service\QueryParamBuilder;
 use Algolia\SearchAdapter\Service\StoreIdResolver;
 use Algolia\SearchAdapter\Test\Traits\QueryTestTrait;
@@ -24,16 +25,19 @@ class QueryParamBuilderTest extends TestCase
     private InstantSearchHelper|MockObject $instantSearchHelper;
     private StoreIdResolver|MockObject $storeIdResolver;
     private PriceKeyResolver|MockObject $priceKeyResolver;
+    private FacetValueConverter|MockObject $facetValueConverter;
 
     protected function setUp(): void
     {
         $this->instantSearchHelper = $this->createMock(InstantSearchHelper::class);
         $this->storeIdResolver = $this->createMock(StoreIdResolver::class);
         $this->priceKeyResolver = $this->createMock(PriceKeyResolver::class);
+        $this->facetValueConverter = $this->createMock(FacetValueConverter::class);
         $this->queryParamBuilder = new QueryParamBuilder(
             $this->instantSearchHelper,
             $this->storeIdResolver,
-            $this->priceKeyResolver
+            $this->priceKeyResolver,
+            $this->facetValueConverter
         );
         $this->paginationInfo = $this->createMock(PaginationInfoInterface::class);
     }
@@ -48,7 +52,7 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
-        
+
         $this->storeIdResolver->method('getStoreId')->willReturn(1);
         $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
@@ -72,7 +76,7 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
-        
+
         $this->storeIdResolver->method('getStoreId')->willReturn(1);
         $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
@@ -89,13 +93,14 @@ class QueryParamBuilderTest extends TestCase
     {
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
+        $otherQuery = $this->createMock(RequestQueryInterface::class);
 
         $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getMust')->willReturn(['other' => 'value']);
+        $boolQuery->method('getMust')->willReturn(['other' => $otherQuery]);
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
-        
+
         $this->storeIdResolver->method('getStoreId')->willReturn(1);
         $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
@@ -110,61 +115,53 @@ class QueryParamBuilderTest extends TestCase
 
     public function testGetFilterParamWithValidFilter(): void
     {
-        $boolQuery = $this->createMockBoolQuery();
+        $filters = ['category' => $this->createMockFilterQuery('12')];
 
-        $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery('12')]);
-
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFilterParam', [$boolQuery, 'category']);
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFilterParam', [&$filters, 'category']);
 
         $this->assertEquals('12', $result);
     }
 
     public function testGetFilterParamWithMissingKey(): void
     {
-        $boolQuery = $this->createMockBoolQuery();
+        $otherQuery = $this->createMock(RequestQueryInterface::class);
+        $filters = ['other' => $otherQuery];
 
-        $boolQuery->method('getMust')->willReturn(['other' => 'value']);
-
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFilterParam', [$boolQuery, 'category']);
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFilterParam', [&$filters, 'category']);
 
         $this->assertEquals(false, $result);
     }
 
     public function testGetFilterParamWithNonFilterType(): void
     {
-        $boolQuery = $this->createMockBoolQuery();
         $nonFilterQuery = $this->createMock(RequestQueryInterface::class);
-
-        $boolQuery->method('getMust')->willReturn(['category' => $nonFilterQuery]);
         $nonFilterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_MATCH);
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFilterParam', [$boolQuery, 'category']);
+        $filters = ['category' => $nonFilterQuery];
+
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFilterParam', [&$filters, 'category']);
 
         $this->assertEquals(false, $result);
     }
 
     public function testGetFilterParamWithNonReferenceFilter(): void
     {
-        $boolQuery = $this->createMockBoolQuery();
         $filterQuery = $this->createMockFilterQuery();
-
-        $boolQuery->method('getMust')->willReturn(['category' => $filterQuery]);
-
         $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
         $filterQuery->method('getReferenceType')->willReturn('other');
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFilterParam', [$boolQuery, 'category']);
+        $filters = ['category' => $filterQuery];
+
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFilterParam', [&$filters, 'category']);
 
         $this->assertEquals(false, $result);
     }
 
     public function testGetFilterParamWithFalseValue(): void
     {
-        $boolQuery = $this->createMockBoolQuery();
+        $filters = ['category' => $this->createMockFilterQuery(false)];
 
-        $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery(false)]);
-
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFilterParam', [$boolQuery, 'category']);
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFilterParam', [&$filters, 'category']);
 
         $this->assertEquals(false, $result);
     }
@@ -181,7 +178,7 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
-        
+
         $this->storeIdResolver->method('getStoreId')->willReturn(1);
         $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
@@ -207,7 +204,7 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
-        
+
         $this->storeIdResolver->method('getStoreId')->willReturn(1);
         $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
@@ -235,7 +232,7 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
-        
+
         $this->storeIdResolver->method('getStoreId')->willReturn(1);
         $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
@@ -265,7 +262,7 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
-        
+
         $this->storeIdResolver->method('getStoreId')->willReturn(1);
         $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
@@ -289,7 +286,7 @@ class QueryParamBuilderTest extends TestCase
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
-        
+
         $this->storeIdResolver->method('getStoreId')->willReturn(1);
         $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
@@ -306,13 +303,14 @@ class QueryParamBuilderTest extends TestCase
     {
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
+        $otherQuery = $this->createMock(RequestQueryInterface::class);
 
         $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getMust')->willReturn(['other' => 'value']);
+        $boolQuery->method('getMust')->willReturn(['other' => $otherQuery]);
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
-        
+
         $this->storeIdResolver->method('getStoreId')->willReturn(1);
         $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
@@ -327,51 +325,50 @@ class QueryParamBuilderTest extends TestCase
 
     public function testApplyVisibilityFiltersWithInSearchSingleValue(): void
     {
-        $boolQuery = $this->createMockBoolQuery();
-
-        $boolQuery->method('getMust')->willReturn([
+        $filters = [
             'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_SEARCH)
-        ]);
+        ];
 
         $params = [];
 
-        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, $boolQuery]);
+        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, &$filters]);
 
         $this->assertEquals([
             'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
         ], $params);
+
+        $this->assertCount(0, $filters); // filters should burn down
     }
 
     public function testApplyVisibilityFiltersWithInCatalogSingleValue(): void
     {
-        $boolQuery = $this->createMockBoolQuery();
-
-        $boolQuery->method('getMust')->willReturn([
+        $filters = [
             'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_CATALOG)
-        ]);
+        ];
 
         $params = [];
 
-        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, $boolQuery]);
+        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, &$filters]);
 
         $this->assertEquals([
             'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)]
         ], $params);
+
+        $this->assertCount(0, $filters); // filters should burn down
     }
 
     public function testApplyVisibilityFiltersWithBothValuesArray(): void
     {
-        $boolQuery = $this->createMockBoolQuery();
         $filterQuery = $this->createMockFilterQuery([
             Visibility::VISIBILITY_IN_SEARCH,
             Visibility::VISIBILITY_IN_CATALOG
         ]);
 
-        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
+        $filters = ['visibility' => $filterQuery];
 
         $params = [];
 
-        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, $boolQuery]);
+        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, &$filters]);
 
         $this->assertEquals([
             'numericFilters' => [
@@ -379,52 +376,56 @@ class QueryParamBuilderTest extends TestCase
                 sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)
             ]
         ], $params);
+
+        $this->assertCount(0, $filters); // filters should burn down
     }
 
     public function testApplyVisibilityFiltersWithNoVisibilityParam(): void
     {
-        $boolQuery = $this->createMockBoolQuery();
-
-        $boolQuery->method('getMust')->willReturn(['other' => 'value']);
+        $otherQuery = $this->createMock(RequestQueryInterface::class);
+        $filters = ['other' => $otherQuery];
 
         $params = [];
 
-        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, $boolQuery]);
+        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, &$filters]);
 
         $this->assertEquals([], $params);
+
+        $this->assertCount(1, $filters); // filters should not be altered
     }
 
     public function testApplyVisibilityFiltersWithFalseVisibilityParam(): void
     {
-        $boolQuery = $this->createMockBoolQuery();
-
-        $boolQuery->method('getMust')->willReturn(['visibility' => $this->createMockFilterQuery(false)]);
+        $filters = ['visibility' => $this->createMockFilterQuery(false)];
 
         $params = [];
 
-        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, $boolQuery]);
+        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, &$filters]);
 
         $this->assertEquals([], $params);
+
+        $this->assertCount(0, $filters); // filters should burn down
     }
 
     public function testApplyVisibilityFiltersWithArrayNonMatchingValues(): void
     {
-        $boolQuery = $this->createMockBoolQuery();
         $filterQuery = $this->createMockFilterQuery();
         $termFilter = $this->createMockTermFilter();
-
-        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
 
         $filterQuery->method('getReference')->willReturn($termFilter);
 
         $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
         $termFilter->method('getValue')->willReturn([1, 4]);
 
+        $filters = ['visibility' => $filterQuery];
+
         $params = [];
 
-        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, $boolQuery]);
+        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, &$filters]);
 
         $this->assertEquals([], $params);
+
+        $this->assertCount(0, $filters); // filters should burn down
     }
 
     public function testApplyVisibilityFilter(): void
@@ -462,21 +463,21 @@ class QueryParamBuilderTest extends TestCase
 
     public function testApplyFilters(): void
     {
-        $boolQuery = $this->createMockBoolQuery();
-
-        $boolQuery->method('getMust')->willReturn([
+        $filters = [
             'category' => $this->createMockFilterQuery('12'),
             'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_SEARCH)
-        ]);
+        ];
 
         $params = [];
 
-        $this->invokeMethod($this->queryParamBuilder, 'applyFilters', [&$params, $boolQuery]);
+        $this->invokeMethod($this->queryParamBuilder, 'applyFilters', [&$params, &$filters, 1]);
 
         $this->assertEquals([
             'facetFilters' => ['categoryIds:12'],
             'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
         ], $params);
+
+        $this->assertCount(0, $filters); // filters should burn down
     }
 
     /**
@@ -485,7 +486,7 @@ class QueryParamBuilderTest extends TestCase
     public function testTransformFacetParam(string $facetName, ?string $priceKey, array $expected): void
     {
         $storeId = 1;
-        
+
         if ($priceKey !== null) {
             $this->priceKeyResolver->method('getPriceKey')->with($storeId)->willReturn($priceKey);
         }
@@ -563,7 +564,7 @@ class QueryParamBuilderTest extends TestCase
 
         $this->instantSearchHelper->method('getFacets')->with($storeId)->willReturn([]);
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacets', [$storeId]);
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacetsToRetrieve', [$storeId]);
 
         $this->assertEquals([], $result);
     }
@@ -578,7 +579,7 @@ class QueryParamBuilderTest extends TestCase
         ]);
         $this->priceKeyResolver->method('getPriceKey')->with($storeId)->willReturn('.USD.default');
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacets', [$storeId]);
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacetsToRetrieve', [$storeId]);
 
         $expected = [
             'price.USD.default',
@@ -607,7 +608,7 @@ class QueryParamBuilderTest extends TestCase
             [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'material']
         ]);
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacets', [$storeId]);
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacetsToRetrieve', [$storeId]);
 
         $this->assertEquals(['color', 'size', 'material'], $result);
     }
@@ -623,7 +624,7 @@ class QueryParamBuilderTest extends TestCase
             [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'price']
         ]);
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacets', [$storeId]);
+        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacetsToRetrieve', [$storeId]);
 
         $this->assertEquals([], $result);
     }
