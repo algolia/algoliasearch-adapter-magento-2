@@ -3,14 +3,13 @@
 namespace Algolia\SearchAdapter\Service;
 
 use Algolia\SearchAdapter\Api\Data\SearchQueryResultInterface;
-use Magento\Catalog\Model\ResourceModel\Product;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Search\RequestInterface;
 
 class AggregationBuilder
 {
     public function __construct(
-        protected Product $productResource,
+        protected FacetValueConverter $facetValueConverter,
     ) {}
 
     /**
@@ -68,7 +67,7 @@ class AggregationBuilder
         $data = [];
 
         foreach ($options as $label => $count) {
-            $optionId = $this->getOptionIdByLabel($attributeCode, $label);
+            $optionId = $this->facetValueConverter->covertLabelToOptionId($attributeCode, $label);
             $data[$optionId] = [
                 'value' => $optionId,
                 'count' => (int) $count,
@@ -77,19 +76,4 @@ class AggregationBuilder
 
         return $data;
     }
-
-    /**
-     * @throws LocalizedException
-     */
-    protected function getOptionIdByLabel(string $attributeCode, string $label): string
-    {
-        $attribute = $this->productResource->getAttribute($attributeCode);
-
-        if (!$attribute || !$attribute->usesSource()) {
-            return '';
-        }
-
-        return $attribute->getSource()->getOptionId($label) ?? '';
-    }
-
 }
