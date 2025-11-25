@@ -8,6 +8,7 @@ use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Service\Product\PriceKeyResolver;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
 use Magento\Catalog\Model\Product\Visibility;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\Request\Filter\Term;
 use Magento\Framework\Search\Request\FilterInterface as RequestFilterInterface;
@@ -211,7 +212,7 @@ class QueryParamBuilder
             $value = $this->facetValueConverter->convertOptionIdToLabel($facetName, $term->getValue());
             $this->applyFilter($params, 'facetFilters', sprintf('%s:%s', $facetName, $value));
 
-            unset($filters[$key]);
+            unset($filters[$key]); // burn down filters
         }
     }
 
@@ -265,37 +266,6 @@ class QueryParamBuilder
         }
 
         return $term->getValue();
-    }
-
-    /**
-     * FilterQuery objects require a deep seek to match the attribute
-     *
-     * @param RequestQueryInterface[] $filters - the filters to be processed
-     *      (values will be modified if $remove is set to true)
-     * @param string $facetName - the facet filter to search for
-     * @param bool $remove - Removes the filter if found
-     *     (True by default in order to burn down the filters for processing)
- */
-    protected function getFacetFilterParam(array &$filters, string $facetName, bool $remove = true): string|false
-    {
-        foreach ($filters as $key => $filter) {
-            if ($filter->getType() !== RequestQueryInterface::TYPE_FILTER) {
-                continue;
-            }
-            /** @var FilterQuery $filter */
-            $term = $filter->getReference();
-            if ($term->getType() !== RequestFilterInterface::TYPE_TERM) {
-                continue;
-            }
-            /** @var Term $term */
-            if ($term->getField() == $facetName) {
-                if ($remove) {
-                    unset($filters[$key]);
-                }
-                return $term->getValue();
-            }
-        }
-        return false;
     }
 
     /**
