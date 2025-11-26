@@ -20,7 +20,7 @@ class FacetValueConverter
     /**
      * @throws LocalizedException
      */
-    public function covertLabelToOptionId(string $attributeCode, string $label): string
+    public function convertLabelToOptionId(string $attributeCode, string $label): string
     {
         $attribute = $this->productResourceModel->getAttribute($attributeCode);
 

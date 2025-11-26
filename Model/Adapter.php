@@ -8,7 +8,7 @@ use Algolia\SearchAdapter\Model\Request\QueryMapper;
 use Algolia\SearchAdapter\Model\Response\DocumentMapper;
 use Algolia\SearchAdapter\Model\Response\SearchQueryResult;
 use Algolia\SearchAdapter\Model\Response\SearchQueryResultFactory;
-use Algolia\SearchAdapter\Service\AggregationBuilder;
+use Algolia\SearchAdapter\Service\Aggregation\AggregationBuilder;
 use Algolia\SearchAdapter\Service\AlgoliaBackendConnector;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
