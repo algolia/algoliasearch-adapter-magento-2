@@ -47,18 +47,20 @@ class AggregationBuilder
      *      (e.g. [ 'color' => [ 'Black' => 4 ]] )
      * @param int|null $storeId
      * @return array<string, array<string, mixed>> An array formatted for Magento aggregation render
-     * @see applyBucketData
      * @throws LocalizedException
+     * @see \Algolia\SearchAdapter\Service\Aggregation\AbstractBucketBuilder::applyBucketData
      */
     protected function buildBucketData(BucketInterface $bucket, array $facets, ?int $storeId = null): array
     {
         $attributeCode = $bucket->getField();
         // Handle categories
         if ($attributeCode === CategoryBucketBuilder::BUCKET_KEY_CATEGORIES
-            && $bucket->getType() == BucketInterface::TYPE_TERM) {
+            && $bucket->getType() === BucketInterface::TYPE_TERM) {
             /** @var TermBucket $bucket */
             return $this->categoryBucketBuilder->build($bucket, $facets, $storeId);
         }
+
+        // Handle pricing - TODO
 
         // Handle everything else
         return isset($facets[$attributeCode])

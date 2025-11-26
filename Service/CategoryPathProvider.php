@@ -35,9 +35,16 @@ class CategoryPathProvider
         return $categoryPaths;
     }
 
+    /**
+     * Returns a full category path delimited by the configured separator
+     * 
+     * @param string $path e.g. "1/2/20/22/28"
+     * @param array<string, string> $categoryMap A map of entity ID to category name
+     * @param int|null $storeId
+     * @return string
+     */
     protected function buildFullCategoryPath(string $path, array $categoryMap, ?int $storeId = null): string
     {
-        $fullPath = '';
         $categoryNames = array_map(fn($id) => $categoryMap[$id] ?? null, explode('/', $path));
         return implode(
             $this->configHelper->getCategorySeparator($storeId),
@@ -62,6 +69,9 @@ class CategoryPathProvider
     }
 
     /**
+     * This method provides a complete list of entity ids extracted from each category's parent hierarchy.
+     * The intent is to collect the IDs in order perform a *single query* against the database for category name retrieval.
+     *
      * @param CategoryCollection $collection
      * @return int[]
      */

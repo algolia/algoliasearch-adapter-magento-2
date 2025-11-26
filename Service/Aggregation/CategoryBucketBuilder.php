@@ -24,7 +24,7 @@ class CategoryBucketBuilder extends AbstractBucketBuilder
      * @param int|null $storeId
      * @return array<string, array<string, mixed>> An array formatted for Magento aggregation render
      * @throws LocalizedException
-     * @see applyBucketData
+     * @see \Algolia\SearchAdapter\Service\Aggregation\AbstractBucketBuilder::applyBucketData
      */
     public function build(TermBucket $bucket, array $facets, ?int $storeId = null): array
     {
