@@ -29,6 +29,8 @@ class AggregationBuilder
     }
 
     /**
+     * Build data to render all buckets from the request
+     *
      * @throws LocalizedException
      */
     protected function buildBuckets(RequestInterface $request, SearchQueryResultInterface $result): array
@@ -43,6 +45,12 @@ class AggregationBuilder
     }
 
     /**
+     * @param TermBucket $bucket The attribute bucket to be processed (from the request)
+     * @param array<string, array<string, int>> $facets An array of facets -> options -> counts
+     *      (e.g. [ 'color' => [ 'Black' => 4 ]] )
+     * @param int|null $storeId
+     * @return array<string, array<string, mixed>> An array formatted for Magento aggregation render
+     * @see applyBucketData
      * @throws LocalizedException
      */
     protected function buildBucketData(BucketInterface $bucket, array $facets, ?int $storeId = null): array
@@ -60,6 +68,14 @@ class AggregationBuilder
             : []; // we only care about Algolia facets - but the bucket must still be registered
     }
 
+    /**
+     * @param TermBucket $bucket The category bucket to be processed (from the request)
+     * @param array<string, array<string, int>> $facets An array of facets -> options -> counts
+     *      (e.g. [ 'color' => [ 'Black' => 4 ]] )
+     * @param int|null $storeId
+     * @return array<string, array<string, mixed>> An array formatted for Magento aggregation render
+     * @see applyBucketData
+     */
     protected function buildBucketDataForCategories(TermBucket $bucket, array $facets, ?int $storeId = null): array
     {
         $params = $bucket->getParameters();
@@ -73,6 +89,12 @@ class AggregationBuilder
         return $data;
     }
 
+    /**
+     * Flatten the facets from the search response into a map of full paths to counts
+     * @param array<string, array<string, int>> $facets An array of facets -> options -> counts
+     *      (e.g. [ 'color' => [ 'Black' => 4 ]] )
+     * @return array<string, int> A map of paths to hit counts
+     */
     protected function getCategoryCountMapFromFacets(array $facets): array
     {
         $categories = array_filter(
@@ -98,6 +120,7 @@ class AggregationBuilder
         return $data;
     }
 
+    /** Applies a formatted bucket data structure to an array keyed by entity IDs */
     protected function applyBucketData(array &$data, string $entityId, int $count): void
     {
         $data[$entityId] = [

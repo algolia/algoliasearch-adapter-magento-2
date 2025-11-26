@@ -5,6 +5,7 @@ namespace Algolia\SearchAdapter\Service;
 use Algolia\AlgoliaSearch\Helper\ConfigHelper;
 use Magento\Catalog\Model\ResourceModel\Category\Collection as CategoryCollection;
 use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
+use Magento\Framework\Exception\LocalizedException;
 
 class CategoryPathProvider
 {
@@ -14,11 +15,12 @@ class CategoryPathProvider
     ) {}
 
     /**
-     * Get the category paths for the given category IDs.
+     * Get the full category paths for the given category IDs.
      *
-     * @param int[] $categoryIds
+     * @param string[] $categoryIds An array of category entity IDs
      * @param int|null $storeId
-     * @return string[]
+     * @return array<string, string> A map of entity ID to full delimited category path
+     * @throws LocalizedException
      */
     public function getCategoryPaths(array $categoryIds, ?int $storeId = null): array
     {
@@ -26,7 +28,7 @@ class CategoryPathProvider
         $collection->addFieldToFilter('entity_id', ['in' => $categoryIds]);
         $categoryPaths = [];
         $parentIds = $this->extractParentCategoryIds($collection);
-        $categoryMap = $this->getCategoryMap($parentIds);
+        $categoryMap = $this->getCategoryNameMap($parentIds);
         foreach ($collection->getItems() as $category) {
             $categoryPaths[$category->getId()] = $this->buildFullCategoryPath($category->getPath(), $categoryMap, $storeId);
         }
@@ -44,11 +46,13 @@ class CategoryPathProvider
     }
 
     /**
-     * @param int[] $categoryIds
-     * @return array<int, string>
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * Returns a map of category IDs to category names
+     *
+     * @param string[] $categoryIds
+     * @return array<string, string> A map of entity ID to category name
+     * @throws LocalizedException
      */
-    protected function getCategoryMap(array $categoryIds): array
+    protected function getCategoryNameMap(array $categoryIds): array
     {
         $collection = $this->categoryCollectionFactory->create();
         $collection->addAttributeToSelect('name');
@@ -65,7 +69,7 @@ class CategoryPathProvider
     {
         $parentIds = array_map(fn($category) => explode('/', $category->getPath()), $collection->getItems());
         // flatten and de-dupe
-        return array_unique(array_merge(...$parentIds));
+        return array_values(array_unique(array_merge(...$parentIds)));
     }
 
 }
