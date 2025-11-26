@@ -51,7 +51,7 @@ class Adapter implements AdapterInterface
 
         $data =  [
             DocumentMapperResultInterface::RESPONSE_KEY_DOCUMENTS => $result->getDocuments(),
-            DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS => $aggregations, // $this->getMockAggregations($request),
+            DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS => $aggregations,
             DocumentMapperResultInterface::RESPONSE_KEY_TOTAL => $result->getTotalCount()
         ];
 
