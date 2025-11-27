@@ -4,6 +4,7 @@
     <preference for="Algolia\SearchAdapter\Api\Data\PaginationInfoInterface" type="Algolia\SearchAdapter\Model\Request\PaginationInfo" />
     <preference for="Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface" type="Algolia\SearchAdapter\Model\Request\QueryMapperResult" />
     <preference for="Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface" type="Algolia\SearchAdapter\Model\Response\DocumentMapperResult" />
+    <preference for="Algolia\SearchAdapter\Api\Data\SearchQueryResultInterface" type="Algolia\SearchAdapter\Model\Response\SearchQueryResult" />
 
     <type name="Magento\Search\Model\EngineResolver">
         <arguments>

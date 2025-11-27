@@ -6,14 +6,18 @@ use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface;
 use Algolia\SearchAdapter\Model\Request\QueryMapper;
 use Algolia\SearchAdapter\Model\Response\DocumentMapper;
+use Algolia\SearchAdapter\Model\Response\SearchQueryResult;
+use Algolia\SearchAdapter\Model\Response\SearchQueryResultFactory;
+use Algolia\SearchAdapter\Service\Aggregation\AggregationBuilder;
 use Algolia\SearchAdapter\Service\AlgoliaBackendConnector;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\AdapterInterface;
 use Magento\Framework\Search\RequestInterface;
 use Magento\Framework\Search\Response\QueryResponse;
 
 // Fallback to Elasticsearch classes (also used by OpenSearch)
-use Magento\Elasticsearch\SearchAdapter\Aggregation\Builder as AggregationBuilder;
+use Magento\Elasticsearch\SearchAdapter\Aggregation\Builder as MockAggregationBuilder;
 use Magento\Elasticsearch\SearchAdapter\QueryContainerFactory;
 use Magento\Elasticsearch\SearchAdapter\ResponseFactory;
 use Magento\Elasticsearch\ElasticAdapter\SearchAdapter\Mapper;
@@ -21,31 +25,33 @@ use Magento\Elasticsearch\ElasticAdapter\SearchAdapter\Mapper;
 class Adapter implements AdapterInterface
 {
     public function __construct(
-        protected AlgoliaBackendConnector $connector,
-        protected QueryMapper             $queryMapper,
-        protected DocumentMapper          $documentMapper,
-        protected ResponseFactory         $responseFactory,
-        protected AggregationBuilder      $aggregationBuilder,
-        protected QueryContainerFactory   $queryContainerFactory,
-        protected Mapper                  $mapper,
+        protected AlgoliaBackendConnector  $connector,
+        protected QueryMapper              $queryMapper,
+        protected DocumentMapper           $documentMapper,
+        protected SearchQueryResultFactory $searchQueryResultFactory,
+        protected AggregationBuilder       $aggregationBuilder,
+        protected ResponseFactory          $responseFactory,
+        protected MockAggregationBuilder   $mockAggregationBuilder,
+        protected QueryContainerFactory    $queryContainerFactory,
+        protected Mapper                   $mapper,
     ){}
 
     /**
      * @inheritDoc
      *
-     * @throws NoSuchEntityException|AlgoliaException
+     * @throws NoSuchEntityException|AlgoliaException|LocalizedException
      */
     public function query(RequestInterface $request): QueryResponse
     {
         $query = $this->queryMapper->process($request);
         $response = $this->connector->query($query->getSearchQuery());
-        $result = $this->documentMapper->process($response, $query->getPaginationInfo());
-
-        $mockData = $this->getMockData($request);
+        $search = $this->searchQueryResultFactory->create($response);
+        $aggregations = $this->aggregationBuilder->build($request, $search);
+        $result = $this->documentMapper->process($search, $query->getPaginationInfo());
 
         $data =  [
             DocumentMapperResultInterface::RESPONSE_KEY_DOCUMENTS => $result->getDocuments(),
-            DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS => $mockData[DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS],
+            DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS => $aggregations,
             DocumentMapperResultInterface::RESPONSE_KEY_TOTAL => $result->getTotalCount()
         ];
 
@@ -56,25 +62,16 @@ class Adapter implements AdapterInterface
         );
     }
 
-    //
-
     /**
      * Create a mock response for aggregations and testing
      * TODO: Implement Algolia aggregation builder
      */
-    function getMockData(RequestInterface $request): array
+    function getMockAggregations(RequestInterface $request): array
     {
         $queryLegacy = $this->mapper->buildQuery($request);
         $mockResponse = $this->getSampleResponseData($request);
-        $mockDocuments = $mockResponse['hits']['hits'] ?? [];
-        $mockTotal = $mockResponse['hits']['total']['value'] ?? 0;
-        $this->aggregationBuilder->setQuery($this->queryContainerFactory->create(['query' => $queryLegacy]));
-        $mockAggregations = $this->aggregationBuilder->build($request, $mockResponse);
-        return [
-            DocumentMapperResultInterface::RESPONSE_KEY_DOCUMENTS => $mockDocuments,
-            DocumentMapperResultInterface::RESPONSE_KEY_AGGREGATIONS => $mockAggregations,
-            DocumentMapperResultInterface::RESPONSE_KEY_TOTAL => $mockTotal
-        ];
+        $this->mockAggregationBuilder->setQuery($this->queryContainerFactory->create(['query' => $queryLegacy]));
+        return $this->mockAggregationBuilder->build($request, $mockResponse);
     }
 
     /**
@@ -973,18 +970,5 @@ class Adapter implements AdapterInterface
                         ),
                 ),
         );
-    }
-
-    private function rawEmptySearchProvider(): array
-    {
-        return [
-            "hits" => [
-                "hits" => []
-            ],
-            "aggregations" => [
-                "price_bucket" => [],
-                "category_bucket" => ["buckets" => []],
-            ]
-        ];
     }
 }
