@@ -44,7 +44,7 @@ class FacetValueConverter
 
         $option = $this->getAttributeOptionById($attrInfo->getAttributeId(), $value);
 
-        if (!$option || !is_array($option->getData())) {
+        if (!$option || !$option['value'] || !is_array($option->getData())) {
             return '';
         }
 
