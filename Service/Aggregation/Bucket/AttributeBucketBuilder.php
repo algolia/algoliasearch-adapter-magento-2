@@ -1,6 +1,6 @@
 <?php
 
-namespace Algolia\SearchAdapter\Service\Aggregation;
+namespace Algolia\SearchAdapter\Service\Aggregation\Bucket;
 
 use Algolia\SearchAdapter\Service\FacetValueConverter;
 use Magento\Framework\Exception\LocalizedException;

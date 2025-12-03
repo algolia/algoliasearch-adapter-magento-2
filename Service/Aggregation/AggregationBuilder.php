@@ -3,6 +3,8 @@
 namespace Algolia\SearchAdapter\Service\Aggregation;
 
 use Algolia\SearchAdapter\Api\Data\SearchQueryResultInterface;
+use Algolia\SearchAdapter\Service\Aggregation\Bucket\AttributeBucketBuilder;
+use Algolia\SearchAdapter\Service\Aggregation\Bucket\CategoryBucketBuilder;
 use Algolia\SearchAdapter\Service\StoreIdResolver;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Search\Request\Aggregation\TermBucket;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Algolia\SearchAdapter\Service\Aggregation;
+namespace Algolia\SearchAdapter\Service\Aggregation\Bucket;
 
 abstract class AbstractBucketBuilder
 {
