@@ -23,6 +23,12 @@ class QueryParamBuilder
     protected const FACET_PARAM_PRICE = 'price';
     /** @var string  */
     protected const FACET_PARAM_HIERARCHICAL = 'categories';
+    /**
+     * Influences accuracy of product counts
+     * See https://www.algolia.com/doc/api-reference/api-parameters/maxValuesPerFacet
+     * @var int
+     */
+    public const MAX_VALUES_PER_FACET = 100;
 
     public function __construct(
         protected InstantSearchHelper $instantSearchHelper,
@@ -41,6 +47,7 @@ class QueryParamBuilder
             'hitsPerPage' => $pagination->getPageSize(),
             'page' => $pagination->getPageNumber() - 1, # Algolia pages are 0-based, Magento 1-based
             'facets' => $this->getFacetsToRetrieve($storeId),
+            'maxValuesPerFacet' => $this->getMaxValuesPerFacet(),
         ];
 
         $filters = $this->getQueryFilters($request);
@@ -303,5 +310,10 @@ class QueryParamBuilder
             }
         }
         return null;
+    }
+
+    public function getMaxValuesPerFacet(): int
+    {
+        return self::MAX_VALUES_PER_FACET;
     }
 }

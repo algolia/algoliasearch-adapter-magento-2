@@ -5,7 +5,7 @@ namespace Algolia\SearchAdapter\Service;
 class NiceScale
 {
     /** Implements a nice-number interval algorithm similar to what is used by charting libraries */
-    public function getNiceNumber(float $number, bool $round = false): int
+    public function getNiceNumber(float $number, bool $round = false): float
     {
         if ($number <= 0) {
             throw new \InvalidArgumentException('Number must be greater than 0');

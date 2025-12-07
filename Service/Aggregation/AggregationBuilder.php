@@ -5,8 +5,10 @@ namespace Algolia\SearchAdapter\Service\Aggregation;
 use Algolia\SearchAdapter\Api\Data\SearchQueryResultInterface;
 use Algolia\SearchAdapter\Service\Aggregation\Bucket\AttributeBucketBuilder;
 use Algolia\SearchAdapter\Service\Aggregation\Bucket\CategoryBucketBuilder;
+use Algolia\SearchAdapter\Service\Aggregation\Bucket\PriceRangeBucketBuilder;
 use Algolia\SearchAdapter\Service\StoreIdResolver;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Search\Request\Aggregation\DynamicBucket;
 use Magento\Framework\Search\Request\Aggregation\TermBucket;
 use Magento\Framework\Search\Request\BucketInterface;
 use Magento\Framework\Search\RequestInterface;
@@ -14,9 +16,10 @@ use Magento\Framework\Search\RequestInterface;
 class AggregationBuilder
 {
     public function __construct(
-        protected StoreIdResolver        $storeIdResolver,
-        protected AttributeBucketBuilder $attributeBucketBuilder,
-        protected CategoryBucketBuilder  $categoryBucketBuilder,
+        protected StoreIdResolver         $storeIdResolver,
+        protected AttributeBucketBuilder  $attributeBucketBuilder,
+        protected CategoryBucketBuilder   $categoryBucketBuilder,
+        protected PriceRangeBucketBuilder $priceRangeBucketBuilder,
     ) {}
 
     /**
@@ -50,7 +53,7 @@ class AggregationBuilder
      * @param int|null $storeId
      * @return array<string, array<string, mixed>> An array formatted for Magento aggregation render
      * @throws LocalizedException
-     * @see \Algolia\SearchAdapter\Service\Aggregation\AbstractBucketBuilder::applyBucketData
+     * @see AbstractBucketBuilder::applyBucketData
      */
     protected function buildBucketData(BucketInterface $bucket, array $facets, ?int $storeId = null): array
     {
@@ -62,7 +65,11 @@ class AggregationBuilder
             return $this->categoryBucketBuilder->build($bucket, $facets, $storeId);
         }
 
-        // Handle pricing - TODO
+        if ($attributeCode === PriceRangeBucketBuilder::BUCKET_KEY_PRICE
+            && $bucket->getType() === BucketInterface::TYPE_DYNAMIC) {
+            /** @var DynamicBucket $bucket */
+            return $this->priceRangeBucketBuilder->build($bucket, $facets);
+        }
 
         // Handle everything else
         return isset($facets[$attributeCode])
