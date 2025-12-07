@@ -62,7 +62,8 @@ class QueryParamBuilderTest extends TestCase
             'hitsPerPage' => 20,
             'page' => 0,
             'facets' => [],
-            'facetFilters' => ['categoryIds:12']
+            'facetFilters' => ['categoryIds:12'],
+            'maxValuesPerFacet' => 100
         ], $result);
     }
 
@@ -85,7 +86,8 @@ class QueryParamBuilderTest extends TestCase
         $this->assertEquals([
             'hitsPerPage' => 20,
             'page' => 0,
-            'facets' => []
+            'facets' => [],
+            'maxValuesPerFacet' => 100
         ], $result);
     }
 
@@ -109,7 +111,8 @@ class QueryParamBuilderTest extends TestCase
         $this->assertEquals([
             'hitsPerPage' => 20,
             'page' => 0,
-            'facets' => []
+            'facets' => [],
+            'maxValuesPerFacet' => 100
         ], $result);
     }
 
@@ -188,7 +191,8 @@ class QueryParamBuilderTest extends TestCase
             'hitsPerPage' => 20,
             'page' => 0,
             'facets' => [],
-            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)],
+            'maxValuesPerFacet' => 100
         ], $result);
     }
 
@@ -214,7 +218,8 @@ class QueryParamBuilderTest extends TestCase
             'hitsPerPage' => 20,
             'page' => 0,
             'facets' => [],
-            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)]
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)],
+            'maxValuesPerFacet' => 100
         ], $result);
     }
 
@@ -245,7 +250,8 @@ class QueryParamBuilderTest extends TestCase
             'numericFilters' => [
                 sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH),
                 sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)
-            ]
+            ],
+            'maxValuesPerFacet' => 100
         ], $result);
     }
 
@@ -273,7 +279,8 @@ class QueryParamBuilderTest extends TestCase
             'page' => 0,
             'facets' => [],
             'facetFilters' => ['categoryIds:12'],
-            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
+            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)],
+            'maxValuesPerFacet' => 100
         ], $result);
     }
 
@@ -295,7 +302,8 @@ class QueryParamBuilderTest extends TestCase
         $this->assertEquals([
             'hitsPerPage' => 20,
             'page' => 0,
-            'facets' => []
+            'facets' => [],
+            'maxValuesPerFacet' => 100
         ], $result);
     }
 
@@ -319,7 +327,8 @@ class QueryParamBuilderTest extends TestCase
         $this->assertEquals([
             'hitsPerPage' => 20,
             'page' => 0,
-            'facets' => []
+            'facets' => [],
+            'maxValuesPerFacet' => 100
         ], $result);
     }
 
@@ -659,7 +668,8 @@ class QueryParamBuilderTest extends TestCase
         $this->assertEquals([
             'hitsPerPage' => 20,
             'page' => 0,
-            'facets' => $expectedFacets
+            'facets' => $expectedFacets,
+            'maxValuesPerFacet' => 100
         ], $result);
     }
 

@@ -31,9 +31,7 @@ class PriceRangeBucketBuilder
     protected function getRanges(array $priceFacet): array
     {
         $prices = array_keys($priceFacet);
-
-        // $niceScale = $this->niceScale->getNiceRange($prices, self::MAX_STEPS);
-
+        
         $niceBuckets = $this->niceScale->generateBuckets($prices, self::MAX_STEPS);
 
         $buckets = [];

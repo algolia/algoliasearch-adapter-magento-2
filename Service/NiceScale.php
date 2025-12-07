@@ -4,6 +4,14 @@ namespace Algolia\SearchAdapter\Service;
 
 class NiceScale
 {
+    /**
+     * Necessary for correcting binary math errors
+     * 1. Stay below IEEE-754 ~15-16 significant digit limit
+     * 2. Stay high enough to not lose meaningful precision in calculations
+     * e.g.`6.999999999999999`-> `7.0`
+     */
+    protected const DECIMAL_PRECISION_SCALE = 8;
+
     /** Implements a nice-number interval algorithm similar to what is used by charting libraries */
     public function getNiceNumber(float $number, bool $round = false): float
     {
@@ -13,7 +21,7 @@ class NiceScale
 
         $exponent = floor(log10($number));
         $base10 = pow(10, $exponent);
-        $fraction = $number / $base10;
+        $fraction = round($number / $base10, self::DECIMAL_PRECISION_SCALE);
 
         if ($round) {
             if ($fraction < 1.5) {
@@ -72,15 +80,18 @@ class NiceScale
             $bucketMin = $current;
             $bucketMax = $current + $step;
             $buckets[] = [
-                'min' => $bucketMin,
-                'max' => $bucketMax,
+                'min' => round($bucketMin, self::DECIMAL_PRECISION_SCALE),
+                'max' => round($bucketMax, self::DECIMAL_PRECISION_SCALE),
             ];
         }
 
         return $buckets;
     }
 
-    /** Calculate "nice" range */
+    /**
+     * Calculate "nice" range
+     * Experimental approach - will likely be removed
+     */
     public function getNiceRange(array $values, int $maxSteps): array
     {
         $min = min($values);
