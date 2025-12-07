@@ -2,6 +2,10 @@
 
 namespace Algolia\SearchAdapter\Service;
 
+/**
+ * A service to generically provide "nice number" scales
+ * @see \Magento\Framework\Search\Dynamic\Algorithm\Auto::getRange
+ */
 class NiceScale
 {
     /**

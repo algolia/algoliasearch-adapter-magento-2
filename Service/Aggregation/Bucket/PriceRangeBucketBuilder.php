@@ -12,7 +12,7 @@ class PriceRangeBucketBuilder
     /** @var string */
     public const FACET_KEY_PRICE = 'price.';
 
-    public const MAX_STEPS = 5;
+    public const MAX_BUCKETS = 5;
 
     public function __construct(
         protected NiceScale $niceScale,
@@ -31,8 +31,8 @@ class PriceRangeBucketBuilder
     protected function getRanges(array $priceFacet): array
     {
         $prices = array_keys($priceFacet);
-        
-        $niceBuckets = $this->niceScale->generateBuckets($prices, self::MAX_STEPS);
+
+        $niceBuckets = $this->niceScale->generateBuckets($prices, $this->getMaxNumberOfBuckets());
 
         $buckets = [];
         $lastKey = array_key_last($buckets);
@@ -76,4 +76,10 @@ class PriceRangeBucketBuilder
         }
         return [];
     }
+
+    public function getMaxNumberOfBuckets(): int
+    {
+        return self::MAX_BUCKETS;
+    }
+
 }
