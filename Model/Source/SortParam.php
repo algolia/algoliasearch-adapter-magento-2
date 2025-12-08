@@ -22,11 +22,11 @@ class SortParam implements OptionSourceInterface
         return [
             [
                 'value' => self::SORT_PARAM_ALGOLIA,
-                'label' => __('sortBy (Algolia default)'),
+                'label' => __('Algolia default'),
             ],
             [
                 'value' => self::SORT_PARAM_MAGENTO,
-                'label' => __('product_list_order (Magento default)'),
+                'label' => __('Magento default'),
             ],
         ];
     }
