@@ -15,6 +15,8 @@ class ConfigHelper
     public const CONNECTION_TIMEOUT = 'catalog/search/algolia_connect_timeout';
     public const READ_TIMEOUT = 'catalog/search/algolia_read_timeout';
 
+    public const SORTING_PARAMETER = 'algoliasearch_backend/algolia_backend_listing/sort_param';
+
     public function __construct(
         protected EngineResolverInterface $engineResolver,
         protected ScopeConfigInterface    $configInterface,
@@ -33,7 +35,7 @@ class ConfigHelper
         return !$request->getParam('store') && !$request->getParam('website');
     }
 
-    public function isEngineSelectVisible(RequestInterface $request): bool 
+    public function isEngineSelectVisible(RequestInterface $request): bool
     {
         return $this->isEngineSelectEnabled($request)  ||
             !$this->isEngineSelectEnabled($request) && $this->isAlgoliaEngineSelected();
@@ -92,4 +94,12 @@ class ConfigHelper
         return $this->getConfigByScope(self::READ_TIMEOUT, null, $storeId);
     }
 
+    public function getSortingParameter(?int $storeId = null): string
+    {
+        return (string) $this->configInterface->getValue(
+            self::SORTING_PARAMETER,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
 }

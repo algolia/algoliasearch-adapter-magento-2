@@ -6,10 +6,10 @@
                 <algolia_read_timeout>5</algolia_read_timeout>
             </search>
         </catalog>
-        <algoliasearch_advanced>
-            <search_adapter>
-                <!-- placeholder for future fields -->
-            </search_adapter>
-        </algoliasearch_advanced>
+        <algoliasearch_backend>
+            <algolia_backend_listing>
+                <sort_param>product_list_order</sort_param>
+            </algolia_backend_listing>
+        </algoliasearch_backend>
     </default>
 </config>
