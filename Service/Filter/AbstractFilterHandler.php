@@ -62,9 +62,9 @@ abstract class AbstractFilterHandler implements FilterHandlerInterface
      *
      * @param array<string, mixed> $params
      * @param string $filterType
-     * @param string $filterValue
+     * @param string|string[] $filterValue
      */
-    protected function applyFilter(array &$params, string $filterType, string $filterValue): void
+    protected function applyFilter(array &$params, string $filterType, string|array $filterValue): void
     {
         if (!array_key_exists($filterType, $params)) {
             $params[$filterType] = [];

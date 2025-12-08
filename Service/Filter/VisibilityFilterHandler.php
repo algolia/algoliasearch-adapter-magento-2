@@ -15,25 +15,57 @@ class VisibilityFilterHandler extends AbstractFilterHandler
      */
     public function process(array &$params, array &$filters, ?int $storeId = null): void
     {
-        $visibility = $this->getFilterParam($filters, 'visibility');
-        if ($visibility) {
-            if (!is_array($visibility)) {
-                $visibility = [$visibility];
+        $vizFilter = $this->getFilterParam($filters, 'visibility');
+        if ($vizFilter) {
+            if (!is_array($vizFilter)) {
+                $vizFilter = [$vizFilter];
             }
-            if (in_array(Visibility::VISIBILITY_IN_SEARCH, $visibility)) {
+
+            /*
+             *  If viz is for both treat as an OR condition
+             *  OR is handled as a nested array per https://www.algolia.com/doc/api-reference/api-parameters/numericFilters#usage
+             */
+            if (in_array(Visibility::VISIBILITY_BOTH, $vizFilter)) {
+                $this->applyVisibilityFilter(
+                    $params,
+                    [
+                        ProductRecordFieldsInterface::VISIBILITY_CATALOG,
+                        ProductRecordFieldsInterface::VISIBILITY_SEARCH
+                    ]
+                );
+                return;
+            }
+
+            if (in_array(Visibility::VISIBILITY_IN_SEARCH, $vizFilter)) {
                 $this->applyVisibilityFilter($params, ProductRecordFieldsInterface::VISIBILITY_SEARCH);
             }
-            if (in_array(Visibility::VISIBILITY_IN_CATALOG, $visibility)) {
+            if (in_array(Visibility::VISIBILITY_IN_CATALOG, $vizFilter)) {
                 $this->applyVisibilityFilter($params, ProductRecordFieldsInterface::VISIBILITY_CATALOG);
             }
         }
     }
 
+    protected function shouldApplyVisibilityFilter(array $filterParams, int $visibility): bool
+    {
+        $possibleValues = [
+            Visibility::VISIBILITY_BOTH,
+            $visibility
+        ];
+        return !empty(array_intersect($possibleValues, $filterParams));
+    }
+
     /**
      * Apply the visibility field as a numeric filter to the Algolia search query parameters
+     * @param array<string, mixed> $params
+     * @param string|string[] $visibilityFilter
      */
-    protected function applyVisibilityFilter(array &$params, string $visibilityFilterField): void
+    protected function applyVisibilityFilter(array &$params, string|array $visibilityFilter): void
     {
-        $this->applyFilter($params, 'numericFilters', sprintf('%s=1', $visibilityFilterField));
+        $format = '%s=1';
+        if (is_array($visibilityFilter)) {
+            $this->applyFilter($params, 'numericFilters', array_map(fn($visibility) => sprintf($format, $visibility), $visibilityFilter));
+        } else {
+            $this->applyFilter($params, 'numericFilters', sprintf($format, $visibilityFilter));
+        }
     }
 }
