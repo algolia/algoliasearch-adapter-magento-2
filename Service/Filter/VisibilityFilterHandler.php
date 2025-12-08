@@ -21,20 +21,8 @@ class VisibilityFilterHandler extends AbstractFilterHandler
                 $vizFilter = [$vizFilter];
             }
 
-            /*
-             *  If viz is for both treat as an OR condition
-             *  OR is handled as a nested array per https://www.algolia.com/doc/api-reference/api-parameters/numericFilters#usage
-             */
-            if (in_array(Visibility::VISIBILITY_BOTH, $vizFilter)) {
-                $this->applyVisibilityFilter(
-                    $params,
-                    [
-                        ProductRecordFieldsInterface::VISIBILITY_CATALOG,
-                        ProductRecordFieldsInterface::VISIBILITY_SEARCH
-                    ]
-                );
-                return;
-            }
+            // We intentionally ignore VISIBILITY_BOTH
+            // see \Algolia\SearchAdapter\Test\Unit\Service\Filter\VisibilityFilterHandlerTest::testProcessWithVisibilityBothAsScalar
 
             if (in_array(Visibility::VISIBILITY_IN_SEARCH, $vizFilter)) {
                 $this->applyVisibilityFilter($params, ProductRecordFieldsInterface::VISIBILITY_SEARCH);
@@ -45,27 +33,13 @@ class VisibilityFilterHandler extends AbstractFilterHandler
         }
     }
 
-    protected function shouldApplyVisibilityFilter(array $filterParams, int $visibility): bool
-    {
-        $possibleValues = [
-            Visibility::VISIBILITY_BOTH,
-            $visibility
-        ];
-        return !empty(array_intersect($possibleValues, $filterParams));
-    }
-
     /**
      * Apply the visibility field as a numeric filter to the Algolia search query parameters
      * @param array<string, mixed> $params
-     * @param string|string[] $visibilityFilter
+     * @param string $visibilityFilter
      */
-    protected function applyVisibilityFilter(array &$params, string|array $visibilityFilter): void
+    protected function applyVisibilityFilter(array &$params, string $visibilityFilter): void
     {
-        $format = '%s=1';
-        if (is_array($visibilityFilter)) {
-            $this->applyFilter($params, 'numericFilters', array_map(fn($visibility) => sprintf($format, $visibility), $visibilityFilter));
-        } else {
-            $this->applyFilter($params, 'numericFilters', sprintf($format, $visibilityFilter));
-        }
+        $this->applyFilter($params, 'numericFilters', sprintf('%s=1', $visibilityFilter));
     }
 }

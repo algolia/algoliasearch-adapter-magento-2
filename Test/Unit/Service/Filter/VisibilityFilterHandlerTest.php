@@ -159,15 +159,12 @@ class VisibilityFilterHandlerTest extends TestCase
 
         $this->handler->process($params, $filters);
 
-        // VISIBILITY_BOTH (4) should be handled as an OR condition (i.e. nested array)
-        $this->assertEquals([
-            'numericFilters' => [
-                [
-                    sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG),
-                    sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)
-                ]
-            ]
-        ], $params);
+        // VISIBILITY_BOTH (4) is not equal to VISIBILITY_IN_SEARCH (3) or VISIBILITY_IN_CATALOG (2)
+        // so no filters should be applied
+        // The reason for this is Magento sends the "both" filter on both search and category PLP
+        // But Algolia accounts for this during indexing
+        // See \Algolia\AlgoliaSearch\Service\Product\RecordBuilder::addVisibilityAttributes
+        $this->assertEquals([], $params);
         $this->assertCount(0, $filters, 'Filters should burn down correctly');
     }
 }

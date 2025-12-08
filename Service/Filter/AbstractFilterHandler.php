@@ -63,6 +63,8 @@ abstract class AbstractFilterHandler implements FilterHandlerInterface
      * @param array<string, mixed> $params
      * @param string $filterType
      * @param string|string[] $filterValue
+     *   The reason for allowing an array is that OR conditions are handled as nested arrays
+     *   See https://www.algolia.com/doc/api-reference/api-parameters/numericFilters#usage
      */
     protected function applyFilter(array &$params, string $filterType, string|array $filterValue): void
     {
