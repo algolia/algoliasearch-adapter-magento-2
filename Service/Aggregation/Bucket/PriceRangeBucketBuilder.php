@@ -39,15 +39,21 @@ class PriceRangeBucketBuilder
         foreach ($niceBuckets as $key => $niceBucket) {
             $min = $niceBucket['min'];
             $max = $niceBucket['max'];
+            $count = $this->getCountForPriceRange(
+                $priceFacet,
+                $min,
+                $lastKey != $key ? $max : $max + 1 // final bucket should include upper boundary
+            );
+
+            if (!$count) {
+                continue;
+            }
+
             $value = $min . '_' . $max;
             $buckets[$value] = [
                 'from' => $min,
                 'to' => $max,
-                'count' => $this->getCountForPriceRange(
-                    $priceFacet,
-                    $min,
-                    $lastKey != $key ? $max : $max + 1 // final bucket should include upper boundary
-                ),
+                'count' => $count,
                 'value' => $value
             ];
         }
