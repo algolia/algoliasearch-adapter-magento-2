@@ -80,7 +80,6 @@
     </virtualType>
 
     <!-- Search -->
-    <!-- TODO: Implement resolvers / appliers as needed -->
     <virtualType name="algoliaFulltextSearchCollection" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection">
         <arguments>
             <argument name="searchRequestName" xsi:type="string">quick_search_container</argument>
@@ -95,7 +94,6 @@
     </virtualType>
 
     <!-- Categories -->
-    <!-- TODO: Implement resolvers / appliers as needed -->
     <virtualType name="algoliaCategoryCollection" type="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection">
         <arguments>
             <argument name="searchRequestName" xsi:type="string">catalog_view_container</argument>

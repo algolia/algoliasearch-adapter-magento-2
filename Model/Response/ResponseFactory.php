@@ -16,17 +16,17 @@ class ResponseFactory
         protected ObjectManagerInterface $objectManager
     ) {}
 
-    public function create(array $response): QueryResponse
+    public function create(array $rawResponse): QueryResponse
     {
-        $documents = $this->buildDocuments($response['documents'] ?? []);
-        $aggregations = $this->buildAggregations($response['aggregations'] ?? []);
+        $documents = $this->buildDocuments($rawResponse['documents'] ?? []);
+        $aggregations = $this->buildAggregations($rawResponse['aggregations'] ?? []);
 
         return $this->objectManager->create(
             QueryResponse::class,
             [
                 'documents' => $documents,
                 'aggregations' => $aggregations,
-                'total' => $response['total'] ?? 0
+                'total' => $rawResponse['total'] ?? 0
             ]
         );
     }
@@ -39,18 +39,21 @@ class ResponseFactory
      */
     private function buildDocuments(array $rawDocuments): array
     {
-        return array_map(function (array $rawDocument) {
+        return array_reduce($rawDocuments, function(array $documents, array $rawDocument): array {
             $id = $rawDocument['_id'] ?? $rawDocument['fields']['_id'][0] ?? null;
-            // Document has no injectable dependencies, new is fine here
-            // (matches Magento's own DocumentFactory pattern)
-            return new Document([
-                DocumentInterface::ID => $id,
-                /**
-                 * Score not utilized
-                 * @see \Algolia\SearchAdapter\Model\Response\DocumentMapper::buildDocuments
-                 */
-            ]);
-        }, $rawDocuments);
+            if ($id !== null) {
+                // Document has no injectable dependencies, new is fine here
+                // (matches Magento's own DocumentFactory pattern)
+                $documents[] = new Document([
+                    DocumentInterface::ID => $id,
+                    /**
+                     * Score not utilized
+                     * @see DocumentMapper::buildDocuments
+                     */
+                ]);
+            }
+            return $documents;
+        }, []);
     }
 
     /**
@@ -84,7 +87,7 @@ class ResponseFactory
             $valueObjects[] = $this->objectManager->create(
                 Value::class,
                 [
-                    'value' => $valueName,
+                    'value' => (string) $valueName,
                     'metrics' => $metrics,
                 ]
             );
