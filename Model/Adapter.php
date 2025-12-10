@@ -6,7 +6,7 @@ use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface;
 use Algolia\SearchAdapter\Model\Request\QueryMapper;
 use Algolia\SearchAdapter\Model\Response\DocumentMapper;
-use Algolia\SearchAdapter\Model\Response\SearchQueryResult;
+use Algolia\SearchAdapter\Model\Response\ResponseFactory;
 use Algolia\SearchAdapter\Model\Response\SearchQueryResultFactory;
 use Algolia\SearchAdapter\Service\Aggregation\AggregationBuilder;
 use Algolia\SearchAdapter\Service\AlgoliaBackendConnector;
@@ -16,12 +16,6 @@ use Magento\Framework\Search\AdapterInterface;
 use Magento\Framework\Search\RequestInterface;
 use Magento\Framework\Search\Response\QueryResponse;
 
-// Fallback to Elasticsearch classes (also used by OpenSearch)
-use Magento\Elasticsearch\SearchAdapter\Aggregation\Builder as MockAggregationBuilder;
-use Magento\Elasticsearch\SearchAdapter\QueryContainerFactory;
-use Magento\Elasticsearch\SearchAdapter\ResponseFactory;
-use Magento\Elasticsearch\ElasticAdapter\SearchAdapter\Mapper;
-
 class Adapter implements AdapterInterface
 {
     public function __construct(
@@ -30,10 +24,7 @@ class Adapter implements AdapterInterface
         protected DocumentMapper           $documentMapper,
         protected SearchQueryResultFactory $searchQueryResultFactory,
         protected AggregationBuilder       $aggregationBuilder,
-        protected ResponseFactory          $responseFactory,
-        protected MockAggregationBuilder   $mockAggregationBuilder,
-        protected QueryContainerFactory    $queryContainerFactory,
-        protected Mapper                   $mapper,
+        protected ResponseFactory          $responseFactory
     ){}
 
     /**
@@ -55,8 +46,6 @@ class Adapter implements AdapterInterface
             DocumentMapperResultInterface::RESPONSE_KEY_TOTAL => $result->getTotalCount()
         ];
 
-        // Temporarily using ElasticSearch DocumentFactory and AggregationFactory which are deprecated
-        // TODO: Implement new Algolia factories
         return $this->responseFactory->create(
             $data
         );

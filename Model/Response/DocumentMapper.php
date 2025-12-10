@@ -27,6 +27,11 @@ class DocumentMapper
         ]);
     }
 
+    /**
+     * Build the documents array for the response based on Magento's predefined data structure
+     * This maintains the abstraction between Algolia and the raw data format that is compatible with Elasticsearch/OpenSearch
+     * and ultimately the QueryResponse format that is expected by the Magento Search Adapter
+     */
     protected function buildDocuments(array $hits): array
     {
         $i = 0;
@@ -36,7 +41,7 @@ class DocumentMapper
                     'fields' => [
                         '_id' => [ $hit['objectID'] ],
                     ],
-                    'score' => null,
+                    'score' => null, // Score not utilized
                     'sort' => [ ++$i, $hit['objectID'] ]
                 ];
             },
