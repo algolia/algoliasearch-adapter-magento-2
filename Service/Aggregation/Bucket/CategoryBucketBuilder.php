@@ -1,6 +1,6 @@
 <?php
 
-namespace Algolia\SearchAdapter\Service\Aggregation;
+namespace Algolia\SearchAdapter\Service\Aggregation\Bucket;
 
 use Algolia\SearchAdapter\Service\CategoryPathProvider;
 use Magento\Framework\Exception\LocalizedException;
@@ -34,7 +34,9 @@ class CategoryBucketBuilder extends AbstractBucketBuilder
         $countMap = $this->getCategoryCountMapFromFacets($facets);
         $data = [];
         foreach ($paths as $id => $path) {
-            $this->applyBucketData($data, $id, $countMap[$path]);
+            if (array_key_exists($path, $countMap)) {
+                $this->applyBucketData($data, $id, $countMap[$path]);
+            }
         }
         return $data;
     }

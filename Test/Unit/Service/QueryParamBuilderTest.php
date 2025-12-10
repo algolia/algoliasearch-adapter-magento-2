@@ -2,53 +2,54 @@
 
 namespace Algolia\SearchAdapter\Test\Unit\Service;
 
-use Algolia\AlgoliaSearch\Api\Product\ProductRecordFieldsInterface;
 use Algolia\AlgoliaSearch\Api\Product\ReplicaManagerInterface;
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Service\Product\PriceKeyResolver;
 use Algolia\AlgoliaSearch\Test\TestCase;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
-use Algolia\SearchAdapter\Service\FacetValueConverter;
+use Algolia\SearchAdapter\Api\Service\FilterHandlerInterface;
 use Algolia\SearchAdapter\Service\QueryParamBuilder;
 use Algolia\SearchAdapter\Service\StoreIdResolver;
 use Algolia\SearchAdapter\Test\Traits\QueryTestTrait;
-use Magento\Catalog\Model\Product\Visibility;
-use Magento\Framework\Search\Request\FilterInterface as RequestFilterInterface;
 use Magento\Framework\Search\Request\QueryInterface as RequestQueryInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 
 class QueryParamBuilderTest extends TestCase
 {
     use QueryTestTrait;
-    private QueryParamBuilder $queryParamBuilder;
+
     private PaginationInfoInterface|MockObject $paginationInfo;
     private InstantSearchHelper|MockObject $instantSearchHelper;
     private StoreIdResolver|MockObject $storeIdResolver;
     private PriceKeyResolver|MockObject $priceKeyResolver;
-    private FacetValueConverter|MockObject $facetValueConverter;
 
     protected function setUp(): void
     {
         $this->instantSearchHelper = $this->createMock(InstantSearchHelper::class);
         $this->storeIdResolver = $this->createMock(StoreIdResolver::class);
         $this->priceKeyResolver = $this->createMock(PriceKeyResolver::class);
-        $this->facetValueConverter = $this->createMock(FacetValueConverter::class);
-        $this->queryParamBuilder = new QueryParamBuilder(
-            $this->instantSearchHelper,
-            $this->storeIdResolver,
-            $this->priceKeyResolver,
-            $this->facetValueConverter
-        );
         $this->paginationInfo = $this->createMock(PaginationInfoInterface::class);
     }
 
-    public function testBuildWithCategoryFilter(): void
+    /** Conditionally create a QueryParamBuilder with or without filter handlers */
+    private function createQueryParamBuilder(array $filterHandlers = []): QueryParamBuilder
     {
+        return new QueryParamBuilder(
+            $this->instantSearchHelper,
+            $this->storeIdResolver,
+            $this->priceKeyResolver,
+            $filterHandlers
+        );
+    }
+
+    public function testBuildWithNoFilters(): void
+    {
+        $queryParamBuilder = $this->createQueryParamBuilder();
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
 
         $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getMust')->willReturn(['category' => $this->createMockFilterQuery('12')]);
+        $boolQuery->method('getMust')->willReturn([]);
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
@@ -56,18 +57,20 @@ class QueryParamBuilderTest extends TestCase
         $this->storeIdResolver->method('getStoreId')->willReturn(1);
         $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
-        $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
+        $result = $queryParamBuilder->build($request, $this->paginationInfo);
 
         $this->assertEquals([
             'hitsPerPage' => 20,
             'page' => 0,
             'facets' => [],
-            'facetFilters' => ['categoryIds:12']
+            'maxValuesPerFacet' => 100
         ], $result);
     }
 
+    /** We always expect a boolean query - if not supplied then the params fall back to default */
     public function testBuildWithNonBoolQuery(): void
     {
+        $queryParamBuilder = $this->createQueryParamBuilder();
         $request = $this->createMockRequest();
         $nonBoolQuery = $this->createMock(RequestQueryInterface::class);
 
@@ -80,17 +83,39 @@ class QueryParamBuilderTest extends TestCase
         $this->storeIdResolver->method('getStoreId')->willReturn(1);
         $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
-        $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
+        $result = $queryParamBuilder->build($request, $this->paginationInfo);
 
         $this->assertEquals([
             'hitsPerPage' => 20,
             'page' => 0,
-            'facets' => []
+            'facets' => [],
+            'maxValuesPerFacet' => 100
         ], $result);
     }
 
-    public function testBuildWithoutCategoryFilter(): void
+    public function testBuildCallsFilterHandlers(): void
     {
+        $filterHandler1 = $this->createMock(FilterHandlerInterface::class);
+        $filterHandler2 = $this->createMock(FilterHandlerInterface::class);
+
+        $filterHandler1->expects($this->once())
+            ->method('process')
+            ->with(
+                $this->isType('array'),
+                $this->isType('array'),
+                $this->equalTo(1)
+            );
+
+        $filterHandler2->expects($this->once())
+            ->method('process')
+            ->with(
+                $this->isType('array'),
+                $this->isType('array'),
+                $this->equalTo(1)
+            );
+
+        $queryParamBuilder = $this->createQueryParamBuilder([$filterHandler1, $filterHandler2]);
+
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
         $otherQuery = $this->createMock(RequestQueryInterface::class);
@@ -104,77 +129,23 @@ class QueryParamBuilderTest extends TestCase
         $this->storeIdResolver->method('getStoreId')->willReturn(1);
         $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
-        $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
-
-        $this->assertEquals([
-            'hitsPerPage' => 20,
-            'page' => 0,
-            'facets' => []
-        ], $result);
+        $queryParamBuilder->build($request, $this->paginationInfo);
     }
 
-    public function testGetFilterParamWithValidFilter(): void
+    public function testBuildDoesNotCallFilterHandlersWhenNoFilters(): void
     {
-        $filters = ['category' => $this->createMockFilterQuery('12')];
+        $filterHandler = $this->createMock(FilterHandlerInterface::class);
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFilterParam', [&$filters, 'category']);
+        $filterHandler->expects($this->never())
+            ->method('process');
 
-        $this->assertEquals('12', $result);
-    }
+        $queryParamBuilder = $this->createQueryParamBuilder([$filterHandler]);
 
-    public function testGetFilterParamWithMissingKey(): void
-    {
-        $otherQuery = $this->createMock(RequestQueryInterface::class);
-        $filters = ['other' => $otherQuery];
-
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFilterParam', [&$filters, 'category']);
-
-        $this->assertEquals(false, $result);
-    }
-
-    public function testGetFilterParamWithNonFilterType(): void
-    {
-        $nonFilterQuery = $this->createMock(RequestQueryInterface::class);
-        $nonFilterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_MATCH);
-
-        $filters = ['category' => $nonFilterQuery];
-
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFilterParam', [&$filters, 'category']);
-
-        $this->assertEquals(false, $result);
-    }
-
-    public function testGetFilterParamWithNonReferenceFilter(): void
-    {
-        $filterQuery = $this->createMockFilterQuery();
-        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
-        $filterQuery->method('getReferenceType')->willReturn('other');
-
-        $filters = ['category' => $filterQuery];
-
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFilterParam', [&$filters, 'category']);
-
-        $this->assertEquals(false, $result);
-    }
-
-    public function testGetFilterParamWithFalseValue(): void
-    {
-        $filters = ['category' => $this->createMockFilterQuery(false)];
-
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFilterParam', [&$filters, 'category']);
-
-        $this->assertEquals(false, $result);
-    }
-
-    public function testBuildWithVisibilityFilterInSearchOnly(): void
-    {
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
 
         $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getMust')->willReturn([
-            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_SEARCH)
-        ]);
+        $boolQuery->method('getMust')->willReturn([]);
 
         $this->paginationInfo->method('getPageSize')->willReturn(20);
         $this->paginationInfo->method('getPageNumber')->willReturn(1);
@@ -182,302 +153,28 @@ class QueryParamBuilderTest extends TestCase
         $this->storeIdResolver->method('getStoreId')->willReturn(1);
         $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
-        $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
-
-        $this->assertEquals([
-            'hitsPerPage' => 20,
-            'page' => 0,
-            'facets' => [],
-            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
-        ], $result);
+        $queryParamBuilder->build($request, $this->paginationInfo);
     }
 
-    public function testBuildWithVisibilityFilterInCatalogOnly(): void
+    public function testBuildWithPagination(): void
     {
+        $queryParamBuilder = $this->createQueryParamBuilder();
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
 
         $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getMust')->willReturn([
-            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_CATALOG)
-        ]);
+        $boolQuery->method('getMust')->willReturn([]);
 
-        $this->paginationInfo->method('getPageSize')->willReturn(20);
-        $this->paginationInfo->method('getPageNumber')->willReturn(1);
+        $this->paginationInfo->method('getPageSize')->willReturn(10);
+        $this->paginationInfo->method('getPageNumber')->willReturn(3);
 
         $this->storeIdResolver->method('getStoreId')->willReturn(1);
         $this->instantSearchHelper->method('getFacets')->willReturn([]);
 
-        $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
+        $result = $queryParamBuilder->build($request, $this->paginationInfo);
 
-        $this->assertEquals([
-            'hitsPerPage' => 20,
-            'page' => 0,
-            'facets' => [],
-            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)]
-        ], $result);
-    }
-
-    public function testBuildWithVisibilityFilterBothValues(): void
-    {
-        $request = $this->createMockRequest();
-        $boolQuery = $this->createMockBoolQuery();
-        $filterQuery = $this->createMockFilterQuery([
-            Visibility::VISIBILITY_IN_SEARCH,
-            Visibility::VISIBILITY_IN_CATALOG
-        ]);
-
-        $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getMust')->willReturn(['visibility' => $filterQuery]);
-
-        $this->paginationInfo->method('getPageSize')->willReturn(20);
-        $this->paginationInfo->method('getPageNumber')->willReturn(1);
-
-        $this->storeIdResolver->method('getStoreId')->willReturn(1);
-        $this->instantSearchHelper->method('getFacets')->willReturn([]);
-
-        $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
-
-        $this->assertEquals([
-            'hitsPerPage' => 20,
-            'page' => 0,
-            'facets' => [],
-            'numericFilters' => [
-                sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH),
-                sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)
-            ]
-        ], $result);
-    }
-
-    public function testBuildWithCategoryAndVisibilityFilters(): void
-    {
-        $request = $this->createMockRequest();
-        $boolQuery = $this->createMockBoolQuery();
-
-        $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getMust')->willReturn([
-            'category' => $this->createMockFilterQuery('12'),
-            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_SEARCH)
-        ]);
-
-        $this->paginationInfo->method('getPageSize')->willReturn(20);
-        $this->paginationInfo->method('getPageNumber')->willReturn(1);
-
-        $this->storeIdResolver->method('getStoreId')->willReturn(1);
-        $this->instantSearchHelper->method('getFacets')->willReturn([]);
-
-        $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
-
-        $this->assertEquals([
-            'hitsPerPage' => 20,
-            'page' => 0,
-            'facets' => [],
-            'facetFilters' => ['categoryIds:12'],
-            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
-        ], $result);
-    }
-
-    public function testBuildWithVisibilityFilterNonMatchingValue(): void
-    {
-        $request = $this->createMockRequest();
-        $boolQuery = $this->createMockBoolQuery();
-        $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getMust')->willReturn(['visibility' => $this->createMockFilterQuery(1)]);
-
-        $this->paginationInfo->method('getPageSize')->willReturn(20);
-        $this->paginationInfo->method('getPageNumber')->willReturn(1);
-
-        $this->storeIdResolver->method('getStoreId')->willReturn(1);
-        $this->instantSearchHelper->method('getFacets')->willReturn([]);
-
-        $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
-
-        $this->assertEquals([
-            'hitsPerPage' => 20,
-            'page' => 0,
-            'facets' => []
-        ], $result);
-    }
-
-    public function testBuildWithoutVisibilityFilter(): void
-    {
-        $request = $this->createMockRequest();
-        $boolQuery = $this->createMockBoolQuery();
-        $otherQuery = $this->createMock(RequestQueryInterface::class);
-
-        $request->method('getQuery')->willReturn($boolQuery);
-        $boolQuery->method('getMust')->willReturn(['other' => $otherQuery]);
-
-        $this->paginationInfo->method('getPageSize')->willReturn(20);
-        $this->paginationInfo->method('getPageNumber')->willReturn(1);
-
-        $this->storeIdResolver->method('getStoreId')->willReturn(1);
-        $this->instantSearchHelper->method('getFacets')->willReturn([]);
-
-        $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
-
-        $this->assertEquals([
-            'hitsPerPage' => 20,
-            'page' => 0,
-            'facets' => []
-        ], $result);
-    }
-
-    public function testApplyVisibilityFiltersWithInSearchSingleValue(): void
-    {
-        $filters = [
-            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_SEARCH)
-        ];
-
-        $params = [];
-
-        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, &$filters]);
-
-        $this->assertEquals([
-            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
-        ], $params);
-
-        $this->assertCount(0, $filters, 'Filters should burn down correctly');
-    }
-
-    public function testApplyVisibilityFiltersWithInCatalogSingleValue(): void
-    {
-        $filters = [
-            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_CATALOG)
-        ];
-
-        $params = [];
-
-        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, &$filters]);
-
-        $this->assertEquals([
-            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)]
-        ], $params);
-
-        $this->assertCount(0, $filters, 'Filters should burn down correctly');
-    }
-
-    public function testApplyVisibilityFiltersWithBothValuesArray(): void
-    {
-        $filterQuery = $this->createMockFilterQuery([
-            Visibility::VISIBILITY_IN_SEARCH,
-            Visibility::VISIBILITY_IN_CATALOG
-        ]);
-
-        $filters = ['visibility' => $filterQuery];
-
-        $params = [];
-
-        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, &$filters]);
-
-        $this->assertEquals([
-            'numericFilters' => [
-                sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH),
-                sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)
-            ]
-        ], $params);
-
-        $this->assertCount(0, $filters, 'Filters should burn down correctly');
-    }
-
-    public function testApplyVisibilityFiltersWithNoVisibilityParam(): void
-    {
-        $otherQuery = $this->createMock(RequestQueryInterface::class);
-        $filters = ['other' => $otherQuery];
-
-        $params = [];
-
-        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, &$filters]);
-
-        $this->assertEquals([], $params);
-
-        $this->assertCount(1, $filters, 'Filters should not be altered');
-    }
-
-    public function testApplyVisibilityFiltersWithFalseVisibilityParam(): void
-    {
-        $filters = ['visibility' => $this->createMockFilterQuery(false)];
-
-        $params = [];
-
-        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, &$filters]);
-
-        $this->assertEquals([], $params);
-
-        $this->assertCount(0, $filters, 'Filters should burn down correctly');
-    }
-
-    public function testApplyVisibilityFiltersWithArrayNonMatchingValues(): void
-    {
-        $filterQuery = $this->createMockFilterQuery();
-        $termFilter = $this->createMockTermFilter();
-
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getValue')->willReturn([1, 4]);
-
-        $filters = ['visibility' => $filterQuery];
-
-        $params = [];
-
-        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilters', [&$params, &$filters]);
-
-        $this->assertEquals([], $params);
-
-        $this->assertCount(0, $filters, 'Filters should burn down correctly');
-    }
-
-    public function testApplyVisibilityFilter(): void
-    {
-        $params = [];
-
-        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilter', [
-            &$params,
-            ProductRecordFieldsInterface::VISIBILITY_SEARCH
-        ]);
-
-        $this->assertEquals([
-            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
-        ], $params);
-    }
-
-    public function testApplyVisibilityFilterWithExistingNumericFilters(): void
-    {
-        $params = [
-            'numericFilters' => ['price>100']
-        ];
-
-        $this->invokeMethod($this->queryParamBuilder, 'applyVisibilityFilter', [
-            &$params,
-            ProductRecordFieldsInterface::VISIBILITY_CATALOG
-        ]);
-
-        $this->assertEquals([
-            'numericFilters' => [
-                'price>100',
-                sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_CATALOG)
-            ]
-        ], $params);
-    }
-
-    public function testApplyFilters(): void
-    {
-        $filters = [
-            'category' => $this->createMockFilterQuery('12'),
-            'visibility' => $this->createMockFilterQuery(Visibility::VISIBILITY_IN_SEARCH)
-        ];
-
-        $params = [];
-
-        $this->invokeMethod($this->queryParamBuilder, 'applyFilters', [&$params, &$filters, 1]);
-
-        $this->assertEquals([
-            'facetFilters' => ['categoryIds:12'],
-            'numericFilters' => [sprintf('%s=1', ProductRecordFieldsInterface::VISIBILITY_SEARCH)]
-        ], $params);
-
-        $this->assertCount(0, $filters, 'Filters should burn down correctly');
+        $this->assertEquals(10, $result['hitsPerPage']);
+        $this->assertEquals(2, $result['page']); // 0-based: page 3 becomes 2
     }
 
     /**
@@ -485,13 +182,14 @@ class QueryParamBuilderTest extends TestCase
      */
     public function testTransformFacetParam(string $facetName, ?string $priceKey, array $expected): void
     {
+        $queryParamBuilder = $this->createQueryParamBuilder();
         $storeId = 1;
 
         if ($priceKey !== null) {
             $this->priceKeyResolver->method('getPriceKey')->with($storeId)->willReturn($priceKey);
         }
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'transformFacetParam', [$facetName, $storeId]);
+        $result = $this->invokeMethod($queryParamBuilder, 'transformFacetParam', [$facetName, $storeId]);
 
         $this->assertEquals($expected, $result);
     }
@@ -540,7 +238,8 @@ class QueryParamBuilderTest extends TestCase
 
     public function testSplitHierarchicalFacet(): void
     {
-        $result = $this->invokeMethod($this->queryParamBuilder, 'splitHierarchicalFacet', ['categories']);
+        $queryParamBuilder = $this->createQueryParamBuilder();
+        $result = $this->invokeMethod($queryParamBuilder, 'splitHierarchicalFacet', ['categories']);
 
         $expected = [
             'categories.level0',
@@ -560,17 +259,19 @@ class QueryParamBuilderTest extends TestCase
 
     public function testGetFacetsWithEmptyConfig(): void
     {
+        $queryParamBuilder = $this->createQueryParamBuilder();
         $storeId = 1;
 
         $this->instantSearchHelper->method('getFacets')->with($storeId)->willReturn([]);
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacetsToRetrieve', [$storeId]);
+        $result = $this->invokeMethod($queryParamBuilder, 'getFacetsToRetrieve', [$storeId]);
 
         $this->assertEquals([], $result);
     }
 
     public function testGetFacetsWithPriceAndCategories(): void
     {
+        $queryParamBuilder = $this->createQueryParamBuilder();
         $storeId = 1;
 
         $this->instantSearchHelper->method('getFacets')->with($storeId)->willReturn([
@@ -579,7 +280,7 @@ class QueryParamBuilderTest extends TestCase
         ]);
         $this->priceKeyResolver->method('getPriceKey')->with($storeId)->willReturn('.USD.default');
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacetsToRetrieve', [$storeId]);
+        $result = $this->invokeMethod($queryParamBuilder, 'getFacetsToRetrieve', [$storeId]);
 
         $expected = [
             'price.USD.default',
@@ -600,6 +301,7 @@ class QueryParamBuilderTest extends TestCase
 
     public function testGetFacetsWithAttributes(): void
     {
+        $queryParamBuilder = $this->createQueryParamBuilder();
         $storeId = 1;
 
         $this->instantSearchHelper->method('getFacets')->with($storeId)->willReturn([
@@ -608,13 +310,14 @@ class QueryParamBuilderTest extends TestCase
             [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'material']
         ]);
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacetsToRetrieve', [$storeId]);
+        $result = $this->invokeMethod($queryParamBuilder, 'getFacetsToRetrieve', [$storeId]);
 
         $this->assertEquals(['color', 'size', 'material'], $result);
     }
 
     public function testGetFacetsWithExceptionReturnsEmpty(): void
     {
+        $queryParamBuilder = $this->createQueryParamBuilder();
         $storeId = 1;
 
         $this->priceKeyResolver->method('getPriceKey')
@@ -624,7 +327,7 @@ class QueryParamBuilderTest extends TestCase
             [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'price']
         ]);
 
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacetsToRetrieve', [$storeId]);
+        $result = $this->invokeMethod($queryParamBuilder, 'getFacetsToRetrieve', [$storeId]);
 
         $this->assertEquals([], $result);
     }
@@ -637,6 +340,7 @@ class QueryParamBuilderTest extends TestCase
         ?string $priceKey,
         array $expectedFacets
     ): void {
+        $queryParamBuilder = $this->createQueryParamBuilder();
         $storeId = 1;
         $request = $this->createMockRequest();
         $boolQuery = $this->createMockBoolQuery();
@@ -654,273 +358,14 @@ class QueryParamBuilderTest extends TestCase
             $this->priceKeyResolver->method('getPriceKey')->with($storeId)->willReturn($priceKey);
         }
 
-        $result = $this->queryParamBuilder->build($request, $this->paginationInfo);
+        $result = $queryParamBuilder->build($request, $this->paginationInfo);
 
         $this->assertEquals([
             'hitsPerPage' => 20,
             'page' => 0,
-            'facets' => $expectedFacets
+            'facets' => $expectedFacets,
+            'maxValuesPerFacet' => 100
         ], $result);
-    }
-
-    /**
-     * @dataProvider facetFiltersDataProvider
-     */
-    public function testApplyFacetFilters(
-        array $filterDefinitions,
-        array $configuredFacets,
-        array $expectedParams,
-        int $expectedRemainingFilters,
-        array $facetValueConversions = []
-    ): void {
-        $storeId = 1;
-        $params = [];
-
-        // Build filters from definitions
-        $filters = [];
-        foreach ($filterDefinitions as $key => $definition) {
-            if ($definition['type'] === 'facet') {
-                $filters[$key] = $this->createFilterQueryForFacet($definition['field'], $definition['optionId']);
-            } elseif ($definition['type'] === 'non-term') {
-                $filters[$key] = $this->createNonTermFilter();
-            }
-        }
-
-        $this->instantSearchHelper->method('getFacets')->with($storeId)->willReturn($configuredFacets);
-
-        // Setup facet value converter expectations
-        if (!empty($facetValueConversions)) {
-            $valueMap = [];
-            foreach ($facetValueConversions as $conversion) {
-                $valueMap[] = [$conversion['attribute'], $conversion['optionId'], $conversion['label']];
-            }
-            $this->facetValueConverter
-                ->method('convertOptionIdToLabel')
-                ->willReturnMap($valueMap);
-        }
-
-        $this->invokeMethod($this->queryParamBuilder, 'applyFacetFilters', [&$params, &$filters, $storeId]);
-
-        $this->assertEquals($expectedParams, $params);
-        $this->assertCount($expectedRemainingFilters, $filters, 'Filters should burn down correctly');
-    }
-
-    public static function facetFiltersDataProvider(): array
-    {
-        return [
-            'single facet filter - color' => [
-                'filterDefinitions' => [
-                    'color' => ['type' => 'facet', 'field' => 'color', 'optionId' => 123]
-                ],
-                'configuredFacets' => [
-                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'color']
-                ],
-                'expectedParams' => [
-                    'facetFilters' => ['color:Blue']
-                ],
-                'expectedRemainingFilters' => 0,
-                'facetValueConversions' => [
-                    ['attribute' => 'color', 'optionId' => 123, 'label' => 'Blue']
-                ]
-            ],
-            'multiple facet filters' => [
-                'filterDefinitions' => [
-                    'color' => ['type' => 'facet', 'field' => 'color', 'optionId' => 123],
-                    'size' => ['type' => 'facet', 'field' => 'size', 'optionId' => 456],
-                    'style' => ['type' => 'facet', 'field' => 'style', 'optionId' => 789]
-                ],
-                'configuredFacets' => [
-                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'color'],
-                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'size'],
-                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'style']
-                ],
-                'expectedParams' => [
-                    'facetFilters' => ['color:Blue', 'size:Small', 'style:Basic']
-                ],
-                'expectedRemainingFilters' => 0,
-                'facetValueConversions' => [
-                    ['attribute' => 'color', 'optionId' => 123, 'label' => 'Blue'],
-                    ['attribute' => 'size', 'optionId' => 456, 'label' => 'Small'],
-                    ['attribute' => 'style', 'optionId' => 789, 'label' => 'Basic']
-                ]
-            ],
-            'filter not in configured facets' => [
-                'filterDefinitions' => [
-                    'color' => ['type' => 'facet', 'field' => 'color', 'optionId' => 123],
-                    'material' => ['type' => 'facet', 'field' => 'material', 'optionId' => 999]
-                ],
-                'configuredFacets' => [
-                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'color']
-                ],
-                'expectedParams' => [
-                    'facetFilters' => ['color:Blue']
-                ],
-                'expectedRemainingFilters' => 1,
-                'facetValueConversions' => [
-                    ['attribute' => 'color', 'optionId' => 123, 'label' => 'Blue']
-                ]
-            ],
-            'empty filters array' => [
-                'filterDefinitions' => [],
-                'configuredFacets' => [
-                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'color']
-                ],
-                'expectedParams' => [],
-                'expectedRemainingFilters' => 0,
-                'facetValueConversions' => []
-            ],
-            'no configured facets' => [
-                'filterDefinitions' => [
-                    'color' => ['type' => 'facet', 'field' => 'color', 'optionId' => 123]
-                ],
-                'configuredFacets' => [],
-                'expectedParams' => [],
-                'expectedRemainingFilters' => 1,
-                'facetValueConversions' => []
-            ],
-            'mixed valid and non-term filters' => [
-                'filterDefinitions' => [
-                    'color' => ['type' => 'facet', 'field' => 'color', 'optionId' => 123],
-                    'other' => ['type' => 'non-term']
-                ],
-                'configuredFacets' => [
-                    [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'color']
-                ],
-                'expectedParams' => [
-                    'facetFilters' => ['color:Blue']
-                ],
-                'expectedRemainingFilters' => 1,
-                'facetValueConversions' => [
-                    ['attribute' => 'color', 'optionId' => 123, 'label' => 'Blue']
-                ]
-            ]
-        ];
-    }
-
-    /**
-     * Helper method to create a properly structured filter query for facet testing
-     */
-    private function createFilterQueryForFacet(string $field, int $optionId): MockObject
-    {
-        $filterQuery = $this->createMock(\Magento\Framework\Search\Request\Query\Filter::class);
-        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
-
-        $termFilter = $this->createMock(\Magento\Framework\Search\Request\Filter\Term::class);
-        $termFilter->method('getType')->willReturn(RequestFilterInterface::TYPE_TERM);
-        $termFilter->method('getField')->willReturn($field);
-        $termFilter->method('getValue')->willReturn($optionId);
-
-        $filterQuery->method('getReference')->willReturn($termFilter);
-
-        return $filterQuery;
-    }
-
-    /**
-     * Helper method to create a non-term filter for testing
-     */
-    private function createNonTermFilter(): MockObject
-    {
-        $filter = $this->createMock(RequestQueryInterface::class);
-        $filter->method('getType')->willReturn(RequestQueryInterface::TYPE_MATCH);
-        return $filter;
-    }
-
-    public function testApplyFacetFiltersWithExistingParams(): void
-    {
-        $storeId = 1;
-        $params = [
-            'facetFilters' => ['categoryIds:12']
-        ];
-
-        $filters = [
-            'color' => $this->createFilterQueryForFacet('color', 123)
-        ];
-
-        $this->instantSearchHelper->method('getFacets')->with($storeId)->willReturn([
-            [ReplicaManagerInterface::SORT_KEY_ATTRIBUTE_NAME => 'color']
-        ]);
-
-        $this->facetValueConverter
-            ->method('convertOptionIdToLabel')
-            ->with('color', 123)
-            ->willReturn('Blue');
-
-        $this->invokeMethod($this->queryParamBuilder, 'applyFacetFilters', [&$params, &$filters, $storeId]);
-
-        $this->assertEquals([
-            'facetFilters' => ['categoryIds:12', 'color:Blue']
-        ], $params);
-        $this->assertCount(0, $filters);
-    }
-
-    public function testGetFacetFilterTermWithValidFilter(): void
-    {
-        $filter = $this->createFilterQueryForFacet('color', 123);
-
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacetFilterTerm', [$filter]);
-
-        $this->assertInstanceOf(\Magento\Framework\Search\Request\Filter\Term::class, $result);
-        $this->assertEquals('color', $result->getField());
-        $this->assertEquals(123, $result->getValue());
-    }
-
-    public function testGetFacetFilterTermWithNonFilterType(): void
-    {
-        $filter = $this->createMock(RequestQueryInterface::class);
-        $filter->method('getType')->willReturn(RequestQueryInterface::TYPE_MATCH);
-
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacetFilterTerm', [$filter]);
-
-        $this->assertNull($result);
-    }
-
-    public function testGetFacetFilterTermWithNonTermReference(): void
-    {
-        $filterQuery = $this->createMock(\Magento\Framework\Search\Request\Query\Filter::class);
-        $filterQuery->method('getType')->willReturn(RequestQueryInterface::TYPE_FILTER);
-
-        $filterQuery->method('getReference')->willReturn($this->createNonTermFilter());
-
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getFacetFilterTerm', [$filterQuery]);
-
-        $this->assertNull($result);
-    }
-
-    public function testGetMatchedFacetFound(): void
-    {
-        $facets = [
-            ['attribute' => 'color', 'label' => 'Color'],
-            ['attribute' => 'size', 'label' => 'Size']
-        ];
-
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getMatchedFacet', [&$facets, 'color']);
-
-        $this->assertEquals(['attribute' => 'color', 'label' => 'Color'], $result);
-        $this->assertCount(1, $facets, 'Matched facet should be removed from array');
-    }
-
-    public function testGetMatchedFacetNotFound(): void
-    {
-        $facets = [
-            ['attribute' => 'color', 'label' => 'Color']
-        ];
-
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getMatchedFacet', [&$facets, 'size']);
-
-        $this->assertNull($result);
-        $this->assertCount(1, $facets, 'Facets array should remain unchanged');
-    }
-
-    public function testGetMatchedFacetWithRemoveFalse(): void
-    {
-        $facets = [
-            ['attribute' => 'color', 'label' => 'Color']
-        ];
-
-        $result = $this->invokeMethod($this->queryParamBuilder, 'getMatchedFacet', [&$facets, 'color', false]);
-
-        $this->assertEquals(['attribute' => 'color', 'label' => 'Color'], $result);
-        $this->assertCount(1, $facets, 'Facets array should NOT be modified when remove=false');
     }
 
     public static function fullFacetScenarioDataProvider(): array
@@ -1023,5 +468,10 @@ class QueryParamBuilderTest extends TestCase
             ]
         ];
     }
-}
 
+    public function testGetMaxValuesPerFacet(): void
+    {
+        $queryParamBuilder = $this->createQueryParamBuilder();
+        $this->assertEquals(100, $queryParamBuilder->getMaxValuesPerFacet());
+    }
+}

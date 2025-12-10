@@ -24,8 +24,11 @@ class CategoryPathProvider
      */
     public function getCategoryPaths(array $categoryIds, ?int $storeId = null): array
     {
-        $collection = $this->categoryCollectionFactory->create();
-        $collection->addFieldToFilter('entity_id', ['in' => $categoryIds]);
+        $collection = $this->categoryCollectionFactory
+            ->create()
+            ->addFieldToFilter('entity_id', ['in' => $categoryIds])
+            ->setStore($storeId);
+
         $categoryPaths = [];
         $parentIds = $this->extractParentCategoryIds($collection);
         $categoryMap = $this->getCategoryNameMap($parentIds);
@@ -37,7 +40,7 @@ class CategoryPathProvider
 
     /**
      * Returns a full category path delimited by the configured separator
-     * 
+     *
      * @param string $path e.g. "1/2/20/22/28"
      * @param array<string, string> $categoryMap A map of entity ID to category name
      * @param int|null $storeId
@@ -73,7 +76,8 @@ class CategoryPathProvider
      * The intent is to collect the IDs in order perform a *single query* against the database for category name retrieval.
      *
      * @param CategoryCollection $collection
-     * @return int[]
+     * @return string[]
+     *   e.g. [ "1/2/20/21/23", "1/2/20/21/24", etc. ] -> ["1", "2", "20", "21", "23", "24", etc. ]
      */
     protected function extractParentCategoryIds(CategoryCollection $collection): array
     {

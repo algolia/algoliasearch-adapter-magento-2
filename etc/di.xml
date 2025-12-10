@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-
     <preference for="Algolia\SearchAdapter\Api\Data\PaginationInfoInterface" type="Algolia\SearchAdapter\Model\Request\PaginationInfo" />
     <preference for="Algolia\SearchAdapter\Api\Data\QueryMapperResultInterface" type="Algolia\SearchAdapter\Model\Request\QueryMapperResult" />
     <preference for="Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface" type="Algolia\SearchAdapter\Model\Response\DocumentMapperResult" />
@@ -149,6 +148,16 @@
 <!--        </arguments>-->
 <!--    </type>-->
 
+    <type name="Algolia\SearchAdapter\Service\QueryParamBuilder">
+        <arguments>
+            <argument name="filterHandlers" xsi:type="array">
+                <item name="categoryHandler" xsi:type="object">Algolia\SearchAdapter\Service\Filter\CategoryFilterHandler</item>
+                <item name="visibilityHandler" xsi:type="object">Algolia\SearchAdapter\Service\Filter\VisibilityFilterHandler</item>
+                <item name="attributeHandler" xsi:type="object">Algolia\SearchAdapter\Service\Filter\AttributeFilterHandler</item>
+                <item name="priceRangeHandler" xsi:type="object">Algolia\SearchAdapter\Service\Filter\PriceRangeFilterHandler</item>
+            </argument>
+        </arguments>
+    </type>
 
     <!-- Temp fallback to Elasticsearch aggregators / mappers - this will all be reimplemented -->
     <type name="Magento\Framework\Search\Dynamic\IntervalFactory">
