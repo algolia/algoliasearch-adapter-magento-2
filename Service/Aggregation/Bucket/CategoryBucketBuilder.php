@@ -18,13 +18,14 @@ class CategoryBucketBuilder extends AbstractBucketBuilder
     ) {}
 
     /**
-     * @param TermBucket $bucket The category bucket to be processed (from the request)
+     * @param TermBucket $bucket The category bucket to be processed
+     *      (from the request, contains categories to filter for presentation)
      * @param array<string, array<string, int>> $facets An array of facets -> options -> counts
-     *      (e.g. [ 'color' => [ 'Black' => 4 ]] )
+     *      (e.g. [ 'categories.level0' => [ 'Men' => 12 ]] )
      * @param int|null $storeId
      * @return array<string, array<string, mixed>> An array formatted for Magento aggregation render
      * @throws LocalizedException
-     * @see \Algolia\SearchAdapter\Service\Aggregation\AbstractBucketBuilder::applyBucketData
+     * @see \Algolia\SearchAdapter\Service\Aggregation\Bucket\AbstractBucketBuilder::applyBucketData
      */
     public function build(TermBucket $bucket, array $facets, ?int $storeId = null): array
     {
@@ -44,8 +45,9 @@ class CategoryBucketBuilder extends AbstractBucketBuilder
     /**
      * Flatten the facets from the search response into a map of full paths to counts
      * @param array<string, array<string, int>> $facets An array of facets -> options -> counts
-     *      (e.g. [ 'color' => [ 'Black' => 4 ]] )
+     *      (e.g. [ 'categories.level0' => [ 'Men' => 12 ]] )
      * @return array<string, int> A map of paths to hit counts
+     *      (e.g. [[ 'Men' => 12 ], [ 'Men /// Tops' => 12 ]])
      */
     protected function getCategoryCountMapFromFacets(array $facets): array
     {
