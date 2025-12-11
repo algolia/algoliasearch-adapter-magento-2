@@ -19,7 +19,7 @@ class ToolbarPlugin
         protected ConfigHelper $configHelper,
     ) {}
 
-    public function beforeGetTemplateFile(Toolbar $subject, ?string $template = null)
+    public function beforeGetTemplateFile(Toolbar $subject, ?string $template = null): array
     {
         if (
             // Intercept only sorter.phtml

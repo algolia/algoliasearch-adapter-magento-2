@@ -1,7 +1,11 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-    <type name="\Magento\Catalog\Block\Product\ProductList\Toolbar">
+    <type name="Magento\Catalog\Block\Product\ProductList\Toolbar">
         <plugin name="algolia_toolbar" type="Algolia\SearchAdapter\Plugin\View\ToolbarPlugin" />
+    </type>
+
+    <type name="Magento\Catalog\Model\Layer\Filter\Item">
+        <plugin name="algolia_filter" type="Algolia\SearchAdapter\Plugin\Model\Layer\Filter\ItemPlugin" />
     </type>
 </config>
