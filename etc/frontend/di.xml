@@ -11,6 +11,11 @@
     </type>
     <type name="Magento\Swatches\Block\LayeredNavigation\RenderLayered">
         <plugin name="algolia_swatch_filter"
-                type="\Algolia\SearchAdapter\Plugin\Block\LayeredNavigation\RenderedLayeredPlugin"/>
+                type="Algolia\SearchAdapter\Plugin\Block\LayeredNavigation\RenderedLayeredPlugin" />
+    </type>
+
+    <type name="Magento\CatalogSearch\Model\Layer\Filter\Attribute">
+        <plugin name="algolia_filter_request_normalizer"
+                type="Algolia\SearchAdapter\Plugin\Model\Layer\Filter\AttributePlugin" />
     </type>
 </config>

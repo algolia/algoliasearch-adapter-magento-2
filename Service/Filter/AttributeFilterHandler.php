@@ -44,7 +44,7 @@ class AttributeFilterHandler extends AbstractFilterHandler
             if (!$facet) {
                 continue;
             }
-            $value = $this->configHelper->areSeoFiltersEnabled($storeId)
+            $value = $this->shouldUseOriginalFilterValue($term, $storeId)
                 ? $term->getValue()
                 : $this->facetValueConverter->convertOptionIdToLabel($facetName, $term->getValue());
 
@@ -52,6 +52,11 @@ class AttributeFilterHandler extends AbstractFilterHandler
 
             unset($filters[$key]); // burn down filters
         }
+    }
+
+    protected function shouldUseOriginalFilterValue(Term $term, ?int $storeId): bool
+    {
+        return false; // $this->configHelper->areSeoFiltersEnabled($storeId);
     }
 
     /**
