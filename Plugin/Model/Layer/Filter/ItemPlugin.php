@@ -2,9 +2,11 @@
 
 namespace Algolia\SearchAdapter\Plugin\Model\Layer\Filter;
 
+use Algolia\SearchAdapter\Helper\ConfigHelper;
 use Magento\Catalog\Model\Layer\Filter\Item;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\UrlInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\Theme\Block\Html\Pager;
 
 class ItemPlugin
@@ -17,6 +19,8 @@ class ItemPlugin
     public function __construct(
         protected UrlInterface $url,
         protected Pager $htmlPagerBlock,
+        protected ConfigHelper $configHelper,
+        protected StoreManagerInterface $storeManager,
     ) {}
 
     /**
@@ -24,7 +28,11 @@ class ItemPlugin
      */
     public function afterGetUrl(Item $subject, $result): string
     {
-        if (in_array($subject->getFilter()->getRequestVar(), self::EXCLUDED_ATTRIBUTES)) {
+        if (
+            !$this->configHelper->areSeoFiltersEnabled($this->storeManager->getStore()->getId())
+            ||
+            in_array($subject->getFilter()->getRequestVar(), self::EXCLUDED_ATTRIBUTES)
+        ) {
             return $result;
         }
 

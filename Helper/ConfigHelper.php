@@ -12,8 +12,10 @@ class ConfigHelper
 {
     public const ALGOLIA_ENGINE = "algolia";
 
+    // Backend engine configuration
     public const CONNECTION_TIMEOUT = 'catalog/search/algolia_connect_timeout';
     public const READ_TIMEOUT = 'catalog/search/algolia_read_timeout';
+    public const SEO_FILTERS = 'catalog/search/algolia_seo_filters';
 
     public const SORTING_PARAMETER = 'algoliasearch_backend/algolia_backend_listing/sort_param';
 
@@ -41,8 +43,13 @@ class ConfigHelper
             !$this->isEngineSelectEnabled($request) && $this->isAlgoliaEngineSelected();
     }
 
+    public function areSeoFiltersEnabled(?int $storeId = null): bool
+    {
+        return $this->configInterface->getValue(self::SEO_FILTERS, ScopeInterface::SCOPE_STORES, $storeId);
+    }
+
     /**
-     * Get value scoped by website or store
+     * Get value scoped by website or store (required for website context based admin functions)
      */
     protected function getConfigByScope(string $path, ?int $websiteId = null, ?int $storeId = null): string
     {

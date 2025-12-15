@@ -4,6 +4,7 @@
             <search>
                 <algolia_connect_timeout>2</algolia_connect_timeout>
                 <algolia_read_timeout>5</algolia_read_timeout>
+                <algolia_seo_filters>1</algolia_seo_filters>
             </search>
         </catalog>
         <algoliasearch_backend>
