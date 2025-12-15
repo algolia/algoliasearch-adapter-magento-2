@@ -5,7 +5,12 @@
         <plugin name="algolia_toolbar" type="Algolia\SearchAdapter\Plugin\View\ToolbarPlugin" />
     </type>
 
+    <!-- URL generators for filters -->
     <type name="Magento\Catalog\Model\Layer\Filter\Item">
         <plugin name="algolia_filter" type="Algolia\SearchAdapter\Plugin\Model\Layer\Filter\ItemPlugin" />
+    </type>
+    <type name="Magento\Swatches\Block\LayeredNavigation\RenderLayered">
+        <plugin name="algolia_swatch_filter"
+                type="\Algolia\SearchAdapter\Plugin\Block\LayeredNavigation\RenderedLayeredPlugin"/>
     </type>
 </config>

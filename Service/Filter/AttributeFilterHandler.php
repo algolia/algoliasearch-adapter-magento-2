@@ -4,6 +4,7 @@ namespace Algolia\SearchAdapter\Service\Filter;
 
 use Algolia\AlgoliaSearch\Api\Product\ReplicaManagerInterface;
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
+use Algolia\SearchAdapter\Helper\ConfigHelper;
 use Algolia\SearchAdapter\Service\FacetValueConverter;
 use Magento\Framework\Search\Request\Filter\Term;
 use Magento\Framework\Search\Request\FilterInterface as RequestFilterInterface;
@@ -13,6 +14,7 @@ use Magento\Framework\Search\Request\QueryInterface as RequestQueryInterface;
 class AttributeFilterHandler extends AbstractFilterHandler
 {
     public function __construct(
+        protected ConfigHelper $configHelper,
         protected InstantSearchHelper $instantSearchHelper,
         protected FacetValueConverter $facetValueConverter,
     ) {}
@@ -42,7 +44,10 @@ class AttributeFilterHandler extends AbstractFilterHandler
             if (!$facet) {
                 continue;
             }
-            $value = $this->facetValueConverter->convertOptionIdToLabel($facetName, $term->getValue());
+            $value = $this->configHelper->areSeoFiltersEnabled($storeId)
+                ? $term->getValue()
+                : $this->facetValueConverter->convertOptionIdToLabel($facetName, $term->getValue());
+
             $this->applyFilter($params, 'facetFilters', sprintf('%s:%s', $facetName, $value));
 
             unset($filters[$key]); // burn down filters
