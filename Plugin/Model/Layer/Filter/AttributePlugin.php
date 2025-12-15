@@ -10,7 +10,10 @@ use Magento\Store\Model\StoreManagerInterface;
 
 /**
  * All text based labels must be normalized to option IDs to retain compatability with Magento Layered Navigation
+ * (including swatches with backend type of 'int' and current refinements).
  * This plugin is used to convert the text based label to the option ID as needed.
+ *
+ * @see \Magento\CatalogSearch\Model\Layer\Filter\Attribute::convertAttributeValue
  */
 class AttributePlugin
 {
@@ -28,13 +31,6 @@ class AttributePlugin
             !$this->configHelper->areSeoFiltersEnabled($this->storeManager->getStore()->getId())
             ||
             empty($attributeValue)
-//            ||
-//            /**
-//             * @see \Magento\CatalogSearch\Model\Layer\Filter\Attribute::convertAttributeValue
-//             */
-//            $subject->getAttributeModel()->getBackendType() !== 'int'
-//            ||
-//            is_int($attributeValue)
         ) {
             return [$request];
         }

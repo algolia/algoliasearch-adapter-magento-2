@@ -10,6 +10,11 @@ use Magento\Framework\UrlInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Theme\Block\Html\Pager;
 
+/**
+ * This plugin alters the URL used for standard text based filters to use labels instead of option IDs.
+ *
+ * @see \Magento\Catalog\Model\Layer\Filter\Item::getUrl
+ */
 class ItemPlugin extends AbstractFilterPlugin
 {
     protected const EXCLUDED_ATTRIBUTES = [

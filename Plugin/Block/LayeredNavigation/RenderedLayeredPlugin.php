@@ -10,6 +10,11 @@ use Magento\Store\Model\StoreManagerInterface;
 use Magento\Swatches\Block\LayeredNavigation\RenderLayered;
 use Magento\Theme\Block\Html\Pager;
 
+/**
+ * This plugin alters the URL used for swatch based filters to use labels instead of option IDs.
+ *
+ * @see \Magento\Swatches\Block\LayeredNavigation\RenderLayered::buildUrl
+ */
 class RenderedLayeredPlugin extends AbstractFilterPlugin
 {
 
@@ -33,6 +38,9 @@ class RenderedLayeredPlugin extends AbstractFilterPlugin
             return $result;
         }
 
-        return $this->buildUrl($attributeCode, $this->facetValueConverter->convertOptionIdToLabel($attributeCode, $optionId));
+        return $this->buildUrl(
+            $attributeCode,
+            $this->facetValueConverter->convertOptionIdToLabel($attributeCode, $optionId)
+        );
     }
 }
