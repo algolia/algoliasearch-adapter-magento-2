@@ -30,7 +30,9 @@ class AttributePlugin
         if (
             !$this->configHelper->areSeoFiltersEnabled($this->storeManager->getStore()->getId())
             ||
-            empty($attributeValue)
+            $attributeValue === null
+            ||
+            trim($attributeValue) === ''
         ) {
             return [$request];
         }
