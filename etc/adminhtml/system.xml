@@ -44,6 +44,24 @@
                         <field id="engine">algolia</field>
                     </depends>
                 </field>
+                <field id="algolia_seo_filters" translate="label" type="select" sortOrder="66"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable SEO Friendly Filters</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>
+                        <![CDATA[
+                            Highly recommended when using InstantSearch alongside backend render.
+                            When enabled, Magento’s backend renderer uses the same query-parameter format as InstantSearch,
+                            ensuring a consistent experience and improving SEO by generating meaningful, indexable URLs.
+
+                            <br></br>
+                            Example: <code>?color=49</code> → <code>?color=blue</code>
+                        ]]>
+                    </comment>
+                    <depends>
+                        <field id="engine">algolia</field>
+                    </depends>
+                </field>
                 <field id="algolia_test_connect" translate="button_label" sortOrder="68" showInDefault="1"
                        showInWebsite="1" showInStore="1">
                     <label/>

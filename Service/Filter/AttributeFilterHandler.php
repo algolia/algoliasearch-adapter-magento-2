@@ -4,6 +4,7 @@ namespace Algolia\SearchAdapter\Service\Filter;
 
 use Algolia\AlgoliaSearch\Api\Product\ReplicaManagerInterface;
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
+use Algolia\SearchAdapter\Helper\ConfigHelper;
 use Algolia\SearchAdapter\Service\FacetValueConverter;
 use Magento\Framework\Search\Request\Filter\Term;
 use Magento\Framework\Search\Request\FilterInterface as RequestFilterInterface;
@@ -43,6 +44,7 @@ class AttributeFilterHandler extends AbstractFilterHandler
                 continue;
             }
             $value = $this->facetValueConverter->convertOptionIdToLabel($facetName, $term->getValue());
+
             $this->applyFilter($params, 'facetFilters', sprintf('%s:%s', $facetName, $value));
 
             unset($filters[$key]); // burn down filters
