@@ -14,7 +14,6 @@ use Magento\Framework\Search\Request\QueryInterface as RequestQueryInterface;
 class AttributeFilterHandler extends AbstractFilterHandler
 {
     public function __construct(
-        protected ConfigHelper $configHelper,
         protected InstantSearchHelper $instantSearchHelper,
         protected FacetValueConverter $facetValueConverter,
     ) {}
