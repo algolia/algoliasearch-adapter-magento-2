@@ -3,6 +3,7 @@
 namespace Algolia\SearchAdapter\Service;
 
 use Algolia\AlgoliaSearch\Api\Product\ReplicaManagerInterface;
+use Algolia\AlgoliaSearch\Api\Product\RuleContextInterface;
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Service\Product\PriceKeyResolver;
 use Algolia\SearchAdapter\Api\Data\PaginationInfoInterface;
@@ -49,6 +50,7 @@ class QueryParamBuilder
             'page' => $pagination->getPageNumber() - 1, # Algolia pages are 0-based, Magento 1-based
             'facets' => $this->getFacetsToRetrieve($storeId),
             'maxValuesPerFacet' => $this->getMaxValuesPerFacet(),
+            'ruleContexts' => [ RuleContextInterface::FACET_FILTERS_CONTEXT ]
         ];
 
         $filters = $this->getQueryFilters($request);
