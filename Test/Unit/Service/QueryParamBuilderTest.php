@@ -3,6 +3,7 @@
 namespace Algolia\SearchAdapter\Test\Unit\Service;
 
 use Algolia\AlgoliaSearch\Api\Product\ReplicaManagerInterface;
+use Algolia\AlgoliaSearch\Api\Product\RuleContextInterface;
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Service\Product\PriceKeyResolver;
 use Algolia\AlgoliaSearch\Test\TestCase;
@@ -63,7 +64,8 @@ class QueryParamBuilderTest extends TestCase
             'hitsPerPage' => 20,
             'page' => 0,
             'facets' => [],
-            'maxValuesPerFacet' => 100
+            'maxValuesPerFacet' => 100,
+            'ruleContexts' => [RuleContextInterface::FACET_FILTERS_CONTEXT],
         ], $result);
     }
 
@@ -89,7 +91,8 @@ class QueryParamBuilderTest extends TestCase
             'hitsPerPage' => 20,
             'page' => 0,
             'facets' => [],
-            'maxValuesPerFacet' => 100
+            'maxValuesPerFacet' => 100,
+            'ruleContexts' => [RuleContextInterface::FACET_FILTERS_CONTEXT],
         ], $result);
     }
 
@@ -364,7 +367,8 @@ class QueryParamBuilderTest extends TestCase
             'hitsPerPage' => 20,
             'page' => 0,
             'facets' => $expectedFacets,
-            'maxValuesPerFacet' => 100
+            'maxValuesPerFacet' => 100,
+            'ruleContexts' => [RuleContextInterface::FACET_FILTERS_CONTEXT],
         ], $result);
     }
 
