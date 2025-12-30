@@ -22,6 +22,7 @@ class AttributePlugin
         protected StoreManagerInterface $storeManager,
         protected FacetValueConverter   $facetValueConverter,
     ) {}
+
     public function beforeApply(Attribute $subject, RequestInterface $request): array
     {
         $attributeCode = $subject->getRequestVar();
