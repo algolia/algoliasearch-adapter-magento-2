@@ -15,14 +15,14 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class RenderedLayeredPluginTest extends TestCase
 {
-    private RenderedLayeredPlugin $plugin;
-    private ConfigHelper|MockObject $configHelper;
-    private StoreManagerInterface|MockObject $storeManager;
-    private FacetValueConverter|MockObject $facetValueConverter;
-    private UrlInterface|MockObject $urlBuilder;
-    private Pager|MockObject $pager;
-    private StoreInterface|MockObject $store;
-    private RenderLayered|MockObject $subject;
+    private ?RenderedLayeredPlugin $plugin = null;
+    private null|(ConfigHelper&MockObject) $configHelper = null;
+    private null|(StoreManagerInterface&MockObject) $storeManager = null;
+    private null|(FacetValueConverter&MockObject) $facetValueConverter = null;
+    private null|(UrlInterface&MockObject) $urlBuilder = null;
+    private null|(Pager&MockObject) $pager = null;
+    private null|(StoreInterface&MockObject) $store = null;
+    private null|(RenderLayered&MockObject) $subject = null;
 
     protected function setUp(): void
     {

@@ -17,10 +17,10 @@ class CategoryFilterHandlerTest extends TestCase
 {
     use QueryTestTrait;
 
-    private CategoryFilterHandler $handler;
-    private ConfigHelper|MockObject $configHelper;
-    private CategoryPathProvider|MockObject $categoryPathProvider;
-    private CategoryRepositoryInterface|MockObject $categoryRepository;
+    private ?CategoryFilterHandler $handler = null;
+    private null|(ConfigHelper&MockObject) $configHelper = null;
+    private null|(CategoryPathProvider&MockObject) $categoryPathProvider = null;
+    private null|(CategoryRepositoryInterface&MockObject) $categoryRepository = null;
 
     protected function setUp(): void
     {

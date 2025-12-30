@@ -7,7 +7,7 @@ use Algolia\SearchAdapter\Service\NiceScale;
 
 class NiceScaleTest extends TestCase
 {
-    private NiceScale $niceScale;
+    private ?NiceScale $niceScale = null;
 
     protected function setUp(): void
     {

@@ -6,12 +6,13 @@ use Algolia\AlgoliaSearch\Test\TestCase;
 use Algolia\SearchAdapter\Service\Filter\AbstractFilterHandler;
 use Algolia\SearchAdapter\Test\Traits\QueryTestTrait;
 use Magento\Framework\Search\Request\QueryInterface as RequestQueryInterface;
+use PHPUnit\Framework\MockObject\MockObject;
 
 class AbstractFilterHandlerTest extends TestCase
 {
     use QueryTestTrait;
 
-    private AbstractFilterHandler $handler;
+    private null|(AbstractFilterHandler&MockObject) $handler = null;
 
     protected function setUp(): void
     {

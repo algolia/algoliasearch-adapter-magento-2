@@ -13,8 +13,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class StoreIdResolverTest extends TestCase
 {
-    private StoreIdResolver $storeIdResolver;
-    private ScopeResolverInterface|MockObject $scopeResolver;
+    private ?StoreIdResolver $storeIdResolver = null;
+    private null|(ScopeResolverInterface&MockObject) $scopeResolver = null;
 
     protected function setUp(): void
     {
@@ -49,7 +49,7 @@ class StoreIdResolverTest extends TestCase
         $this->storeIdResolver->getStoreId($request);
     }
 
-    private function createMockRequestWithStore(int $storeId): RequestInterface|MockObject
+    private function createMockRequestWithStore(int $storeId): RequestInterface&MockObject
     {
         $request = $this->createMock(RequestInterface::class);
         $dimension = $this->createMockDimension($storeId);
@@ -57,7 +57,7 @@ class StoreIdResolverTest extends TestCase
         return $request;
     }
 
-    private function createMockDimension(int $storeId = 1): Dimension|MockObject
+    private function createMockDimension(int $storeId = 1): Dimension&MockObject
     {
         $dimension = $this->createMock(Dimension::class);
         $dimension->method('getValue')->willReturn((string) $storeId);

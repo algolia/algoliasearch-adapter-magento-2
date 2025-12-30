@@ -12,11 +12,11 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class DocumentMapperTest extends TestCase
 {
-    private DocumentMapper $documentMapper;
-    private DocumentMapperResultInterfaceFactory|MockObject $documentMapperResultFactory;
-    private DocumentMapperResultInterface|MockObject $documentMapperResult;
-    private PaginationInfoInterface|MockObject $pagination;
-    private SearchQueryResultInterface|MockObject $searchQueryResult;
+    private ?DocumentMapper $documentMapper = null;
+    private null|(DocumentMapperResultInterfaceFactory&MockObject) $documentMapperResultFactory = null;
+    private null|(DocumentMapperResultInterface&MockObject) $documentMapperResult = null;
+    private null|(PaginationInfoInterface&MockObject) $pagination = null;
+    private null|(SearchQueryResultInterface&MockObject) $searchQueryResult = null;
 
     protected function setUp(): void
     {

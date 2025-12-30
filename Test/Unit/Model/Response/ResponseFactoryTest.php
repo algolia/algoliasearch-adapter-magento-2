@@ -15,8 +15,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class ResponseFactoryTest extends TestCase
 {
-    private ResponseFactory $responseFactory;
-    private ObjectManagerInterface|MockObject $objectManager;
+    private ?ResponseFactory $responseFactory = null;
+    private null|(ObjectManagerInterface&MockObject) $objectManager = null;
 
     protected function setUp(): void
     {
