@@ -14,13 +14,13 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class AttributePluginTest extends TestCase
 {
-    private AttributePlugin $plugin;
-    private ConfigHelper|MockObject $configHelper;
-    private StoreManagerInterface|MockObject $storeManager;
-    private FacetValueConverter|MockObject $facetValueConverter;
-    private StoreInterface|MockObject $store;
-    private Attribute|MockObject $subject;
-    private HttpRequest|MockObject $request;
+    private ?AttributePlugin $plugin = null;
+    private null|(ConfigHelper&MockObject) $configHelper = null;
+    private null|(StoreManagerInterface&MockObject) $storeManager = null;
+    private null|(FacetValueConverter&MockObject) $facetValueConverter = null;
+    private null|(StoreInterface&MockObject) $store = null;
+    private null|(Attribute&MockObject) $subject = null;
+    private null|(HttpRequest&MockObject) $request = null;
 
     protected function setUp(): void
     {

@@ -18,8 +18,8 @@ class PriceRangeFilterHandlerTest extends TestCase
 {
     use QueryTestTrait;
 
-    private PriceRangeFilterHandler $handler;
-    private PriceKeyResolver|MockObject $priceKeyResolver;
+    private ?PriceRangeFilterHandler $handler = null;
+    private null|(PriceKeyResolver&MockObject) $priceKeyResolver = null;
 
     protected function setUp(): void
     {

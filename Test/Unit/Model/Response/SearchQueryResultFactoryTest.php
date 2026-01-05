@@ -10,9 +10,9 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class SearchQueryResultFactoryTest extends TestCase
 {
-    private SearchQueryResultFactory $searchQueryResultFactory;
-    private SearchQueryResultInterfaceFactory|MockObject $searchQueryResultInterfaceFactory;
-    private SearchQueryResultInterface|MockObject $searchQueryResult;
+    private ?SearchQueryResultFactory $searchQueryResultFactory = null;
+    private null|(SearchQueryResultInterfaceFactory&MockObject) $searchQueryResultInterfaceFactory = null;
+    private null|(SearchQueryResultInterface&MockObject) $searchQueryResult = null;
 
     protected function setUp(): void
     {

@@ -18,9 +18,9 @@ class AttributeFilterHandlerTest extends TestCase
 {
     use QueryTestTrait;
 
-    private AttributeFilterHandler $handler;
-    private InstantSearchHelper|MockObject $instantSearchHelper;
-    private FacetValueConverter|MockObject $facetValueConverter;
+    private ?AttributeFilterHandler $handler = null;
+    private null|(InstantSearchHelper&MockObject) $instantSearchHelper = null;
+    private null|(FacetValueConverter&MockObject) $facetValueConverter = null;
 
     protected function setUp(): void
     {

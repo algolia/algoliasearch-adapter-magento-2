@@ -14,8 +14,15 @@
                 type="Algolia\SearchAdapter\Plugin\Block\LayeredNavigation\RenderedLayeredPlugin" />
     </type>
 
+    <!-- URL handlers for filters -->
     <type name="Magento\CatalogSearch\Model\Layer\Filter\Attribute">
         <plugin name="algolia_filter_request_normalizer"
                 type="Algolia\SearchAdapter\Plugin\Model\Layer\Filter\AttributePlugin" />
+    </type>
+    
+    <!-- Cannot call on Magento\Catalog\Model\ResourceModel\Product\Collection due to inheritance -->
+    <type name="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection">
+        <plugin name="algolia_collection_filter"
+                type="Algolia\SearchAdapter\Plugin\Model\ResourceModel\Product\CollectionPlugin" />
     </type>
 </config>

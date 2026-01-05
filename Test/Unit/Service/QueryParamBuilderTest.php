@@ -19,10 +19,10 @@ class QueryParamBuilderTest extends TestCase
 {
     use QueryTestTrait;
 
-    private PaginationInfoInterface|MockObject $paginationInfo;
-    private InstantSearchHelper|MockObject $instantSearchHelper;
-    private StoreIdResolver|MockObject $storeIdResolver;
-    private PriceKeyResolver|MockObject $priceKeyResolver;
+    private null|(PaginationInfoInterface&MockObject) $paginationInfo = null;
+    private null|(InstantSearchHelper&MockObject) $instantSearchHelper = null;
+    private null|(StoreIdResolver&MockObject) $storeIdResolver = null;
+    private null|(PriceKeyResolver&MockObject) $priceKeyResolver = null;
 
     protected function setUp(): void
     {

@@ -33,21 +33,21 @@ use PHPUnit\Framework\MockObject\MockObject;
 class QueryMapperTest extends TestCase
 {
     use QueryTestTrait;
-    private QueryMapper $queryMapper;
-    private QueryMapperResultInterfaceFactory|MockObject $queryMapperResultFactory;
-    private SearchQueryInterfaceFactory|MockObject $searchQueryFactory;
-    private PaginationInfoInterfaceFactory|MockObject $paginationInfoFactory;
-    private StoreIdResolver|MockObject $storeIdResolver;
-    private IndexOptionsBuilder|MockObject $indexOptionsBuilder;
-    private SortState|MockObject $sortState;
-    private SortOrderBuilder|MockObject $sortOrderBuilder;
-    private QueryParamBuilder|MockObject $queryParamBuilder;
-    private QueryMapperResultInterface|MockObject $queryMapperResult;
-    private SearchQueryInterface|MockObject $searchQuery;
-    private PaginationInfoInterface|MockObject $paginationInfo;
-    private IndexOptionsInterface|MockObject $indexOptions;
-    private ScopeResolverInterface|MockObject $scopeResolver;
-    private ScopeInterface|MockObject $scope;
+    private ?QueryMapper $queryMapper = null;
+    private null|(QueryMapperResultInterfaceFactory&MockObject) $queryMapperResultFactory = null;
+    private null|(SearchQueryInterfaceFactory&MockObject) $searchQueryFactory = null;
+    private null|(PaginationInfoInterfaceFactory&MockObject) $paginationInfoFactory = null;
+    private null|(StoreIdResolver&MockObject) $storeIdResolver = null;
+    private null|(IndexOptionsBuilder&MockObject) $indexOptionsBuilder = null;
+    private null|(SortState&MockObject) $sortState = null;
+    private null|(SortOrderBuilder&MockObject) $sortOrderBuilder = null;
+    private null|(QueryParamBuilder&MockObject) $queryParamBuilder = null;
+    private null|(QueryMapperResultInterface&MockObject) $queryMapperResult = null;
+    private null|(SearchQueryInterface&MockObject) $searchQuery = null;
+    private null|(PaginationInfoInterface&MockObject) $paginationInfo = null;
+    private null|(IndexOptionsInterface&MockObject) $indexOptions = null;
+    private null|(ScopeResolverInterface&MockObject) $scopeResolver = null;
+    private null|(ScopeInterface&MockObject) $scope = null;
 
     protected function setUp(): void
     {
@@ -341,7 +341,7 @@ class QueryMapperTest extends TestCase
         $this->assertSame($page, $result->getPageNumber());
     }
 
-    private function createPaginationInfoFactoryMock(): PaginationInfoInterfaceFactory|MockObject
+    private function createPaginationInfoFactoryMock(): PaginationInfoInterfaceFactory&MockObject
     {
         $factory = $this->createMock(PaginationInfoInterfaceFactory::class);
         $factory->method('create')
@@ -355,7 +355,7 @@ class QueryMapperTest extends TestCase
         return $factory;
     }
 
-    private function createMockRequestWithStore(int $storeId = 1): RequestInterface|MockObject
+    private function createMockRequestWithStore(int $storeId = 1): RequestInterface&MockObject
     {
         $request = $this->createMockRequest();
         $this->storeIdResolver->method('getStoreId')->with($request)->willReturn($storeId);
@@ -363,7 +363,7 @@ class QueryMapperTest extends TestCase
         return $request;
     }
 
-    private function createMockRequestWithGetSort(array $sortData, int $storeId = 1): RequestInterface|MockObject
+    private function createMockRequestWithGetSort(array $sortData, int $storeId = 1): RequestInterface&MockObject
     {
         $request = $this->getMockBuilder(RequestInterface::class)
             ->onlyMethods(['getName', 'getIndex', 'getDimensions', 'getAggregation', 'getQuery', 'getFrom', 'getSize'])
@@ -376,7 +376,7 @@ class QueryMapperTest extends TestCase
         return $request;
     }
 
-    private function createMockSortOrder(string $field, string $direction = SortOrder::SORT_ASC): SortOrder|MockObject
+    private function createMockSortOrder(string $field, string $direction = SortOrder::SORT_ASC): SortOrder&MockObject
     {
         $sortOrder = $this->createMock(SortOrder::class);
         $sortOrder->method('getField')->willReturn($field);
@@ -384,7 +384,7 @@ class QueryMapperTest extends TestCase
         return $sortOrder;
     }
 
-    private function setupMockSortOrderBuilder(?string $field = null, string $direction = SortOrder::SORT_ASC): SortOrder|MockObject
+    private function setupMockSortOrderBuilder(?string $field = null, string $direction = SortOrder::SORT_ASC): SortOrder&MockObject
     {
         $sortOrder = $this->createMockSortOrder($field, $direction);
         $this->sortOrderBuilder->expects($this->once())->method('create')->willReturn($sortOrder);

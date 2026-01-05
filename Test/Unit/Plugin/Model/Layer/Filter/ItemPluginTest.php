@@ -15,12 +15,12 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class ItemPluginTest extends TestCase
 {
-    private ItemPlugin $plugin;
-    private ConfigHelper|MockObject $configHelper;
-    private StoreManagerInterface|MockObject $storeManager;
-    private UrlInterface|MockObject $urlBuilder;
-    private Pager|MockObject $pager;
-    private StoreInterface|MockObject $store;
+    private ?ItemPlugin $plugin = null;
+    private null|(ConfigHelper&MockObject) $configHelper = null;
+    private null|(StoreManagerInterface&MockObject) $storeManager = null;
+    private null|(UrlInterface&MockObject) $urlBuilder = null;
+    private null|(Pager&MockObject) $pager = null;
+    private null|(StoreInterface&MockObject) $store = null;
 
     protected function setUp(): void
     {
@@ -229,7 +229,7 @@ class ItemPluginTest extends TestCase
         $this->plugin->afterGetUrl($item, $originalUrl);
     }
 
-    private function createMockItem(string $requestVar, string $label): Item|MockObject
+    private function createMockItem(string $requestVar, string $label): Item&MockObject
     {
         $filter = $this->createMock(AbstractFilter::class);
         $filter->method('getRequestVar')->willReturn($requestVar);

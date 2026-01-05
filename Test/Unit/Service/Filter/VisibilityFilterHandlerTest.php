@@ -13,7 +13,7 @@ class VisibilityFilterHandlerTest extends TestCase
 {
     use QueryTestTrait;
 
-    private VisibilityFilterHandler $handler;
+    private ?VisibilityFilterHandler $handler = null;
 
     protected function setUp(): void
     {
