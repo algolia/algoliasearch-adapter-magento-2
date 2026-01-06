@@ -2,7 +2,6 @@
 
 namespace Algolia\SearchAdapter\Model\Source;
 
-use Algolia\AlgoliaSearch\Service\IndexNameFetcher;
 use Magento\Framework\Data\OptionSourceInterface;
 
 class SortParam implements OptionSourceInterface
@@ -10,12 +9,15 @@ class SortParam implements OptionSourceInterface
     public const SORT_PARAM_ALGOLIA = 'sortBy';
     public const SORT_PARAM_MAGENTO = 'product_list_order';
 
+    /*
+     * TODO: Refactor this into a query string parameter "mode" - see MAGE-1452
+     * It doesn't make sense to aggregate the following parameters under the same "sort" configuration
+     */
     public const PAGE_PARAM_ALGOLIA = 'page';
     public const PAGE_PARAM_MAGENTO = 'p';
 
-    public function __construct(
-        protected IndexNameFetcher $indexNameFetcher
-    ){}
+    public const CATEGORY_PARAM_ALGOLIA = 'categories';
+    public const CATEGORY_PARAM_MAGENTO = 'cat';
 
     public function toOptionArray()
     {

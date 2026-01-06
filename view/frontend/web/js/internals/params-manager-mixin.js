@@ -1,36 +1,31 @@
 define(function () {
-    const ADAPTER_SORTING_PARAMETER = "product_list_order"
-
     return function (target) {
         const mixin = {
             getProductIndexName() {
                 return algoliaConfig.indexName + '_products';
             },
 
-            getPagingParam: function() {
-                return algoliaConfig.pagingParameter;
-            },
-            getSortingParam: function() {
-                return algoliaConfig.sortingParameter;
+            isMagentoCompatibleMode() {
+                return algoliaConfig.routing?.isMagentoCompatible ?? false;
             },
 
-            getSortingValueFromUiState: function(uiStateProductIndex) {
-                if (this.getSortingParam() !== ADAPTER_SORTING_PARAMETER) {
+            getSortingValueFromUiState(uiStateProductIndex) {
+                if (!this.isMagentoCompatibleMode()) {
                     return target.getSortingValueFromUiState(uiStateProductIndex);
                 }
 
                 return this.replicaToSortParam(this.getProductIndexName(), uiStateProductIndex.sortBy);
             },
 
-            getSortingFromRoute: function(routeParameters) {
-                if (this.getSortingParam() !== ADAPTER_SORTING_PARAMETER) {
+            getSortingFromRoute(routeParameters) {
+                if (!this.isMagentoCompatibleMode()) {
                     return target.getSortingFromRoute(routeParameters);
                 }
 
                 return this.sortParamToReplica(this.getProductIndexName(), routeParameters[this.getSortingParam()]);
             },
 
-            replicaToSortParam: (productIndexName, replica) => {
+            replicaToSortParam(productIndexName, replica) {
                 // if no replica is selected, we don't want it to be part of the url
                 if (replica === undefined) {
                     return;
@@ -51,7 +46,7 @@ define(function () {
                 return [sort, direction].join("~");
             },
 
-            sortParamToReplica: (productIndexName, sortParam) => {
+            sortParamToReplica(productIndexName, sortParam) {
                 if (sortParam === undefined) {
                     return;
                 }

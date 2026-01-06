@@ -14,6 +14,11 @@ class CategoryPathResolver
     ) {}
 
     /**
+     * Based on the full category path find the *first* matching entity ID in the category tree
+     *
+     * WARNING: This assumes that category paths are unique.
+     * If identical trees are found in the database then an incorrect entity ID may be returned.
+     *
      * @return string Category ID if found or empty string if not
      * @throws LocalizedException
      */
@@ -22,6 +27,7 @@ class CategoryPathResolver
         $pathParts = array_reverse(explode($delimiter, $path));
         $categoryName = array_shift($pathParts);
 
+        // Get the candidate categories
         $collection = $this->categoryCollectionFactory->create()
             ->addAttributeToFilter('name', ['eq' => $categoryName])
             ->addFieldToFilter('level', ['gt' => 1]);
@@ -30,6 +36,7 @@ class CategoryPathResolver
             $collection->setStoreId($storeId);
         }
 
+        // Evaluate the parentage until a match is found
         /** @var Category $category */
         foreach ($collection as $category) {
             $parentIds = array_reverse($category->getPathIds());
@@ -44,6 +51,8 @@ class CategoryPathResolver
     }
 
     /**
+     * Evaluates the original category path string against an array of parent ids.
+     * If the category names for those parent ids match then the parentage is assumed to be the same.
      * @throws LocalizedException
      */
     protected function hasMatchingParents(array $pathParts, array $parentIds, ?int $storeId = null): bool
