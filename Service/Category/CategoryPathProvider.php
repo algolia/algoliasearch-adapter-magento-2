@@ -1,6 +1,6 @@
 <?php
 
-namespace Algolia\SearchAdapter\Service;
+namespace Algolia\SearchAdapter\Service\Category;
 
 use Algolia\AlgoliaSearch\Helper\ConfigHelper;
 use Magento\Catalog\Model\ResourceModel\Category\Collection as CategoryCollection;

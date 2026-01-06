@@ -2,7 +2,7 @@
 
 namespace Algolia\SearchAdapter\Service\Aggregation\Bucket;
 
-use Algolia\SearchAdapter\Service\CategoryPathProvider;
+use Algolia\SearchAdapter\Service\Category\CategoryPathProvider;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Search\Request\Aggregation\TermBucket;
 
