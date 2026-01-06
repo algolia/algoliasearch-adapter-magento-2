@@ -2,6 +2,8 @@
 
 namespace Algolia\SearchAdapter\Plugin\Model\Layer\Filter;
 
+use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
+use Algolia\AlgoliaSearch\Service\Category\CategoryPathProvider;
 use Algolia\SearchAdapter\Helper\ConfigHelper;
 use Algolia\SearchAdapter\Plugin\AbstractFilterPlugin;
 use Magento\Catalog\Model\Layer\Filter\Item;
@@ -19,14 +21,15 @@ use Magento\Theme\Block\Html\Pager;
  */
 class ItemPlugin extends AbstractFilterPlugin
 {
-    protected const EXCLUDED_ATTRIBUTES = [
-        'cat',
-        'price'
-    ];
+    protected const PARAM_CATEGORY = 'cat';
+    protected const PARAM_PRICE = 'price';
+    protected const EXCLUDED_ATTRIBUTES = [];
 
     public function __construct(
+
         protected ConfigHelper          $configHelper,
         protected StoreManagerInterface $storeManager,
+        protected CategoryPathProvider  $categoryPathProvider,
         UrlInterface                    $urlBuilder,
         Pager                           $pager,
     ) {
@@ -38,19 +41,44 @@ class ItemPlugin extends AbstractFilterPlugin
      */
     public function afterGetUrl(Item $subject, string $result): string
     {
+        $param = $subject->getFilter()->getRequestVar();
+        $storeId = $this->storeManager->getStore()->getId();
+
         if (
-            !$this->configHelper->areSeoFiltersEnabled($this->storeManager->getStore()->getId())
+            !$this->configHelper->areSeoFiltersEnabled($storeId)
             ||
-            in_array($subject->getFilter()->getRequestVar(), self::EXCLUDED_ATTRIBUTES)
+            in_array($param, self::EXCLUDED_ATTRIBUTES)
         ) {
             return $result;
         }
 
-        return $this->buildUrl($subject->getFilter()->getRequestVar(), $this->getSlug($subject));
+        switch ($param) {
+            case self::PARAM_CATEGORY:
+                return $this->getCategorySlug($subject, $storeId);
+            case self::PARAM_PRICE:
+                return $result; // TODO: Implement IS compat price handling
+            default: // all other EAV attributes
+                return $this->buildUrl($param, $this->getAttributeSlug($subject));
+        }
     }
 
-    protected function getSlug(Item $item): string
+    protected function getAttributeSlug(Item $item): string
     {
         return $item->getData('label');
+    }
+
+    /**
+     * @throws LocalizedException
+     */
+    protected function getCategorySlug(Item $item, int $storeId): string
+    {
+        return $this->buildUrl(
+            $item->getFilter()->getRequestVar(),
+            $this->categoryPathProvider->getCategoryPageId(
+                $item->getValueString(),
+                $storeId,
+                InstantSearchHelper::CATEGORY_ROUTE_DELIMITER
+            )
+        );
     }
 }
