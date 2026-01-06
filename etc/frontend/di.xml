@@ -19,7 +19,11 @@
         <plugin name="algolia_filter_request_normalizer"
                 type="Algolia\SearchAdapter\Plugin\Model\Layer\Filter\AttributePlugin" />
     </type>
-    
+    <type name="Magento\CatalogSearch\Model\Layer\Filter\Category">
+        <plugin name="algolia_category_filter"
+                type="Algolia\SearchAdapter\Plugin\Model\Layer\Filter\CategoryPlugin" />
+    </type>
+
     <!-- Cannot call on Magento\Catalog\Model\ResourceModel\Product\Collection due to inheritance -->
     <type name="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection">
         <plugin name="algolia_collection_filter"
