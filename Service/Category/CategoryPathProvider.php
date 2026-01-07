@@ -1,17 +1,24 @@
 <?php
 
-namespace Algolia\SearchAdapter\Service;
+namespace Algolia\SearchAdapter\Service\Category;
 
 use Algolia\AlgoliaSearch\Helper\ConfigHelper;
+use Algolia\AlgoliaSearch\Service\Category\CategoryPathProvider as CoreCategoryPathProvider;
 use Magento\Catalog\Model\ResourceModel\Category\Collection as CategoryCollection;
 use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
 use Magento\Framework\Exception\LocalizedException;
 
+/** 
+ * Provides category path details and name mappings.
+ * Deals primarily with category collections.
+ * Delegates to the core CategoryPathProvider for category name lookups.
+ */
 class CategoryPathProvider
 {
     public function __construct(
         protected CategoryCollectionFactory $categoryCollectionFactory,
         protected ConfigHelper              $configHelper,
+        protected CoreCategoryPathProvider  $coreCategoryPathProvider,
     ) {}
 
     /**
@@ -31,9 +38,13 @@ class CategoryPathProvider
 
         $categoryPaths = [];
         $parentIds = $this->extractParentCategoryIds($collection);
-        $categoryMap = $this->getCategoryNameMap($parentIds);
+        $categoryMap = $this->coreCategoryPathProvider->getCategoryNameMap($parentIds, $storeId);
         foreach ($collection->getItems() as $category) {
-            $categoryPaths[$category->getId()] = $this->buildFullCategoryPath($category->getPath(), $categoryMap, $storeId);
+            $categoryPaths[$category->getId()] = $this->buildFullCategoryPath(
+                $category->getPath(),
+                $categoryMap,
+                $storeId
+            );
         }
         return $categoryPaths;
     }
@@ -53,22 +64,6 @@ class CategoryPathProvider
             $this->configHelper->getCategorySeparator($storeId),
             array_filter($categoryNames, fn($name) => !empty($name))
         );
-    }
-
-    /**
-     * Returns a map of category IDs to category names
-     *
-     * @param string[] $categoryIds
-     * @return array<string, string> A map of entity ID to category name
-     * @throws LocalizedException
-     */
-    protected function getCategoryNameMap(array $categoryIds): array
-    {
-        $collection = $this->categoryCollectionFactory->create();
-        $collection->addAttributeToSelect('name');
-        $collection->addFieldToFilter('entity_id', ['in' => $categoryIds]);
-        $collection->addFieldToFilter('level', ['gt' => 1]);
-        return array_map(fn($item) => $item->getName(), $collection->getItems());
     }
 
     /**

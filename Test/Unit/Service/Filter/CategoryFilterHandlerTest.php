@@ -9,7 +9,6 @@ use Algolia\AlgoliaSearch\Test\TestCase;
 use Algolia\SearchAdapter\Service\Filter\CategoryFilterHandler;
 use Algolia\SearchAdapter\Test\Traits\QueryTestTrait;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
-use Magento\Catalog\Model\Category;
 use Magento\Framework\Search\Request\QueryInterface as RequestQueryInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 
@@ -112,13 +111,8 @@ class CategoryFilterHandlerTest extends TestCase
             ->with($storeId)
             ->willReturn($attributeName);
 
-        $category = $this->createMock(Category::class);
-        $this->categoryRepository->method('get')
-            ->with($categoryId)
-            ->willReturn($category);
-
         $this->categoryPathProvider->method('getCategoryPageId')
-            ->with($category, $storeId)
+            ->with($categoryId, $storeId)
             ->willReturn($categoryPageId);
 
         $this->handler->process($params, $filters, $storeId);

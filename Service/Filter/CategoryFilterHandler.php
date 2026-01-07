@@ -6,6 +6,7 @@ use Algolia\AlgoliaSearch\Api\Product\RuleContextInterface;
 use Algolia\AlgoliaSearch\Helper\ConfigHelper;
 use Algolia\AlgoliaSearch\Service\Category\CategoryPathProvider;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\Request\QueryInterface as RequestQueryInterface;
 
@@ -22,7 +23,7 @@ class CategoryFilterHandler extends AbstractFilterHandler
      *
      * @param array<string, mixed> $params
      * @param RequestQueryInterface[] $filters
-     * @throws NoSuchEntityException
+     * @throws LocalizedException
      */
     public function process(array &$params, array &$filters, ?int $storeId = null): void
     {
@@ -36,12 +37,12 @@ class CategoryFilterHandler extends AbstractFilterHandler
 
             // Merch Studio support
             if ($this->configHelper->isVisualMerchEnabled($storeId)) {
-                $category = $this->categoryRepository->get($categoryId);
-                if ($category instanceof \Magento\Catalog\Model\Category) { // Sanity check: interface along does not contain all required methods
+                $categoryPageId = $this->categoryPathProvider->getCategoryPageId($categoryId, $storeId);
+                if ($categoryPageId) {
                     // The 'filters' parameter expects a string: https://www.algolia.com/doc/api-reference/api-parameters/filters
                     $params['filters'] = sprintf('%s:"%s"',
                         $this->configHelper->getCategoryPageIdAttributeName($storeId),
-                        $this->categoryPathProvider->getCategoryPageId($category, $storeId)
+                        $categoryPageId
                     );
                 }
             }
