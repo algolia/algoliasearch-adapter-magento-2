@@ -21,8 +21,13 @@ class SortParam extends AbstractConfigComment
     {
         $productIndex = $this->indexNameFetcher->getIndexName('_products') . '_price_default_asc';
 
+        $link = $this->getConfigLink(
+            'catalog',
+            'row_catalog_search_algolia_seo_filters'
+        );
+
         return <<<COMMENT
-            <div class="algolia-help-content"> 
+            <div class="algolia-help-content">
             <p>Specify the query string parameters you want to use in your product listing URLs.</p>
 
             <p>There are two options: <strong>Algolia default</strong> (classic InstantSearch) and <strong>Magento compatibility mode</strong> (default Magento urls).</p>
@@ -74,6 +79,10 @@ class SortParam extends AbstractConfigComment
                 </tr>
                 </tbody>
             </table>
+
+            <aside>
+                <p><strong>Note:</strong> For best results with InstantSearch, we also recommend enabling <a href="$link">SEO filters</a>.</p>
+            </aside>
 
             </div>
             COMMENT;
