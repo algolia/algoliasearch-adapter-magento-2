@@ -20,7 +20,7 @@ class UpdateConfiguration implements ObserverInterface
         $isMagentoCompatible = $sortingParam === SortParam::SORT_PARAM_MAGENTO;
 
         $configuration['routing'] = array_merge(
-            $configuration['routing'],
+            $configuration['routing'] ?? [],
             [
                 'isMagentoCompatible' => $isMagentoCompatible,
                 'sortingParameter' => $this->configHelper->getSortingParameter(),
