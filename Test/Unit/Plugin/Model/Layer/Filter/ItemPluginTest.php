@@ -2,6 +2,7 @@
 
 namespace Algolia\SearchAdapter\Test\Unit\Plugin\Model\Layer\Filter;
 
+use Algolia\AlgoliaSearch\Service\Category\CategoryPathProvider;
 use Algolia\AlgoliaSearch\Test\TestCase;
 use Algolia\SearchAdapter\Helper\ConfigHelper;
 use Algolia\SearchAdapter\Plugin\Model\Layer\Filter\ItemPlugin;
@@ -18,6 +19,7 @@ class ItemPluginTest extends TestCase
     private ?ItemPlugin $plugin = null;
     private null|(ConfigHelper&MockObject) $configHelper = null;
     private null|(StoreManagerInterface&MockObject) $storeManager = null;
+    private null|(CategoryPathProvider&MockObject) $categoryPathProvider = null;
     private null|(UrlInterface&MockObject) $urlBuilder = null;
     private null|(Pager&MockObject) $pager = null;
     private null|(StoreInterface&MockObject) $store = null;
@@ -26,6 +28,7 @@ class ItemPluginTest extends TestCase
     {
         $this->configHelper = $this->createMock(ConfigHelper::class);
         $this->storeManager = $this->createMock(StoreManagerInterface::class);
+        $this->categoryPathProvider = $this->createMock(CategoryPathProvider::class);
         $this->urlBuilder = $this->createMock(UrlInterface::class);
         $this->pager = $this->createMock(Pager::class);
         $this->store = $this->createMock(StoreInterface::class);
@@ -36,6 +39,7 @@ class ItemPluginTest extends TestCase
         $this->plugin = new ItemPlugin(
             $this->configHelper,
             $this->storeManager,
+            $this->categoryPathProvider,
             $this->urlBuilder,
             $this->pager
         );
@@ -61,25 +65,49 @@ class ItemPluginTest extends TestCase
         $this->assertEquals($originalUrl, $result);
     }
 
-    public function testAfterGetUrlReturnOriginalForExcludedCatAttribute(): void
+    public function testAfterGetUrlBuildsCategoryUrl(): void
     {
         $originalUrl = 'https://example.com/original-url?cat=15';
-        $item = $this->createMockItem('cat', '15');
+        $expectedUrl = 'https://example.com/original-url?cat=Men~Tops';
+        $item = $this->createMockCategoryItem('cat', '15');
 
         $this->configHelper
             ->method('areSeoFiltersEnabled')
             ->willReturn(true);
 
-        $this->urlBuilder
-            ->expects($this->never())
-            ->method('getUrl');
+        $this->categoryPathProvider
+            ->expects($this->once())
+            ->method('getCategoryPageId')
+            ->with('15', 1, '~')
+            ->willReturn('Men~Tops');
+
+        $this->pager
+            ->method('getPageVarName')
+            ->willReturn('p');
+
+        $this->urlBuilder   
+            ->expects($this->once())
+            ->method('getUrl')
+            ->with(
+                '*/*/*',
+                [
+                    '_current' => true,
+                    '_use_rewrite' => true,
+                    '_query' => [
+                        'cat' => 'Men~Tops',
+                        'p' => null
+                    ]
+                ]
+            )
+            ->willReturn($expectedUrl);
 
         $result = $this->plugin->afterGetUrl($item, $originalUrl);
 
-        $this->assertEquals($originalUrl, $result);
+        $this->assertEquals($expectedUrl, $result);
     }
 
-    public function testAfterGetUrlReturnOriginalForExcludedPriceAttribute(): void
+    // TODO: Update this test when IS compat price handling is implemented
+    public function testAfterGetUrlReturnOriginalForPriceAttribute(): void
     {
         $originalUrl = 'https://example.com/original-url?price=100-200';
         $item = $this->createMockItem('price', '100-200');
@@ -172,6 +200,7 @@ class ItemPluginTest extends TestCase
         $plugin = new ItemPlugin(
             $this->configHelper,
             $storeManager,
+            $this->categoryPathProvider,
             $this->urlBuilder,
             $this->pager
         );
@@ -189,14 +218,14 @@ class ItemPluginTest extends TestCase
         $this->assertEquals('original-url', $result);
     }
 
-    public function testGetSlugReturnsItemLabel(): void
+    public function testGetAttributeSlugReturnsItemLabel(): void
     {
         $item = $this->createMock(Item::class);
         $item->method('getData')
             ->with('label')
             ->willReturn('Test Label');
 
-        $result = $this->invokeMethod($this->plugin, 'getSlug', [$item]);
+        $result = $this->invokeMethod($this->plugin, 'getAttributeSlug', [$item]);
 
         $this->assertEquals('Test Label', $result);
     }
@@ -239,6 +268,18 @@ class ItemPluginTest extends TestCase
         $item->method('getData')
             ->with('label')
             ->willReturn($label);
+
+        return $item;
+    }
+
+    private function createMockCategoryItem(string $requestVar, string $valueString): Item&MockObject
+    {
+        $filter = $this->createMock(AbstractFilter::class);
+        $filter->method('getRequestVar')->willReturn($requestVar);
+
+        $item = $this->createMock(Item::class);
+        $item->method('getFilter')->willReturn($filter);
+        $item->method('getValueString')->willReturn($valueString);
 
         return $item;
     }
