@@ -24,7 +24,7 @@ class CategoryPathResolver
      */
     public function getEntityIdForPath(string $path, string $delimiter, ?int $storeId = null): string
     {
-        $pathParts = array_reverse(explode($delimiter, $path));
+        $pathParts = array_reverse(explode($delimiter, $path)); // Process the path parts in reverse order to compare parentage progressively
         $categoryName = array_shift($pathParts);
 
         // Get the candidate categories
@@ -39,8 +39,8 @@ class CategoryPathResolver
         // Evaluate the parentage until a match is found
         /** @var Category $category */
         foreach ($collection as $category) {
-            $parentIds = array_reverse($category->getPathIds());
-            array_shift($parentIds);
+            $parentIds = array_reverse($category->getPathIds()); // Mirror the path parts in reverse order to compare parentage
+            array_shift($parentIds); // Remove the current category ID from the path to compare parentage only
             if ($this->hasMatchingParents($pathParts, $parentIds, $storeId)) {
                 return $category->getId();
             }
