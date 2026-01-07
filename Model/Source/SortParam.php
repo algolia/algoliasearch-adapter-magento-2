@@ -28,7 +28,7 @@ class SortParam implements OptionSourceInterface
             ],
             [
                 'value' => self::SORT_PARAM_MAGENTO,
-                'label' => __('Magento default'),
+                'label' => __('Magento compatibility mode'),
             ],
         ];
     }
