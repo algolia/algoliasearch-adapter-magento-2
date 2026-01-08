@@ -38,12 +38,12 @@ class SortParam extends AbstractConfigComment
                 <li>
                     <strong>Algolia default</strong>
                     <br/>
-                    Example: <code>http//mywebsite.com/?<strong>sortBy</strong>=$productIndex&<strong>categories</strong>=Gear&<strong>page</strong>=2</code>
+                    Example: <code>http//mywebsite.com/?<strong>sortBy</strong>=$productIndex&<strong>categories</strong>=Gear&<strong>price.USD.default</strong>=40:60&<strong>page</strong>=2</code>
                 </li>
                 <li>
                     <strong>Magento compatibility mode</strong>
                     <br/>
-                    Example: <code>http//mywebsite.com/?<strong>product_list_order</strong>=price~asc&<strong>cat</strong>=Gear&<strong>p</strong>=2</code>
+                    Example: <code>http//mywebsite.com/?<strong>product_list_order</strong>=price~asc&<strong>cat</strong>=Gear&<strong>price</strong>=40-60&<strong>p</strong>=2</code>
                 </li>
             </ul>
 
@@ -73,6 +73,14 @@ class SortParam extends AbstractConfigComment
                     <td><code>p</code></td>
                 </tr>
                 <tr>
+                    <td>Price filtering</td>
+                    <td><code>price.%CURRENCY%.%CUSTOMER_GROUP%</code>
+                    <br/><br/>
+                    <small>Example: <code>price.USD.default</code></small>
+                    </td>
+                    <td><code>price</code></td>
+                </tr>
+                 <tr>
                     <td>Category filtering</td>
                     <td><code>categories</code></td>
                     <td><code>cat</code></td>
