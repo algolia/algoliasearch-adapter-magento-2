@@ -22,7 +22,9 @@ class AttributeBucketBuilder extends AbstractBucketBuilder
 
         foreach ($options as $label => $count) {
             $optionId = $this->facetValueConverter->convertLabelToOptionId($attributeCode, $label);
-            $this->applyBucketData($data, $optionId, $count);
+            if ($optionId && $count) {
+                $this->applyBucketData($data, $optionId, $count);
+            }
         }
 
         return $data;
