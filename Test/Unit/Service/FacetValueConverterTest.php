@@ -186,7 +186,7 @@ class FacetValueConverterTest extends TestCase
             ->method('getAttributeId')
             ->willReturn($attributeId);
 
-        $option = $this->createMockOption($optionId, $expectedLabel, 1);
+        $option = $this->createMockOption($optionId, $expectedLabel, true, 1);
         $collection = $this->createMockCollection($attributeId, $optionId, $option);
 
         $this->attributeOptionCollectionFactory
@@ -198,19 +198,44 @@ class FacetValueConverterTest extends TestCase
         $this->assertEquals($expectedLabel, $result);
     }
 
+    public function testConvertOptionIdToLabelReturnsEmptyWhenOptionValueIsNotSet(): void
+    {
+        $attributeId = 42;
+        $optionId = 888;
+        
+        $this->attributeModel
+            ->method('loadByCode')
+            ->willReturnSelf();
+        $this->attributeModel
+            ->method('getAttributeId')
+            ->willReturn($attributeId);
+
+        $option = $this->createMockOption($optionId, null, false, 1);
+        $collection = $this->createMockCollection($attributeId, $optionId, $option);
+
+        $this->attributeOptionCollectionFactory
+            ->method('create')
+            ->willReturn($collection);
+
+        $result = $this->converter->convertOptionIdToLabel('color', $optionId);
+
+        $this->assertEquals('', $result);
+    }
+
     // =========================================================================
     // Helper Methods
     // =========================================================================
 
     protected function createMockOption(
         string $id,
-        string $value,
+        ?string $value,
+        bool $hasValue = true,
         int $expectedCallsOnValue = 2
     ): AttributeOptionInterface&\ArrayAccess&MockObject
     {
         $option = $this->createMock(\Magento\Eav\Model\Entity\Attribute\Option::class);
         $option->method('getData')->willReturn(['optionId' => $id, 'value' => $value]);
-        $option->method('offsetExists')->with('value')->willReturn(true);
+        $option->method('offsetExists')->with('value')->willReturn($hasValue);
         $option->expects($this->exactly($expectedCallsOnValue))->method('offsetGet')->with('value')->willReturn($value);
         return $option;
     }
