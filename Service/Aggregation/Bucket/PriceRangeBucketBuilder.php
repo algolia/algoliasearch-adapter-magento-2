@@ -35,7 +35,7 @@ class PriceRangeBucketBuilder
         $niceBuckets = $this->niceScale->generateBuckets($prices, $this->getMaxNumberOfBuckets());
 
         $buckets = [];
-        $lastKey = array_key_last($buckets);
+        $lastKey = array_key_last($niceBuckets);
         foreach ($niceBuckets as $key => $niceBucket) {
             $min = $niceBucket['min'];
             $max = $niceBucket['max'];
@@ -51,8 +51,8 @@ class PriceRangeBucketBuilder
 
             $value = $min . '_' . $max;
             $buckets[$value] = [
-                'from' => $min,
-                'to' => $max,
+                'from'  => $min,
+                'to'    => $max,
                 'count' => $count,
                 'value' => $value
             ];
