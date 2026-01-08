@@ -19,6 +19,10 @@ class PriceRangeBucketBuilderTest extends TestCase
         $this->builder = new PriceRangeBucketBuilder($this->niceScale);
     }
 
+    // =========================================================================
+    // build() Tests
+    // =========================================================================
+
     public function testBuildWithEmptyFacets(): void
     {
         $bucket = $this->createMock(DynamicBucket::class);
@@ -128,10 +132,18 @@ class PriceRangeBucketBuilderTest extends TestCase
         ], $result);
     }
 
+    // =========================================================================
+    // getMaxNumberOfBuckets() Tests
+    // =========================================================================
+
     public function testGetMaxNumberOfBuckets(): void
     {
         $this->assertEquals(5, $this->builder->getMaxNumberOfBuckets());
     }
+
+    // =========================================================================
+    // getPriceFacet() Tests
+    // =========================================================================
 
     public function testGetPriceFacet(): void
     {
@@ -156,6 +168,19 @@ class PriceRangeBucketBuilderTest extends TestCase
         $result = $this->invokeMethod($this->builder, 'getPriceFacet', [$facets]);
 
         $this->assertEquals([], $result);
+    }
+
+    // =========================================================================
+    // getCountForPriceRange() Tests
+    // =========================================================================
+
+    /**
+     * @dataProvider priceRangeDataProvider
+     */
+    public function testGetCountForPriceRange(array $facet, float $min, float $max, int $expected): void
+    {
+        $result = $this->invokeMethod($this->builder, 'getCountForPriceRange', [$facet, $min, $max]);
+        $this->assertEquals($expected, $result);
     }
 
     public static function priceRangeDataProvider(): array
@@ -204,15 +229,6 @@ class PriceRangeBucketBuilderTest extends TestCase
                 'expected' => 5,
             ],
         ];
-    }
-
-    /**
-     * @dataProvider priceRangeDataProvider
-     */
-    public function testGetCountForPriceRange(array $facet, float $min, float $max, int $expected): void
-    {
-        $result = $this->invokeMethod($this->builder, 'getCountForPriceRange', [$facet, $min, $max]);
-        $this->assertEquals($expected, $result);
     }
 }
 

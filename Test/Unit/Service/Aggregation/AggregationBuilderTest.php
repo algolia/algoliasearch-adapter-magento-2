@@ -38,6 +38,10 @@ class AggregationBuilderTest extends TestCase
         );
     }
 
+    // =========================================================================
+    // build() Tests
+    // =========================================================================
+
     public function testBuildWithEmptyAggregation(): void
     {
         $request = $this->createMock(RequestInterface::class);
@@ -212,6 +216,10 @@ class AggregationBuilderTest extends TestCase
         $this->assertArrayHasKey('category_bucket', $buckets);
         $this->assertArrayHasKey('price_bucket', $buckets);
     }
+
+    // =========================================================================
+    // Helper Methods
+    // =========================================================================
 
     protected function createMockBucket(string $bucketClass, string $type, string $field, ?string $name = null): BucketInterface&MockObject
     {

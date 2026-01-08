@@ -19,6 +19,10 @@ class CategoryBucketBuilderTest extends TestCase
         $this->builder = new CategoryBucketBuilder($this->categoryPathProvider);
     }
 
+    // =========================================================================
+    // build() Tests
+    // =========================================================================
+
     public function testBuildWithEmptyFacets(): void
     {
         $bucket = $this->createMock(TermBucket::class);
@@ -182,6 +186,10 @@ class CategoryBucketBuilderTest extends TestCase
             '10' => ['value' => '10', 'count' => 12],
         ], $result);
     }
+
+    // =========================================================================
+    // getCategoryCountMapFromFacets() Tests
+    // =========================================================================
 
     public function testGetCategoryCountMapFromFacets(): void
     {
