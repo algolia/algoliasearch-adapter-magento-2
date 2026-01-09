@@ -1,5 +1,8 @@
 define(function () {
     return function (target) {
+
+        const PRICE_DELTA  = 0.01;
+
         const mixin = {
             getProductIndexName() {
                 return algoliaConfig.indexName + '_products';
@@ -7,6 +10,16 @@ define(function () {
 
             isMagentoCompatibleMode() {
                 return algoliaConfig.routing?.isMagentoCompatible ?? false;
+            },
+
+            transformPriceUpperBoundary(range) {
+                if (!this.isMagentoCompatibleMode() || !range) {
+                    return range;
+                }
+
+                const rangeValues = range.split(':');
+                rangeValues[1] = (parseInt(rangeValues[1]) - PRICE_DELTA).toString();
+                return rangeValues.join(':');
             },
 
             getSortingValueFromUiState(uiStateProductIndex) {
