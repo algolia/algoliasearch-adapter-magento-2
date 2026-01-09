@@ -37,10 +37,10 @@ class UpdateConfiguration implements ObserverInterface
                     $isMagentoCompatible ?
                         SortParam::PRICE_PARAM_MAGENTO :
                         SortParam::PRICE_PARAM_MAGENTO . $configuration['priceKey'],
-                'priceRouteDelimiter' =>
+                'priceRouteSeparator' =>
                     $isMagentoCompatible ?
-                        SortParam::PRICE_DELIMITER_MAGENTO :
-                        InstantSearchHelper::PRICE_DELIMITER,
+                        SortParam::PRICE_SEPARATOR_MAGENTO :
+                        InstantSearchHelper::PRICE_SEPARATOR,
             ]
         );
     }

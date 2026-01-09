@@ -21,7 +21,7 @@ class SortParam implements OptionSourceInterface
 
     public const PRICE_PARAM_MAGENTO = 'price';
 
-    public const PRICE_DELIMITER_MAGENTO = '-';
+    public const PRICE_SEPARATOR_MAGENTO = '-';
 
     public function toOptionArray()
     {
