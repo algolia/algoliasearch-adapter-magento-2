@@ -33,10 +33,7 @@ class PricePlugin extends AbstractSeoFilterPlugin
             return [$request];
         }
 
-        $maxPrice = $this->maxPriceProvider->getCatalogMaxPrice($storeId);
-        $boundaries = explode(SortParam::PRICE_SEPARATOR_MAGENTO, $attributeValue);
-        $boundaries[0] = isset($boundaries[0]) && $boundaries[0] !== "" ? $boundaries[0] : "0";
-        $boundaries[1] = isset($boundaries[1]) && $boundaries[1] !== "" ? $boundaries[1] : $maxPrice;
+        $boundaries = $this->defineBoundaries($attributeValue, $storeId);
 
         $request->setParam(
             $attributeCode,
@@ -44,5 +41,21 @@ class PricePlugin extends AbstractSeoFilterPlugin
         );
 
         return [$request];
+    }
+
+    /**
+     * @param string $attributeValue
+     * @param int $storeId
+     * @return array
+     */
+    public function defineBoundaries(string $attributeValue, int $storeId): array
+    {
+        $boundaries = explode(SortParam::PRICE_SEPARATOR_MAGENTO, $attributeValue);
+        $boundaries[0] = isset($boundaries[0]) && $boundaries[0] !== "" ? $boundaries[0] : "0";
+        $boundaries[1] = isset($boundaries[1]) && $boundaries[1] !== "" ?
+            $boundaries[1] :
+            $this->maxPriceProvider->getCatalogMaxPrice($storeId);
+
+        return $boundaries;
     }
 }
