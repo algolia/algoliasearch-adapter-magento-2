@@ -23,6 +23,10 @@
         <plugin name="algolia_category_filter"
                 type="Algolia\SearchAdapter\Plugin\Model\Layer\Filter\CategoryPlugin" />
     </type>
+    <type name="Magento\CatalogSearch\Model\Layer\Filter\Price">
+        <plugin name="algolia_price_filter"
+                type="Algolia\SearchAdapter\Plugin\Model\Layer\Filter\PricePlugin" />
+    </type>
 
     <!-- Cannot call on Magento\Catalog\Model\ResourceModel\Product\Collection due to inheritance -->
     <type name="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection">

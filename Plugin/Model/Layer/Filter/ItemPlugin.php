@@ -56,7 +56,7 @@ class ItemPlugin extends AbstractFilterPlugin
             case self::PARAM_CATEGORY:
                 return $this->getCategorySlug($subject, $storeId);
             case self::PARAM_PRICE:
-                return $result; // TODO: Implement IS compat price handling
+                return $result;
             default: // all other EAV attributes
                 return $this->buildUrl($param, $this->getAttributeSlug($subject));
         }
