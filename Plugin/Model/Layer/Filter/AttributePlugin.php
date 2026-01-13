@@ -15,26 +15,23 @@ use Magento\Store\Model\StoreManagerInterface;
  *
  * @see \Magento\CatalogSearch\Model\Layer\Filter\Attribute::convertAttributeValue
  */
-class AttributePlugin
+class AttributePlugin extends AbstractSeoFilterPlugin
 {
     public function __construct(
-        protected ConfigHelper          $configHelper,
         protected StoreManagerInterface $storeManager,
         protected FacetValueConverter   $facetValueConverter,
-    ) {}
+        ConfigHelper                    $configHelper,
+    ) {
+        parent::__construct($configHelper);
+    }
 
     public function beforeApply(Attribute $subject, RequestInterface $request): array
     {
         $attributeCode = $subject->getRequestVar();
         $attributeValue = $request->getParam($attributeCode);
+        $storeId = $this->storeManager->getStore()->getId();
 
-        if (
-            !$this->configHelper->areSeoFiltersEnabled($this->storeManager->getStore()->getId())
-            ||
-            $attributeValue === null
-            ||
-            trim($attributeValue) === ''
-        ) {
+        if (!$this->checkFilterConfig($attributeValue, $storeId)) {
             return [$request];
         }
 

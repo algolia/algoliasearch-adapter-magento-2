@@ -10,13 +10,15 @@ use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Store\Model\StoreManagerInterface;
 
-class PricePlugin
+class PricePlugin extends AbstractSeoFilterPlugin
 {
     public function __construct(
-        protected ConfigHelper          $configHelper,
         protected StoreManagerInterface $storeManager,
         protected MaxPriceProvider      $maxPriceProvider,
-    ) {}
+        ConfigHelper                    $configHelper,
+    ) {
+        parent::__construct($configHelper);
+    }
 
     /**
      * @throws LocalizedException
@@ -27,13 +29,7 @@ class PricePlugin
         $attributeValue = $request->getParam($attributeCode);
         $storeId = $this->storeManager->getStore()->getId();
 
-        if (
-            !$this->configHelper->areSeoFiltersEnabled($storeId)
-            ||
-            $attributeValue === null
-            ||
-            trim($attributeValue) === ''
-        ) {
+        if (!$this->checkFilterConfig($attributeValue, $storeId)) {
             return [$request];
         }
 

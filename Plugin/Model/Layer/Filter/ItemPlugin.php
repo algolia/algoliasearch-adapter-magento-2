@@ -45,8 +45,7 @@ class ItemPlugin extends AbstractFilterPlugin
         $storeId = $this->storeManager->getStore()->getId();
 
         if (
-            !$this->configHelper->areSeoFiltersEnabled($storeId)
-            ||
+            !$this->configHelper->areSeoFiltersEnabled($storeId) ||
             in_array($param, self::EXCLUDED_ATTRIBUTES)
         ) {
             return $result;
