@@ -4,10 +4,13 @@ namespace Algolia\SearchAdapter\Plugin\Model\Layer\Filter;
 
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Service\Category\CategoryPathProvider;
+use Algolia\AlgoliaSearch\Service\Product\PriceKeyResolver;
 use Algolia\SearchAdapter\Helper\ConfigHelper;
+use Algolia\SearchAdapter\Model\Source\SortParam;
 use Algolia\SearchAdapter\Plugin\AbstractFilterPlugin;
 use Magento\Catalog\Model\Layer\Filter\Item;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\UrlInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Theme\Block\Html\Pager;
@@ -30,6 +33,7 @@ class ItemPlugin extends AbstractFilterPlugin
         protected ConfigHelper          $configHelper,
         protected StoreManagerInterface $storeManager,
         protected CategoryPathProvider  $categoryPathProvider,
+        protected PriceKeyResolver     $priceKeyResolver,
         UrlInterface                    $urlBuilder,
         Pager                           $pager,
     ) {
@@ -55,7 +59,7 @@ class ItemPlugin extends AbstractFilterPlugin
             case self::PARAM_CATEGORY:
                 return $this->getCategorySlug($subject, $storeId);
             case self::PARAM_PRICE:
-                return $result;
+                return $this->getPricingSlug($subject, $storeId);
             default: // all other EAV attributes
                 return $this->buildUrl($param, $this->getAttributeSlug($subject));
         }
@@ -79,5 +83,26 @@ class ItemPlugin extends AbstractFilterPlugin
                 InstantSearchHelper::CATEGORY_ROUTE_DELIMITER
             )
         );
+    }
+
+    /**
+     * @throws LocalizedException
+     */
+    protected function getPricingSlug(Item $item, int $storeId): string
+    {
+        return $this->buildUrl(
+            $item->getFilter()->getRequestVar(),
+            $item->getValueString(),
+            [ $this->getPriceParamName($storeId) ]
+        );
+    }
+
+    /**
+     * @throws NoSuchEntityException
+     */
+    protected function getPriceParamName(int $storeId): string
+    {
+        $priceParam = SortParam::PRICE_PARAM_MAGENTO . $this->priceKeyResolver->getPriceKey($storeId);
+        return preg_replace('/\./', '_', $priceParam);
     }
 }
