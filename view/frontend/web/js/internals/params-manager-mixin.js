@@ -17,21 +17,26 @@ define(function () {
             },
 
             getPriceParamValue(currentFacetAttribute, routeParameters) {
-                // Price param should be fetched dynamically because it can be either Magento or Algolia based
-                // Fallbacks to the original parameter in case it's not found
-                let priceParamValue = routeParameters[this.getPriceParam()] ?
-                    routeParameters[this.getPriceParam()]?.replace(this.getPriceSeparator(), ':') :
-                    routeParameters[algoliaConfig.routing.originalPriceParameter]?.replace(algoliaConfig.routing.originalPriceRouteSeparator, ':');
+                const priceParam = this.getPriceParam();
 
-                if (routeParameters[this.getPriceParam()]) {
-                    return this.transformPriceUpperBoundary(priceParamValue);
+                // Guard against prototype pollution
+                if (Object.hasOwn(Object.prototype, priceParam)) {
+                    return '';
                 }
 
-                return priceParamValue;
+                if (
+                    !this.isMagentoCompatibleMode()
+                    // Price param should be fetched dynamically because it can be either Magento or Algolia based
+                    || routeParameters[priceParam] === undefined // Fallback to the default implementation if param is not found
+                ) {
+                    return target.getPriceParamValue(currentFacetAttribute, routeParameters);
+                }
+                const priceParamValue = routeParameters[priceParam]?.replace(this.getPriceSeparator(), ':');
+                return this.transformPriceUpperBoundary(priceParamValue);
             },
 
             transformPriceUpperBoundary(range) {
-                if (!this.isMagentoCompatibleMode() || !range) {
+                if (!range) {
                     return range;
                 }
 
