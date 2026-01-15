@@ -37,13 +37,13 @@ class SortParam extends AbstractConfigComment
             <ul>
                 <li>
                     <strong>Algolia default</strong>
-                    <br/>
-                    Example: <code>http//mywebsite.com/?<strong>sortBy</strong>=$productIndex&<strong>categories</strong>=Gear&<strong>price.USD.default</strong>=40:60&<strong>page</strong>=2</code>
+                    <br/><br/>
+                    Example: <code>http//mywebsite.com/?<strong>sortBy</strong>=$productIndex&<br/><strong>categories</strong>=Gear&<strong>price.USD.default</strong>=40%3A60&<strong>page</strong>=2</code>
                 </li>
                 <li>
                     <strong>Magento compatibility mode</strong>
-                    <br/>
-                    Example: <code>http//mywebsite.com/?<strong>product_list_order</strong>=price~asc&<strong>cat</strong>=Gear&<strong>price</strong>=40-60&<strong>p</strong>=2</code>
+                    <br/><br/>
+                    Example: <code>http//mywebsite.com/?<strong>product_list_order</strong>=price~asc&<br/><strong>cat</strong>=Gear&<strong>price</strong>=40-60&<strong>p</strong>=2</code>
                 </li>
             </ul>
 

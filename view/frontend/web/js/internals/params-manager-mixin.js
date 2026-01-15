@@ -12,6 +12,24 @@ define(function () {
                 return algoliaConfig.routing?.isMagentoCompatible ?? false;
             },
 
+            getPriceParam() {
+                return algoliaConfig.routing.priceParameter;
+            },
+
+            getPriceParamValue(currentFacetAttribute, routeParameters) {
+                // Price param should be fetched dynamically because it can be either Magento or Algolia based
+                // Fallbacks to the original parameter in case it's not found
+                let priceParamValue = routeParameters[this.getPriceParam()] ?
+                    routeParameters[this.getPriceParam()]?.replace(this.getPriceSeparator(), ':') :
+                    routeParameters[algoliaConfig.routing.originalPriceParameter]?.replace(algoliaConfig.routing.originalPriceRouteSeparator, ':');
+
+                if (routeParameters[this.getPriceParam()]) {
+                    return this.transformPriceUpperBoundary(priceParamValue);
+                }
+
+                return priceParamValue;
+            },
+
             transformPriceUpperBoundary(range) {
                 if (!this.isMagentoCompatibleMode() || !range) {
                     return range;
