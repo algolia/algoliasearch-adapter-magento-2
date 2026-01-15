@@ -2,14 +2,14 @@
 
 namespace Algolia\SearchAdapter\Service\Product;
 
-use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
+use Algolia\AlgoliaSearch\Helper\Entity\ProductHelper;
 
 class MaxPriceProvider
 {
     public array $maxPrices;
 
     public function __construct(
-        protected CollectionFactory $productCollectionFactory,
+        protected ProductHelper $productHelper,
     ){}
 
     /**
@@ -19,9 +19,8 @@ class MaxPriceProvider
     public function getCatalogMaxPrice(int $storeId): float
     {
         if (!isset($this->maxPrices[$storeId])) {
-            $collection = $this->productCollectionFactory->create();
-            $collection->setStoreId($storeId);
-            $collection->addAttributeToSort("price", "desc");
+            $collection = $this->productHelper->getProductCollectionQuery($storeId);
+            $collection->setOrder("price", "desc");
 
             $this->maxPrices[$storeId] = $collection->getFirstItem() ?
                 $collection->getFirstItem()->getFinalPrice() :
