@@ -35,9 +35,9 @@ class AttributePluginTest extends TestCase
         $this->store->method('getId')->willReturn(1);
 
         $this->plugin = new AttributePlugin(
-            $this->configHelper,
             $this->storeManager,
-            $this->facetValueConverter
+            $this->facetValueConverter,
+            $this->configHelper,
         );
     }
 
@@ -191,9 +191,9 @@ class AttributePluginTest extends TestCase
         $storeManager->method('getStore')->willReturn($store);
 
         $plugin = new AttributePlugin(
-            $this->configHelper,
             $storeManager,
-            $this->facetValueConverter
+            $this->facetValueConverter,
+            $this->configHelper,
         );
 
         $request = $this->createMock(HttpRequest::class);

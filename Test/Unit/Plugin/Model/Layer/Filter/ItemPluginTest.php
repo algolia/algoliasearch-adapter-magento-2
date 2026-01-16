@@ -3,6 +3,7 @@
 namespace Algolia\SearchAdapter\Test\Unit\Plugin\Model\Layer\Filter;
 
 use Algolia\AlgoliaSearch\Service\Category\CategoryPathProvider;
+use Algolia\AlgoliaSearch\Service\Product\PriceKeyResolver;
 use Algolia\AlgoliaSearch\Test\TestCase;
 use Algolia\SearchAdapter\Helper\ConfigHelper;
 use Algolia\SearchAdapter\Plugin\Model\Layer\Filter\ItemPlugin;
@@ -20,6 +21,7 @@ class ItemPluginTest extends TestCase
     private null|(ConfigHelper&MockObject) $configHelper = null;
     private null|(StoreManagerInterface&MockObject) $storeManager = null;
     private null|(CategoryPathProvider&MockObject) $categoryPathProvider = null;
+    private null|(PriceKeyResolver&MockObject) $priceKeyResolver = null;
     private null|(UrlInterface&MockObject) $urlBuilder = null;
     private null|(Pager&MockObject) $pager = null;
     private null|(StoreInterface&MockObject) $store = null;
@@ -29,6 +31,7 @@ class ItemPluginTest extends TestCase
         $this->configHelper = $this->createMock(ConfigHelper::class);
         $this->storeManager = $this->createMock(StoreManagerInterface::class);
         $this->categoryPathProvider = $this->createMock(CategoryPathProvider::class);
+        $this->priceKeyResolver = $this->createMock(PriceKeyResolver::class);
         $this->urlBuilder = $this->createMock(UrlInterface::class);
         $this->pager = $this->createMock(Pager::class);
         $this->store = $this->createMock(StoreInterface::class);
@@ -40,6 +43,7 @@ class ItemPluginTest extends TestCase
             $this->configHelper,
             $this->storeManager,
             $this->categoryPathProvider,
+            $this->priceKeyResolver,
             $this->urlBuilder,
             $this->pager
         );
@@ -106,23 +110,46 @@ class ItemPluginTest extends TestCase
         $this->assertEquals($expectedUrl, $result);
     }
 
-    // TODO: Update this test when IS compat price handling is implemented
-    public function testAfterGetUrlReturnOriginalForPriceAttribute(): void
+    public function testAfterGetUrlBuildsPriceUrlWithPriceKeyParam(): void
     {
-        $originalUrl = 'https://example.com/original-url?price=100-200';
-        $item = $this->createMockItem('price', '100-200');
+        $originalUrl = 'https://example.com/original-url?price.USD.default=%3A20';
+        $expectedUrl = 'https://example.com/original-url?price=100-200';
+        $item = $this->createMockPriceItem('price', '100-200');
 
         $this->configHelper
             ->method('areSeoFiltersEnabled')
             ->willReturn(true);
 
+        $this->priceKeyResolver
+            ->expects($this->once())
+            ->method('getPriceKey')
+            ->with(1)
+            ->willReturn('.USD.default');
+
+        $this->pager
+            ->method('getPageVarName')
+            ->willReturn('p');
+
         $this->urlBuilder
-            ->expects($this->never())
-            ->method('getUrl');
+            ->expects($this->once())
+            ->method('getUrl')
+            ->with(
+                '*/*/*',
+                [
+                    '_current' => true,
+                    '_use_rewrite' => true,
+                    '_query' => [
+                        'price' => '100-200',
+                        'p' => null,
+                        'price_USD_default' => null
+                    ]
+                ]
+            )
+            ->willReturn($expectedUrl);
 
         $result = $this->plugin->afterGetUrl($item, $originalUrl);
 
-        $this->assertEquals($originalUrl, $result);
+        $this->assertEquals($expectedUrl, $result);
     }
 
     public function testAfterGetUrlBuildsUrlWithLabelWhenSeoFiltersEnabled(): void
@@ -201,6 +228,7 @@ class ItemPluginTest extends TestCase
             $this->configHelper,
             $storeManager,
             $this->categoryPathProvider,
+            $this->priceKeyResolver,
             $this->urlBuilder,
             $this->pager
         );
@@ -228,6 +256,32 @@ class ItemPluginTest extends TestCase
         $result = $this->invokeMethod($this->plugin, 'getAttributeSlug', [$item]);
 
         $this->assertEquals('Test Label', $result);
+    }
+
+    public function testGetPriceParamNameReplacesDotsWithUnderscores(): void
+    {
+        $this->priceKeyResolver
+            ->expects($this->once())
+            ->method('getPriceKey')
+            ->with(1)
+            ->willReturn('.USD.default');
+
+        $result = $this->invokeMethod($this->plugin, 'getPriceParamName', [1]);
+
+        $this->assertEquals('price_USD_default', $result);
+    }
+
+    public function testGetPriceParamNameWithCustomerGroup(): void
+    {
+        $this->priceKeyResolver
+            ->expects($this->once())
+            ->method('getPriceKey')
+            ->with(1)
+            ->willReturn('.EUR.group_2');
+
+        $result = $this->invokeMethod($this->plugin, 'getPriceParamName', [1]);
+
+        $this->assertEquals('price_EUR_group_2', $result);
     }
 
     public function testAfterGetUrlWithSpecialCharactersInLabel(): void
@@ -273,6 +327,18 @@ class ItemPluginTest extends TestCase
     }
 
     private function createMockCategoryItem(string $requestVar, string $valueString): Item&MockObject
+    {
+        $filter = $this->createMock(AbstractFilter::class);
+        $filter->method('getRequestVar')->willReturn($requestVar);
+
+        $item = $this->createMock(Item::class);
+        $item->method('getFilter')->willReturn($filter);
+        $item->method('getValueString')->willReturn($valueString);
+
+        return $item;
+    }
+
+    private function createMockPriceItem(string $requestVar, string $valueString): Item&MockObject
     {
         $filter = $this->createMock(AbstractFilter::class);
         $filter->method('getRequestVar')->willReturn($requestVar);

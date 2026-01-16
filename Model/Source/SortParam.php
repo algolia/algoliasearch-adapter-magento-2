@@ -19,6 +19,10 @@ class SortParam implements OptionSourceInterface
     public const CATEGORY_PARAM_ALGOLIA = 'categories';
     public const CATEGORY_PARAM_MAGENTO = 'cat';
 
+    public const PRICE_PARAM_MAGENTO = 'price';
+
+    public const PRICE_SEPARATOR_MAGENTO = '-';
+
     public function toOptionArray()
     {
         return [

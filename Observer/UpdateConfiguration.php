@@ -2,6 +2,7 @@
 
 namespace Algolia\SearchAdapter\Observer;
 
+use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\SearchAdapter\Helper\ConfigHelper;
 use Algolia\SearchAdapter\Model\Source\SortParam;
 use Magento\Framework\Event\Observer;
@@ -32,6 +33,14 @@ class UpdateConfiguration implements ObserverInterface
                     $isMagentoCompatible ?
                         SortParam::CATEGORY_PARAM_MAGENTO :
                         SortParam::CATEGORY_PARAM_ALGOLIA,
+                'priceParameter' =>
+                    $isMagentoCompatible ?
+                        SortParam::PRICE_PARAM_MAGENTO :
+                        SortParam::PRICE_PARAM_MAGENTO . $configuration['priceKey'],
+                'priceRouteSeparator' =>
+                    $isMagentoCompatible ?
+                        SortParam::PRICE_SEPARATOR_MAGENTO :
+                        InstantSearchHelper::PRICE_SEPARATOR,
             ]
         );
     }

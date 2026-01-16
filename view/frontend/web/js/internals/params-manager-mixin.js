@@ -1,5 +1,8 @@
 define(function () {
     return function (target) {
+
+        const PRICE_DELTA  = 0.01;
+
         const mixin = {
             getProductIndexName() {
                 return algoliaConfig.indexName + '_products';
@@ -7,6 +10,39 @@ define(function () {
 
             isMagentoCompatibleMode() {
                 return algoliaConfig.routing?.isMagentoCompatible ?? false;
+            },
+
+            getPriceParam() {
+                return algoliaConfig.routing.priceParameter;
+            },
+
+            getPriceParamValue(currentFacetAttribute, routeParameters) {
+                const priceParam = this.getPriceParam();
+
+                // Guard against prototype pollution
+                if (Object.hasOwn(Object.prototype, priceParam)) {
+                    return '';
+                }
+
+                if (
+                    !this.isMagentoCompatibleMode()
+                    // Price param should be fetched dynamically because it can be either Magento or Algolia based
+                    || routeParameters[priceParam] === undefined // Fallback to the default implementation if param is not found
+                ) {
+                    return target.getPriceParamValue(currentFacetAttribute, routeParameters);
+                }
+                const priceParamValue = routeParameters[priceParam]?.replace(this.getPriceSeparator(), ':');
+                return this.transformPriceUpperBoundary(priceParamValue);
+            },
+
+            transformPriceUpperBoundary(range) {
+                if (!range) {
+                    return range;
+                }
+
+                const rangeValues = range.split(':');
+                rangeValues[1] = (parseInt(rangeValues[1]) - PRICE_DELTA).toString();
+                return rangeValues.join(':');
             },
 
             getSortingValueFromUiState(uiStateProductIndex) {
