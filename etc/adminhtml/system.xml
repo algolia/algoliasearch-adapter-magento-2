@@ -73,6 +73,31 @@
                 </field>
             </group>
         </section>
+        <section id="algoliasearch_instant">
+            <group id="backend" translate="label" type="text" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Backend Search Compatibility</label>
+                <field id="enable_backend_render" translate="label comment" type="select" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable backend rendering?</label>
+                    <attribute type="expanded">1</attribute>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>
+                        <![CDATA[
+                            InstantSearch renders search results and product listings dynamically in the end user’s browser using JavaScript.
+                            <br><br>
+                            When backend rendering is enabled, search results can also be generated on the server side before the page is delivered.
+                            This can be beneficial for SEO, ensuring that product listings are discoverable by search engine crawlers, and may also improve content visibility for LLM-based discovery.
+                            <br><br>
+                            Backend rendering can be enabled for all users, or selectively for specific user agents (for example, search engine bots),
+                            while regular shoppers continue to use InstantSearch.
+                            <br><br>
+                            <strong>Important:</strong> Enabling backend rendering may result in additional Algolia API calls.
+                            It is strongly recommended to enable Magento’s Full Page Cache to avoid duplicate requests and increased search usage.
+                        ]]>
+                    </comment>
+                </field>
+            </group>
+        </section>
+        <!-- TODO: Relocate to IS section -->
         <section id="algoliasearch_backend" translate="label" type="text" sortOrder="25" showInDefault="1" showInWebsite="0" showInStore="0">
             <label>Backend Search Compatibility</label>
             <tab>algolia</tab>
