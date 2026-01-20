@@ -81,7 +81,7 @@
                     <![CDATA[
                     InstantSearch renders search results and product listings dynamically in the end user’s browser using JavaScript.
                     <br><br>
-                    When backend rendering is enabled, search results can also be generated on the server side <strong>before</strong> the page is delivered.
+                    When <strong>backend rendering</strong> is enabled, search results can also be generated on the server side <em>before</em> the page is delivered.
                     This can be beneficial for SEO, ensuring that product listings are discoverable by search engine crawlers, and may also improve content visibility for LLM-based discovery.
                     ]]>
                 </comment>
@@ -89,13 +89,7 @@
                     <label>Enable backend rendering?</label>
                     <source_model>Algolia\SearchAdapter\Model\Config\Source\EnableBackendRendering</source_model>
                     <comment>
-                        <![CDATA[
-                            Backend rendering can be enabled for all users, or selectively for specific user agents (for example, search engine bots),
-                            while regular shoppers continue to use InstantSearch.
-                            <br><br>
-                            <strong>Important:</strong> Enabling backend rendering may result in additional Algolia API calls.
-                            It is strongly recommended to enable Magento’s Full Page Cache to avoid duplicate requests and increased search usage.
-                        ]]>
+                        <model>Algolia\SearchAdapter\Model\Config\Comment\BackendRendering</model>
                     </comment>
                 </field>
                 <field id="backend_render_allowed_user_agents" translate="label comment" type="Algolia\AlgoliaSearch\Model\Textarea" showInDefault="1" showInWebsite="1" showInStore="1">
