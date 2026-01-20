@@ -113,7 +113,7 @@
                 <field id="sort_param" translate="label comment" type="select" sortOrder="10"
                        showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Query String Parameters</label>
-                    <source_model>Algolia\SearchAdapter\Model\Source\SortParam</source_model>
+                    <source_model>Algolia\SearchAdapter\Model\Config\Source\SortParam</source_model>
                     <comment>
                         <model>Algolia\SearchAdapter\Model\Config\Comment\SortParam</model>
                     </comment>

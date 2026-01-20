@@ -1,6 +1,6 @@
 <?php
 
-namespace Algolia\SearchAdapter\Model\Source;
+namespace Algolia\SearchAdapter\Model\Config\Source;
 
 use Magento\Framework\Data\OptionSourceInterface;
 

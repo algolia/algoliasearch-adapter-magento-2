@@ -4,7 +4,7 @@ namespace Algolia\SearchAdapter\Observer;
 
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\SearchAdapter\Helper\ConfigHelper;
-use Algolia\SearchAdapter\Model\Source\SortParam;
+use Algolia\SearchAdapter\Model\Config\Source\SortParam;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 

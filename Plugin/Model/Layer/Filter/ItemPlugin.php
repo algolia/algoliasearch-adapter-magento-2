@@ -6,7 +6,7 @@ use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Service\Category\CategoryPathProvider;
 use Algolia\AlgoliaSearch\Service\Product\PriceKeyResolver;
 use Algolia\SearchAdapter\Helper\ConfigHelper;
-use Algolia\SearchAdapter\Model\Source\SortParam;
+use Algolia\SearchAdapter\Model\Config\Source\SortParam;
 use Algolia\SearchAdapter\Plugin\AbstractFilterPlugin;
 use Magento\Catalog\Model\Layer\Filter\Item;
 use Magento\Framework\Exception\LocalizedException;
