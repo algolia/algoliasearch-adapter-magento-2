@@ -4,13 +4,12 @@ namespace Algolia\SearchAdapter\Model\Config\Backend;
 
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\SearchAdapter\Helper\ConfigHelper;
+use Magento\Config\Model\ResourceModel\Config\Data\CollectionFactory as ConfigCollectionFactory;
 
-class EnableBackendRendering extends \Magento\Framework\App\Config\Value
+class Engine extends \Magento\Framework\App\Config\Value
 {
-    public const VALIDATION_MSG = 'The Algolia Backend Search engine must be enabled in order to use backend rendering with InstantSearch.';
-
     public function __construct(
-        protected ConfigHelper                                   $configHelper,
+        protected ConfigCollectionFactory                        $configCollectionFactory,
         \Magento\Framework\Model\Context                         $context,
         \Magento\Framework\Registry                              $registry,
         \Magento\Framework\App\Config\ScopeConfigInterface       $config,
@@ -22,19 +21,28 @@ class EnableBackendRendering extends \Magento\Framework\App\Config\Value
         return parent::__construct($context, $registry, $config, $cacheTypeList, $resource, $resourceCollection, $data);
     }
 
-    /**
-     * @throws AlgoliaException
-     */
     public function beforeSave(): self
     {
-        $value = (int) $this->getValue();
+        $value = $this->getValue();
 
-        if ($value && !$this->configHelper->isAlgoliaEngineSelected()) {
+        if ($value != ConfigHelper::ALGOLIA_ENGINE && $this->isBackendRenderConfigured()) {
             throw new AlgoliaException(
-                __(self::VALIDATION_MSG)
+                __(EnableBackendRendering::VALIDATION_MSG)
             );
         }
 
         return parent::beforeSave();
+    }
+
+    /** Check if backend render is configured for any scope - if so the Algolia engine is required */
+    protected function isBackendRenderConfigured(): bool
+    {
+        $collection = $this->configCollectionFactory->create()
+            ->addFieldToFilter('path', ConfigHelper::IS_BACKEND_RENDER_ENABLED)
+            ->addFieldToFilter(
+                'value',
+                ['gt' => \Algolia\SearchAdapter\Model\Config\Source\EnableBackendRendering::BACKEND_RENDER_OFF]
+            );
+        return (bool) $collection->getSize();
     }
 }

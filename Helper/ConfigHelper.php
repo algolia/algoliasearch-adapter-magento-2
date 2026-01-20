@@ -3,6 +3,7 @@
 namespace Algolia\SearchAdapter\Helper;
 
 use Algolia\AlgoliaSearch\Helper\ConfigHelper as BaseConfigHelper;
+use Algolia\SearchAdapter\Model\Config\Source\EnableBackendRendering;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Search\EngineResolverInterface;
@@ -16,6 +17,8 @@ class ConfigHelper
     public const CONNECTION_TIMEOUT = 'catalog/search/algolia_connect_timeout';
     public const READ_TIMEOUT = 'catalog/search/algolia_read_timeout';
     public const SEO_FILTERS = 'catalog/search/algolia_seo_filters';
+
+    public const IS_BACKEND_RENDER_ENABLED = 'algoliasearch_instant/backend/enable_backend_render';
 
     public const SORTING_PARAMETER = 'algoliasearch_backend/algolia_backend_listing/sort_param';
 
@@ -99,6 +102,12 @@ class ConfigHelper
     public function getReadTimeout(?int $storeId = null): int
     {
         return $this->getConfigByScope(self::READ_TIMEOUT, null, $storeId);
+    }
+
+    public function isBackendRenderEnabled(?int $storeId = null): bool
+    {
+        return (int) $this->configInterface->getValue(self::IS_BACKEND_RENDER_ENABLED, $storeId)
+            !== EnableBackendRendering::BACKEND_RENDER_OFF;
     }
 
     public function getSortingParameter(?int $storeId = null): string

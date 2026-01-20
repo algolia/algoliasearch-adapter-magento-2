@@ -8,6 +8,7 @@
                     <label>Search Engine</label>
                     <frontend_model>Algolia\SearchAdapter\Block\Adminhtml\System\Config\Engine</frontend_model>
                     <source_model>Magento\Search\Model\Adminhtml\System\Config\Source\Engine</source_model>
+                    <backend_model>Algolia\SearchAdapter\Model\Config\Backend\Engine</backend_model>
                 </field>
                 <field id="algolia_app_id" translate="label" type="text" sortOrder="61"
                        showInDefault="1" showInWebsite="1" showInStore="1">
