@@ -88,6 +88,7 @@
                 <field id="enable_backend_render" translate="label comment" type="select" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Enable backend rendering?</label>
                     <source_model>Algolia\SearchAdapter\Model\Config\Source\EnableBackendRendering</source_model>
+                    <backend_model>Algolia\SearchAdapter\Model\Config\Backend\EnableBackendRendering</backend_model>
                     <comment>
                         <model>Algolia\SearchAdapter\Model\Config\Comment\BackendRendering</model>
                     </comment>
