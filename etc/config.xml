@@ -7,6 +7,12 @@
                 <algolia_seo_filters>1</algolia_seo_filters>
             </search>
         </catalog>
+        <algoliasearch_instant>
+            <backend>
+                <enable_backend_render>0</enable_backend_render>
+                <backend_render_allowed_user_agents>Googlebot&#xA;Bingbot</backend_render_allowed_user_agents>
+            </backend>
+        </algoliasearch_instant>
         <algoliasearch_backend>
             <algolia_backend_listing>
                 <sort_param>product_list_order</sort_param>
