@@ -32,11 +32,11 @@ class BackendRenderingResolver
             $storeId
         );
 
-        if ($backendRenderMode === EnableBackendRendering::BACKEND_RENDER_OFF) { // Not enabled
+        if ($backendRenderMode === EnableBackendRendering::BACKEND_RENDER_OFF) {
             return true;
         }
 
-        if ($backendRenderMode === EnableBackendRendering::BACKEND_RENDER_ON) { // Always on
+        if ($backendRenderMode === EnableBackendRendering::BACKEND_RENDER_ON) {
             return false;
         }
 
