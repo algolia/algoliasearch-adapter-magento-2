@@ -99,6 +99,7 @@
                     <comment>
                         <![CDATA[
                             To specify multiple, please put one <code>User-Agent</code> string per line.
+                            Partial matches are supported.
                         ]]>
                     </comment>
                     <depends>

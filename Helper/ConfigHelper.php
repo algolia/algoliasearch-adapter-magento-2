@@ -18,7 +18,8 @@ class ConfigHelper
     public const READ_TIMEOUT = 'catalog/search/algolia_read_timeout';
     public const SEO_FILTERS = 'catalog/search/algolia_seo_filters';
 
-    public const IS_BACKEND_RENDER_ENABLED = 'algoliasearch_instant/backend/enable_backend_render';
+    public const BACKEND_RENDER_MODE = 'algoliasearch_instant/backend/enable_backend_render';
+    public const BACKEND_RENDER_USER_AGENTS = 'algoliasearch_instant/backend/backend_render_allowed_user_agents';
 
     public const SORTING_PARAMETER = 'algoliasearch_backend/algolia_backend_listing/sort_param';
 
@@ -106,8 +107,64 @@ class ConfigHelper
 
     public function isBackendRenderEnabled(?int $storeId = null): bool
     {
-        return (int) $this->configInterface->getValue(self::IS_BACKEND_RENDER_ENABLED, $storeId)
-            !== EnableBackendRendering::BACKEND_RENDER_OFF;
+        return (int) $this->configInterface->getValue(
+            self::BACKEND_RENDER_MODE,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        ) !== EnableBackendRendering::BACKEND_RENDER_OFF;
+    }
+
+    public function shouldPreventBackendRendering(?int $storeId = null): bool
+    {
+        $backendRenderMode = (int) $this->configInterface->getValue(
+            self::BACKEND_RENDER_MODE,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+
+        if ($backendRenderMode === EnableBackendRendering::BACKEND_RENDER_OFF) { // Not enabled
+            return true;
+        }
+
+        if ($backendRenderMode === EnableBackendRendering::BACKEND_RENDER_ON) { // Always on
+            return false;
+        }
+
+        return !$this->isUserAgentMatch($storeId);
+    }
+
+    protected function isUserAgentMatch(?int $storeId): bool
+    {
+        $userAgent = mb_strtolower(
+            (string) filter_var(
+                $_SERVER['HTTP_USER_AGENT'] ?? '',
+                FILTER_SANITIZE_SPECIAL_CHARS
+            ),
+            'utf-8'
+        );
+
+        if (!$userAgent) {
+            return false;
+        }
+
+        $allowedUserAgents = $this->configInterface->getValue(
+            self::BACKEND_RENDER_USER_AGENTS,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+        $allowedUserAgents = trim((string) $allowedUserAgents);
+        if ($allowedUserAgents === '') {
+            return false;
+        }
+        $allowedUserAgents = preg_split('/\n|\r\n?/', $allowedUserAgents);
+        $allowedUserAgents = array_filter($allowedUserAgents);
+        foreach ($allowedUserAgents as $allowedUserAgent) {
+            $allowedUserAgent = mb_strtolower($allowedUserAgent, 'utf-8');
+            if (mb_strpos($userAgent, $allowedUserAgent) !== false) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public function getSortingParameter(?int $storeId = null): string

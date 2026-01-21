@@ -29,4 +29,11 @@
         <plugin name="algolia_collection_filter"
                 type="Algolia\SearchAdapter\Plugin\Model\ResourceModel\Product\CollectionPlugin" />
     </type>
+
+
+    <!-- Backend render -->
+    <type name="Algolia\AlgoliaSearch\Service\RenderingManager">
+        <plugin name="algolia_adapter_rendering_manager"
+                type="Algolia\SearchAdapter\Plugin\Service\RenderingManagerPlugin" />
+    </type>
 </config>

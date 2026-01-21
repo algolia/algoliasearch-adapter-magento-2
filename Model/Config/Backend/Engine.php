@@ -38,7 +38,7 @@ class Engine extends \Magento\Framework\App\Config\Value
     protected function isBackendRenderConfigured(): bool
     {
         $collection = $this->configCollectionFactory->create()
-            ->addFieldToFilter('path', ConfigHelper::IS_BACKEND_RENDER_ENABLED)
+            ->addFieldToFilter('path', ConfigHelper::BACKEND_RENDER_MODE)
             ->addFieldToFilter(
                 'value',
                 ['gt' => \Algolia\SearchAdapter\Model\Config\Source\EnableBackendRendering::BACKEND_RENDER_OFF]

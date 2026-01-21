@@ -6,7 +6,7 @@ use Algolia\AlgoliaSearch\Model\Config\AbstractConfigComment;
 
 class BackendRendering extends AbstractConfigComment
 {
-    public function getCommentText($elementString): string
+    public function getCommentText($elementValue): string
     {
         $link = $this->getConfigLink(
             'catalog',
