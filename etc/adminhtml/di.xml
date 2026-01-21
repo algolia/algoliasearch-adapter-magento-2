@@ -3,4 +3,7 @@
     <type name="Magento\CatalogSearch\Model\Indexer\Fulltext">
         <plugin name="algolia_adapter_disable_es_indexing" type="Algolia\SearchAdapter\Plugin\Indexer\DisableElasticSearchIndexing"/>
     </type>
+    <type name="Algolia\AlgoliaSearch\Helper\Configuration\NoticeHelper">
+        <plugin name="algolia_config_instantsearch_comment" type="Algolia\SearchAdapter\Plugin\Helper\Configuration\NoticeHelperComment"/>
+    </type>
 </config>
