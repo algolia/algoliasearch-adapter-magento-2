@@ -3,12 +3,12 @@
 namespace Algolia\SearchAdapter\Plugin\Service;
 
 use Algolia\AlgoliaSearch\Service\RenderingManager;
-use Algolia\SearchAdapter\Helper\ConfigHelper;
+use Algolia\SearchAdapter\Service\BackendRenderingResolver;
 
 class RenderingManagerPlugin
 {
     public function __construct(
-        protected ConfigHelper $configHelper,
+        protected BackendRenderingResolver $backendRenderingResolver,
     ) {}
 
     public function afterShouldPreventBackendRendering(
@@ -22,6 +22,6 @@ class RenderingManagerPlugin
             return false;
         }
 
-        return $this->configHelper->shouldPreventBackendRendering($storeId);
+        return $this->backendRenderingResolver->shouldPreventRendering($storeId);
     }
 }
