@@ -7,10 +7,12 @@
                 <algolia_seo_filters>1</algolia_seo_filters>
             </search>
         </catalog>
-        <algoliasearch_backend>
-            <algolia_backend_listing>
-                <sort_param>product_list_order</sort_param>
-            </algolia_backend_listing>
-        </algoliasearch_backend>
+        <algoliasearch_instant>
+            <backend>
+                <backend_render_mode>0</backend_render_mode>
+                <backend_render_allowed_user_agents>Googlebot&#xA;Bingbot</backend_render_allowed_user_agents>
+                <query_string_param_mode>magento</query_string_param_mode>
+            </backend>
+        </algoliasearch_instant>
     </default>
 </config>

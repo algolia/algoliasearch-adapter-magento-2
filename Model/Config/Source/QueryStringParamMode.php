@@ -1,18 +1,17 @@
 <?php
 
-namespace Algolia\SearchAdapter\Model\Source;
+namespace Algolia\SearchAdapter\Model\Config\Source;
 
 use Magento\Framework\Data\OptionSourceInterface;
 
-class SortParam implements OptionSourceInterface
+class QueryStringParamMode implements OptionSourceInterface
 {
+    public const PARAM_MODE_ALGOLIA = 'default'; // The way InstantSearch params used to work
+    public const PARAM_MODE_MAGENTO = 'magento'; // The way Magento uses params
+
     public const SORT_PARAM_ALGOLIA = 'sortBy';
     public const SORT_PARAM_MAGENTO = 'product_list_order';
 
-    /*
-     * TODO: Refactor this into a query string parameter "mode" - see MAGE-1452
-     * It doesn't make sense to aggregate the following parameters under the same "sort" configuration
-     */
     public const PAGE_PARAM_ALGOLIA = 'page';
     public const PAGE_PARAM_MAGENTO = 'p';
 
@@ -27,11 +26,11 @@ class SortParam implements OptionSourceInterface
     {
         return [
             [
-                'value' => self::SORT_PARAM_ALGOLIA,
+                'value' => self::PARAM_MODE_ALGOLIA,
                 'label' => __('Algolia default'),
             ],
             [
-                'value' => self::SORT_PARAM_MAGENTO,
+                'value' => self::PARAM_MODE_MAGENTO,
                 'label' => __('Magento compatibility mode'),
             ],
         ];

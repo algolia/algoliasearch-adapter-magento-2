@@ -8,6 +8,7 @@
                     <label>Search Engine</label>
                     <frontend_model>Algolia\SearchAdapter\Block\Adminhtml\System\Config\Engine</frontend_model>
                     <source_model>Magento\Search\Model\Adminhtml\System\Config\Source\Engine</source_model>
+                    <backend_model>Algolia\SearchAdapter\Model\Config\Backend\Engine</backend_model>
                 </field>
                 <field id="algolia_app_id" translate="label" type="text" sortOrder="61"
                        showInDefault="1" showInWebsite="1" showInStore="1">
@@ -73,24 +74,43 @@
                 </field>
             </group>
         </section>
-        <section id="algoliasearch_backend" translate="label" type="text" sortOrder="25" showInDefault="1" showInWebsite="0" showInStore="0">
-            <label>Backend Search Compatibility</label>
-            <tab>algolia</tab>
-            <resource>Algolia_AlgoliaSearch::algolia_algoliasearch</resource>
-            <group id="algolia_backend_listing" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
-                <label>Products Listing</label>
+        <section id="algoliasearch_instant">
+            <group id="backend" translate="label" type="text" sortOrder="5" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Backend Search Compatibility</label>
                 <attribute type="expanded">1</attribute>
                 <comment>
                     <![CDATA[
-                            These settings belong to the <code>Algolia_SearchAdapter</code> module.
-                      ]]>
+                    InstantSearch renders search results and product listings dynamically in the end user’s browser using JavaScript.
+                    <br><br>
+                    When <strong>backend rendering</strong> is enabled, search results can also be generated on the server side <em>before</em> the page is delivered.
+                    This can be beneficial for SEO, ensuring that product listings are discoverable by search engine crawlers, and may also improve content visibility for LLM-based discovery.
+                    ]]>
                 </comment>
-                <field id="sort_param" translate="label comment" type="select" sortOrder="10"
-                       showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Query String Parameters</label>
-                    <source_model>Algolia\SearchAdapter\Model\Source\SortParam</source_model>
+                <field id="backend_render_mode" translate="label comment" type="select" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable backend rendering?</label>
+                    <source_model>Algolia\SearchAdapter\Model\Config\Source\BackendRenderMode</source_model>
+                    <backend_model>Algolia\SearchAdapter\Model\Config\Backend\BackendRenderMode</backend_model>
                     <comment>
-                        <model>Algolia\SearchAdapter\Model\Config\Comment\SortParam</model>
+                        <model>Algolia\SearchAdapter\Model\Config\Comment\BackendRenderMode</model>
+                    </comment>
+                </field>
+                <field id="backend_render_allowed_user_agents" translate="label comment" type="Algolia\AlgoliaSearch\Model\Textarea" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Allow backend rendering for specific User Agents</label>
+                    <comment>
+                        <![CDATA[
+                            To specify multiple, please put one <code>User-Agent</code> string per line.
+                            Partial matches are supported.
+                        ]]>
+                    </comment>
+                    <depends>
+                        <field id="backend_render_mode">2</field>
+                    </depends>
+                </field>
+                <field id="query_string_param_mode" translate="label comment" type="select" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Query string parameters</label>
+                    <source_model>Algolia\SearchAdapter\Model\Config\Source\QueryStringParamMode</source_model>
+                    <comment>
+                        <model>Algolia\SearchAdapter\Model\Config\Comment\QueryStringParamMode</model>
                     </comment>
                 </field>
             </group>

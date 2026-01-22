@@ -4,7 +4,7 @@ namespace Algolia\SearchAdapter\Observer;
 
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\SearchAdapter\Helper\ConfigHelper;
-use Algolia\SearchAdapter\Model\Source\SortParam;
+use Algolia\SearchAdapter\Model\Config\Source\QueryStringParamMode;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 
@@ -17,29 +17,32 @@ class UpdateConfiguration implements ObserverInterface
     public function execute(Observer $observer): void
     {
         $configuration = $observer->getData('configuration');
-        $sortingParam = $this->configHelper->getSortingParameter(); //TODO: Refactor this lever to a mode
-        $isMagentoCompatible = $sortingParam === SortParam::SORT_PARAM_MAGENTO;
+        $queryStringParamMode = $this->configHelper->getQueryStringParamMode();
+        $isMagentoCompatible = $queryStringParamMode === QueryStringParamMode::PARAM_MODE_MAGENTO;
 
         $configuration['routing'] = array_merge(
             $configuration['routing'] ?? [],
             [
                 'isMagentoCompatible' => $isMagentoCompatible,
-                'sortingParameter' => $this->configHelper->getSortingParameter(),
+                'sortingParameter' =>
+                    $isMagentoCompatible ?
+                        QueryStringParamMode::SORT_PARAM_MAGENTO :
+                        QueryStringParamMode::SORT_PARAM_ALGOLIA,
                 'pagingParameter'  =>
                     $isMagentoCompatible ?
-                        SortParam::PAGE_PARAM_MAGENTO :
-                        SortParam::PAGE_PARAM_ALGOLIA,
+                        QueryStringParamMode::PAGE_PARAM_MAGENTO :
+                        QueryStringParamMode::PAGE_PARAM_ALGOLIA,
                 'categoryParameter' =>
                     $isMagentoCompatible ?
-                        SortParam::CATEGORY_PARAM_MAGENTO :
-                        SortParam::CATEGORY_PARAM_ALGOLIA,
+                        QueryStringParamMode::CATEGORY_PARAM_MAGENTO :
+                        QueryStringParamMode::CATEGORY_PARAM_ALGOLIA,
                 'priceParameter' =>
                     $isMagentoCompatible ?
-                        SortParam::PRICE_PARAM_MAGENTO :
-                        SortParam::PRICE_PARAM_MAGENTO . $configuration['priceKey'],
+                        QueryStringParamMode::PRICE_PARAM_MAGENTO :
+                        QueryStringParamMode::PRICE_PARAM_MAGENTO . $configuration['priceKey'],
                 'priceRouteSeparator' =>
                     $isMagentoCompatible ?
-                        SortParam::PRICE_SEPARATOR_MAGENTO :
+                        QueryStringParamMode::PRICE_SEPARATOR_MAGENTO :
                         InstantSearchHelper::PRICE_SEPARATOR,
             ]
         );

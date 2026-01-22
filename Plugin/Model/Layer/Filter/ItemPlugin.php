@@ -6,7 +6,7 @@ use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Service\Category\CategoryPathProvider;
 use Algolia\AlgoliaSearch\Service\Product\PriceKeyResolver;
 use Algolia\SearchAdapter\Helper\ConfigHelper;
-use Algolia\SearchAdapter\Model\Source\SortParam;
+use Algolia\SearchAdapter\Model\Config\Source\QueryStringParamMode;
 use Algolia\SearchAdapter\Plugin\AbstractFilterPlugin;
 use Magento\Catalog\Model\Layer\Filter\Item;
 use Magento\Framework\Exception\LocalizedException;
@@ -102,7 +102,7 @@ class ItemPlugin extends AbstractFilterPlugin
      */
     protected function getPriceParamName(int $storeId): string
     {
-        $priceParam = SortParam::PRICE_PARAM_MAGENTO . $this->priceKeyResolver->getPriceKey($storeId);
+        $priceParam = QueryStringParamMode::PRICE_PARAM_MAGENTO . $this->priceKeyResolver->getPriceKey($storeId);
         return preg_replace('/\./', '_', $priceParam);
     }
 }
