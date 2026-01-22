@@ -7,7 +7,7 @@ use Algolia\AlgoliaSearch\Service\IndexNameFetcher;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\UrlInterface;
 
-class SortParam extends AbstractConfigComment
+class QueryStringParamMode extends AbstractConfigComment
 {
     public function __construct(
         protected RequestInterface $request,
@@ -88,8 +88,8 @@ class SortParam extends AbstractConfigComment
                 </tbody>
             </table>
 
-            <aside>
-                <p><strong>Note:</strong> For best results with InstantSearch, we also recommend enabling <a href="$link">SEO filters</a>.</p>
+            <aside class="algolia_dashboard_warning">
+                <p>For best results with InstantSearch, we also recommend enabling <a href="$link">SEO filters</a>.</p>
             </aside>
 
             </div>

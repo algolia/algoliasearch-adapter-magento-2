@@ -16,7 +16,7 @@ class ConfigHelper
     public const CONNECTION_TIMEOUT = 'catalog/search/algolia_connect_timeout';
     public const READ_TIMEOUT = 'catalog/search/algolia_read_timeout';
     public const SEO_FILTERS = 'catalog/search/algolia_seo_filters';
-    public const SORTING_PARAMETER = 'algoliasearch_backend/algolia_backend_listing/sort_param';
+    public const QUERY_STRING_PARAM_MODE = 'algoliasearch_instant/backend/query_string_param_mode';
 
     public function __construct(
         protected EngineResolverInterface $engineResolver,
@@ -100,10 +100,10 @@ class ConfigHelper
         return $this->getConfigByScope(self::READ_TIMEOUT, null, $storeId);
     }
 
-    public function getSortingParameter(?int $storeId = null): string
+    public function getQueryStringParamMode(?int $storeId = null): string
     {
         return (string) $this->configInterface->getValue(
-            self::SORTING_PARAMETER,
+            self::QUERY_STRING_PARAM_MODE,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );

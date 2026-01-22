@@ -21,7 +21,7 @@ class BackendRenderMode extends AbstractConfigComment
             It is strongly recommended to enable Magento’s Full Page Cache to avoid duplicate requests
             and increased search usage.
             <br><br>
-            <div class="algolia_dashboard_warning">
+            <aside class="algolia_dashboard_warning">
                 <p>
                     Backend rendering requires the Magento search engine to be set to
                     <strong>Algolia Backend Search</strong>.
@@ -30,7 +30,7 @@ class BackendRenderMode extends AbstractConfigComment
                     You can configure this in:
                     <a href="$link">Stores &gt; Configuration &gt; Catalog &gt; Catalog &gt; Catalog Search</a>
                 </p>
-            </div>
+            </aside>
         COMMENT;
     }
 }
