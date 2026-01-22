@@ -6,7 +6,7 @@ use Magento\Framework\Data\OptionSourceInterface;
 
 class QueryStringParamMode implements OptionSourceInterface
 {
-    public const PARAM_MODE_ALGOLIA = 'legacy'; // The way InstantSearch params used to work
+    public const PARAM_MODE_ALGOLIA = 'default'; // The way InstantSearch params used to work
     public const PARAM_MODE_MAGENTO = 'magento'; // The way Magento uses params
 
     public const SORT_PARAM_ALGOLIA = 'sortBy';

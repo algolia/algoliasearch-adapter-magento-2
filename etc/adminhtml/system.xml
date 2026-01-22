@@ -75,7 +75,7 @@
             </group>
         </section>
         <section id="algoliasearch_instant">
-            <group id="backend" translate="label" type="text" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
+            <group id="backend" translate="label" type="text" sortOrder="5" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Backend Search Compatibility</label>
                 <attribute type="expanded">1</attribute>
                 <comment>

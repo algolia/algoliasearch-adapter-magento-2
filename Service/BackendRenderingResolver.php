@@ -26,11 +26,7 @@ class BackendRenderingResolver
 
     public function shouldPreventRendering(?int $storeId = null): bool
     {
-        $backendRenderMode = (int) $this->configInterface->getValue(
-            self::BACKEND_RENDER_MODE,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
-        );
+        $backendRenderMode = $this->getBackendRenderMode($storeId);
 
         if ($backendRenderMode === BackendRenderMode::BACKEND_RENDER_OFF) {
             return true;
@@ -41,6 +37,15 @@ class BackendRenderingResolver
         }
 
         return !$this->isUserAgentMatch($storeId);
+    }
+
+    protected function getBackendRenderMode(?int $storeId = null): int
+    {
+        return (int) $this->configInterface->getValue(
+            self::BACKEND_RENDER_MODE,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
     }
 
     protected function isUserAgentMatch(?int $storeId): bool

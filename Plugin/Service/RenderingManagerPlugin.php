@@ -18,6 +18,7 @@ class RenderingManagerPlugin
         int $storeId): bool
     {
         // If core already says "don't prevent", respect that
+        // This is to ensure that both InstantSearch and backend rendering are never disabled at the same time.
         if (!$result) {
             return false;
         }
