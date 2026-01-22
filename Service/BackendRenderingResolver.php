@@ -17,11 +17,7 @@ class BackendRenderingResolver
 
     public function isEnabled(?int $storeId = null): bool
     {
-        return (int) $this->configInterface->getValue(
-            self::BACKEND_RENDER_MODE,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
-        ) !== BackendRenderMode::BACKEND_RENDER_OFF;
+        return $this->getBackendRenderMode($storeId) !== BackendRenderMode::BACKEND_RENDER_OFF;
     }
 
     public function shouldPreventRendering(?int $storeId = null): bool
