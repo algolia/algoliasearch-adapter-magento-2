@@ -4,7 +4,7 @@ namespace Algolia\SearchAdapter\Model\Config\Source;
 
 use Magento\Framework\Data\OptionSourceInterface;
 
-class EnableBackendRendering implements OptionSourceInterface
+class BackendRenderMode implements OptionSourceInterface
 {
     public const BACKEND_RENDER_OFF = 0;
     public const BACKEND_RENDER_ON = 1;

@@ -4,7 +4,7 @@ namespace Algolia\SearchAdapter\Model\Config\Comment;
 
 use Algolia\AlgoliaSearch\Model\Config\AbstractConfigComment;
 
-class BackendRendering extends AbstractConfigComment
+class BackendRenderMode extends AbstractConfigComment
 {
     public function getCommentText($elementValue): string
     {

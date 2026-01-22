@@ -5,7 +5,6 @@ namespace Algolia\SearchAdapter\Model\Config\Backend;
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\SearchAdapter\Helper\ConfigHelper;
 use Algolia\SearchAdapter\Service\BackendRenderingResolver;
-use Algolia\SearchAdapter\Model\Config\Source\EnableBackendRendering as EnableBackendRendering;
 use Magento\Config\Model\ResourceModel\Config\Data\CollectionFactory as ConfigCollectionFactory;
 
 class Engine extends \Magento\Framework\App\Config\Value
@@ -29,7 +28,7 @@ class Engine extends \Magento\Framework\App\Config\Value
 
         if ($value != ConfigHelper::ALGOLIA_ENGINE && $this->isBackendRenderConfigured()) {
             throw new AlgoliaException(
-                __(EnableBackendRendering::VALIDATION_MSG)
+                __(BackendRenderMode::VALIDATION_MSG)
             );
         }
 
@@ -43,7 +42,7 @@ class Engine extends \Magento\Framework\App\Config\Value
             ->addFieldToFilter('path', BackendRenderingResolver::BACKEND_RENDER_MODE)
             ->addFieldToFilter(
                 'value',
-                ['gt' => EnableBackendRendering::BACKEND_RENDER_OFF]
+                ['gt' => BackendRenderMode::BACKEND_RENDER_OFF]
             );
         return (bool) $collection->getSize();
     }

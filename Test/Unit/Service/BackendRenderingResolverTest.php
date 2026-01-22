@@ -3,7 +3,7 @@
 namespace Algolia\SearchAdapter\Test\Unit\Service;
 
 use Algolia\AlgoliaSearch\Test\TestCase;
-use Algolia\SearchAdapter\Model\Config\Source\EnableBackendRendering;
+use Algolia\SearchAdapter\Model\Config\Source\BackendRenderMode;
 use Algolia\SearchAdapter\Service\BackendRenderingResolver;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
@@ -51,15 +51,15 @@ class BackendRenderingResolverTest extends TestCase
     {
         return [
             'disabled' => [
-                'configValue' => EnableBackendRendering::BACKEND_RENDER_OFF,
+                'configValue' => BackendRenderMode::BACKEND_RENDER_OFF,
                 'expected' => false,
             ],
             'enabled always' => [
-                'configValue' => EnableBackendRendering::BACKEND_RENDER_ON,
+                'configValue' => BackendRenderMode::BACKEND_RENDER_ON,
                 'expected' => true,
             ],
             'enabled for user agents' => [
-                'configValue' => EnableBackendRendering::BACKEND_RENDER_USER_AGENTS,
+                'configValue' => BackendRenderMode::BACKEND_RENDER_USER_AGENTS,
                 'expected' => true,
             ],
         ];
@@ -76,7 +76,7 @@ class BackendRenderingResolverTest extends TestCase
                 ScopeInterface::SCOPE_STORE,
                 $storeId
             )
-            ->willReturn(EnableBackendRendering::BACKEND_RENDER_OFF);
+            ->willReturn(BackendRenderMode::BACKEND_RENDER_OFF);
 
         $result = $this->resolver->shouldPreventRendering($storeId);
 
@@ -94,7 +94,7 @@ class BackendRenderingResolverTest extends TestCase
                 ScopeInterface::SCOPE_STORE,
                 $storeId
             )
-            ->willReturn(EnableBackendRendering::BACKEND_RENDER_ON);
+            ->willReturn(BackendRenderMode::BACKEND_RENDER_ON);
 
         $result = $this->resolver->shouldPreventRendering($storeId);
 
@@ -121,7 +121,7 @@ class BackendRenderingResolverTest extends TestCase
                     BackendRenderingResolver::BACKEND_RENDER_MODE,
                     ScopeInterface::SCOPE_STORE,
                     $storeId,
-                    EnableBackendRendering::BACKEND_RENDER_USER_AGENTS,
+                    BackendRenderMode::BACKEND_RENDER_USER_AGENTS,
                 ],
                 [
                     BackendRenderingResolver::BACKEND_RENDER_USER_AGENTS,
@@ -191,7 +191,7 @@ class BackendRenderingResolverTest extends TestCase
                 ScopeInterface::SCOPE_STORE,
                 null
             )
-            ->willReturn(EnableBackendRendering::BACKEND_RENDER_ON);
+            ->willReturn(BackendRenderMode::BACKEND_RENDER_ON);
 
         $result = $this->resolver->shouldPreventRendering(null);
 

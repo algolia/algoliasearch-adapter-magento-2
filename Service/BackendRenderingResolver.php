@@ -2,13 +2,13 @@
 
 namespace Algolia\SearchAdapter\Service;
 
-use Algolia\SearchAdapter\Model\Config\Source\EnableBackendRendering;
+use Algolia\SearchAdapter\Model\Config\Source\BackendRenderMode;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
 
 class BackendRenderingResolver
 {
-    public const BACKEND_RENDER_MODE = 'algoliasearch_instant/backend/enable_backend_render';
+    public const BACKEND_RENDER_MODE = 'algoliasearch_instant/backend/backend_render_mode';
     public const BACKEND_RENDER_USER_AGENTS = 'algoliasearch_instant/backend/backend_render_allowed_user_agents';
 
     public function __construct(
@@ -18,10 +18,10 @@ class BackendRenderingResolver
     public function isEnabled(?int $storeId = null): bool
     {
         return (int) $this->configInterface->getValue(
-                self::BACKEND_RENDER_MODE,
-                ScopeInterface::SCOPE_STORE,
-                $storeId
-            ) !== EnableBackendRendering::BACKEND_RENDER_OFF;
+            self::BACKEND_RENDER_MODE,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        ) !== BackendRenderMode::BACKEND_RENDER_OFF;
     }
 
     public function shouldPreventRendering(?int $storeId = null): bool
@@ -32,11 +32,11 @@ class BackendRenderingResolver
             $storeId
         );
 
-        if ($backendRenderMode === EnableBackendRendering::BACKEND_RENDER_OFF) {
+        if ($backendRenderMode === BackendRenderMode::BACKEND_RENDER_OFF) {
             return true;
         }
 
-        if ($backendRenderMode === EnableBackendRendering::BACKEND_RENDER_ON) {
+        if ($backendRenderMode === BackendRenderMode::BACKEND_RENDER_ON) {
             return false;
         }
 

@@ -5,7 +5,7 @@ namespace Algolia\SearchAdapter\Model\Config\Backend;
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\SearchAdapter\Helper\ConfigHelper;
 
-class EnableBackendRendering extends \Magento\Framework\App\Config\Value
+class BackendRenderMode extends \Magento\Framework\App\Config\Value
 {
     public const VALIDATION_MSG = 'The Algolia Backend Search engine must be enabled in order to use backend rendering with InstantSearch.';
 

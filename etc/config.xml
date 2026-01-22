@@ -9,7 +9,7 @@
         </catalog>
         <algoliasearch_instant>
             <backend>
-                <enable_backend_render>0</enable_backend_render>
+                <backend_render_mode>0</backend_render_mode>
                 <backend_render_allowed_user_agents>Googlebot&#xA;Bingbot</backend_render_allowed_user_agents>
             </backend>
         </algoliasearch_instant>
