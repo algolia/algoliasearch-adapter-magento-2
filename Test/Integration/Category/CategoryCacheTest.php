@@ -85,7 +85,7 @@ class CategoryCacheTest extends AbstractController
      * @magentoConfigFixture current_store system/full_page_cache/caching_application 1
      * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 1
      * @magentoConfigFixture current_store algoliasearch_instant/instant/replace_categories 1
-     * @magentoConfigFixture current_store algoliasearch_instant/backend/enable_backend_render 1
+     * @magentoConfigFixture current_store algoliasearch_instant/backend/backend_render_mode 1
      * @magentoCache full_page enabled
      */
     public function testCategoryPlpMissBackendRenderOn(int $categoryId, string $name, bool $hasProducts): void
@@ -118,7 +118,7 @@ class CategoryCacheTest extends AbstractController
      * @magentoConfigFixture current_store system/full_page_cache/caching_application 1
      * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 1
      * @magentoConfigFixture current_store algoliasearch_instant/instant/replace_categories 1
-     * @magentoConfigFixture current_store algoliasearch_instant/backend/enable_backend_render 1
+     * @magentoConfigFixture current_store algoliasearch_instant/backend/backend_render_mode 1
      * @magentoCache full_page enabled
      */
     public function testCategoryPlpHitBackendRenderOn(int $categoryId, string $name): void
@@ -138,7 +138,7 @@ class CategoryCacheTest extends AbstractController
      * @magentoConfigFixture current_store system/full_page_cache/caching_application 1
      * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 1
      * @magentoConfigFixture current_store algoliasearch_instant/instant/replace_categories 1
-     * @magentoConfigFixture current_store algoliasearch_instant/backend/enable_backend_render 0
+     * @magentoConfigFixture current_store algoliasearch_instant/backend/backend_render_mode 0
      * @magentoCache full_page enabled
      */
     public function testCategoryPlpMissBackendRenderOff(int $categoryId, string $name, bool $hasProducts): void
@@ -171,7 +171,7 @@ class CategoryCacheTest extends AbstractController
      * @magentoConfigFixture current_store system/full_page_cache/caching_application 1
      * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 1
      * @magentoConfigFixture current_store algoliasearch_instant/instant/replace_categories 1
-     * @magentoConfigFixture current_store algoliasearch_instant/backend/enable_backend_render 0
+     * @magentoConfigFixture current_store algoliasearch_instant/backend/backend_render_mode 0
      * @magentoCache full_page enabled
      */
     public function testCategoryPlpHitBackendRenderOff(int $categoryId, string $name): void
@@ -192,7 +192,7 @@ class CategoryCacheTest extends AbstractController
      * @magentoConfigFixture current_store system/full_page_cache/caching_application 1
      * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 1
      * @magentoConfigFixture current_store algoliasearch_instant/instant/replace_categories 1
-     * @magentoConfigFixture current_store algoliasearch_instant/backend/enable_backend_render 2
+     * @magentoConfigFixture current_store algoliasearch_instant/backend/backend_render_mode 2
      * @magentoDataFixture Algolia_SearchAdapter::Test/Integration/_files/backend_render_user_agents.php
      * @magentoCache full_page enabled
      */
@@ -227,7 +227,7 @@ class CategoryCacheTest extends AbstractController
      * @magentoConfigFixture current_store system/full_page_cache/caching_application 1
      * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 1
      * @magentoConfigFixture current_store algoliasearch_instant/instant/replace_categories 1
-     * @magentoConfigFixture current_store algoliasearch_instant/backend/enable_backend_render 2
+     * @magentoConfigFixture current_store algoliasearch_instant/backend/backend_render_mode 2
      * @magentoDataFixture Algolia_SearchAdapter::Test/Integration/_files/backend_render_user_agents.php
      * @magentoCache full_page enabled
      */
@@ -266,7 +266,7 @@ class CategoryCacheTest extends AbstractController
     protected function assertPreventBackend(): void
     {
         $this->assertConfig(
-            'algoliasearch_instant/backend/enable_backend_render',
+            'algoliasearch_instant/backend/backend_render_mode',
             0,
             "Prevent backend rendering must be enabled for this test."
         );
