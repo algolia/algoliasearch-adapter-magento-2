@@ -52,7 +52,8 @@ class SearchCriteriaResolver implements SearchCriteriaResolverInterface
     }
 
     /** We only care about Algolia sorting params - parse and filter out the rest  */
-    protected function transformSortParams(?array $orders): array {
+    protected function transformSortParams(?array $orders): array
+    {
         if (!$orders) {
             return [];
         }
