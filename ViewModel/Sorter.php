@@ -3,6 +3,7 @@
 namespace Algolia\SearchAdapter\ViewModel;
 
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
 use Magento\Store\Model\StoreManagerInterface;
 
@@ -15,6 +16,14 @@ class Sorter implements ArgumentInterface
         protected InstantSearchHelper $instantSearchHelper,
     ) {}
 
+    /**
+     * @return array<array<string,string>>
+     *    e.g. [
+     *       [ 'key' => 'relevance', label => 'Relevance' ],
+     *       [ 'key' => 'price~asc', 'label' => 'Lowest price'],
+     *       etc.
+     * @throws NoSuchEntityException
+     */
     public function getSortingOptions(): array
     {
         $storeId = $this->storeManager->getStore()->getId();
@@ -29,6 +38,13 @@ class Sorter implements ArgumentInterface
      * Independent sort direction handling is not supported
      * This widget sends a composite param value to the backend search (field~direction)
      * which will be parsed later by the SearchCriteriaResolver
+     *
+     * @return array<array<string,string>>
+     *   e.g. [
+     *      [ 'key' => 'price~asc', label => 'Lowest price' ],
+     *      [ 'key' => 'price~desc', 'label' => 'Highest price'],
+     *      etc.
+     *   ]
      */
     protected function transformSortingOptions(array $sortingOptions): array
     {
