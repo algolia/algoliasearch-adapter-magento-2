@@ -23,6 +23,52 @@ class ReplicaManagerTest extends BackendSearchTestCase
     }
 
     /**
+     * Test that replica sync is enabled when backend search is enabled without InstantSearch
+     *
+     * @magentoDbIsolation disabled
+     * @magentoConfigFixture default/catalog/search/engine algolia
+     * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 0
+     * @magentoConfigFixture current_store algoliasearch_indexing_manager/algolia_indexing/enable_indexing 1
+     */
+    public function testReplicaSyncEnabledWithBackendSearchOnly(): void
+    {
+        $this->assertTrue(
+            $this->adapterConfigHelper->isAlgoliaEngineSelected(),
+            'Algolia should be selected as the search engine'
+        );
+
+        $isReplicaSyncEnabled = $this->replicaManager->isReplicaSyncEnabled(1);
+
+        $this->assertTrue(
+            $isReplicaSyncEnabled,
+            'Replica sync should be enabled when Algolia backend search is selected, even without InstantSearch'
+        );
+    }
+
+    /**
+     * Test that replica sync is enabled with InstantSearch only (original behavior)
+     *
+     * @magentoDbIsolation disabled
+     * @magentoConfigFixture default/catalog/search/engine opensearch
+     * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 1
+     * @magentoConfigFixture current_store algoliasearch_indexing_manager/algolia_indexing/enable_indexing 1
+     */
+    public function testReplicaSyncEnabledWithInstantSearchOnly(): void
+    {
+        $this->assertFalse(
+            $this->adapterConfigHelper->isAlgoliaEngineSelected(),
+            'isAlgoliaEngineSelected should return false when a different engine is selected'
+        );
+
+        $isReplicaSyncEnabled = $this->replicaManager->isReplicaSyncEnabled(1);
+
+        $this->assertTrue(
+            $isReplicaSyncEnabled,
+            'Replica sync should be enabled when InstantSearch is enabled (original core behavior)'
+        );
+    }
+
+    /**
      * Test that indexing products with backend search creates replicas
      *
      * @magentoDbIsolation disabled
@@ -33,16 +79,6 @@ class ReplicaManagerTest extends BackendSearchTestCase
     public function testIndexingCreatesReplicasWithBackendSearchEnabled(): void
     {
         $storeId = 1;
-
-        $this->assertTrue(
-            $this->adapterConfigHelper->isAlgoliaEngineSelected(),
-            'Algolia should be selected as the search engine'
-        );
-
-        $this->assertTrue(
-            $this->replicaManager->isReplicaSyncEnabled($storeId),
-            'Replica sync should be enabled for this test'
-        );
 
         // Index products - this should trigger replica creation
         $this->indexAllProducts($storeId);
@@ -67,28 +103,6 @@ class ReplicaManagerTest extends BackendSearchTestCase
         );
     }
 
-    /**
-     * Test plugin correctly extends isReplicaSyncEnabled logic
-     * The ReplicaManagerPlugin::afterIsReplicaSyncEnabled should return true
-     * when Algolia backend search is enabled, even if the original result was false
-     * (because InstantSearch is disabled)
-     *
-     * @magentoDbIsolation disabled
-     * @magentoConfigFixture default/catalog/search/engine algolia
-     * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 0
-     * @magentoConfigFixture current_store algoliasearch_indexing_manager/algolia_indexing/enable_indexing 1
-     */
-    public function testPluginExtendsReplicaSyncLogic(): void
-    {
-        $storeId = 1;
-
-        $result = $this->replicaManager->isReplicaSyncEnabled($storeId);
-
-        $this->assertTrue(
-            $result,
-            'Plugin should enable replica sync when Algolia backend search is selected'
-        );
-    }
 
     /**
      * Test that replica sync requires indexing to be enabled
@@ -118,10 +132,11 @@ class ReplicaManagerTest extends BackendSearchTestCase
      */
     public function testBackendSearchReplicaSyncConditions(
         string $searchEngine,
-        bool $indexingEnabled,
-        bool $expectedResult,
+        bool   $indexingEnabled,
+        bool   $expectedResult,
         string $message
-    ): void {
+    ): void
+    {
         // Set the search engine
         $this->setConfig('catalog/search/engine', $searchEngine, ScopeConfigInterface::SCOPE_TYPE_DEFAULT, null);
         $this->setConfig('algoliasearch_indexing_manager/algolia_indexing/enable_indexing', $indexingEnabled ? '1' : '0');
@@ -137,19 +152,19 @@ class ReplicaManagerTest extends BackendSearchTestCase
     public static function backendSearchReplicaSyncConditionsProvider(): array
     {
         return [
-            'Algolia engine + indexing enabled' => [
+            'Algolia engine + indexing enabled'     => [
                 'algolia',
                 true,
                 true,
                 'Should enable replica sync with Algolia engine and indexing enabled'
             ],
-            'Algolia engine + indexing disabled' => [
+            'Algolia engine + indexing disabled'    => [
                 'algolia',
                 false,
                 false,
                 'Should disable replica sync when indexing is disabled'
             ],
-            'OpenSearch engine + indexing enabled' => [
+            'OpenSearch engine + indexing enabled'  => [
                 'opensearch',
                 true,
                 false,
@@ -162,5 +177,23 @@ class ReplicaManagerTest extends BackendSearchTestCase
                 'Should disable replica sync with non-Algolia engine and indexing disabled'
             ],
         ];
+    }
+
+    /**
+     * Test that replica sync is enabled when both InstantSearch and backend search are enabled
+     *
+     * @magentoDbIsolation disabled
+     * @magentoConfigFixture default/catalog/search/engine algolia
+     * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 1
+     * @magentoConfigFixture current_store algoliasearch_indexing_manager/algolia_indexing/enable_indexing 1
+     */
+    public function testReplicaSyncEnabledWithBothInstantSearchAndBackendSearch(): void
+    {
+        $isReplicaSyncEnabled = $this->replicaManager->isReplicaSyncEnabled(1);
+
+        $this->assertTrue(
+            $isReplicaSyncEnabled,
+            'Replica sync should be enabled when both InstantSearch and Algolia backend are enabled'
+        );
     }
 }
