@@ -4,6 +4,8 @@ namespace Algolia\SearchAdapter\Test\Integration;
 
 use Algolia\AlgoliaSearch\Exception\DiagnosticsException;
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
+use Algolia\AlgoliaSearch\Helper\ConfigHelper;
+use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTest;
 use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTestCase;
 use Algolia\SearchAdapter\Model\Adapter;
 use Magento\Framework\Exception\LocalizedException;
@@ -31,12 +33,17 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
     }
 
     /**
+     * For all searches, test against an "in stock" product use case.
+     *
      * @throws AlgoliaException
      * @throws NoSuchEntityException
      * @throws DiagnosticsException
      */
     protected function indexAllProducts(int $storeId = 1): void
     {
+        $this->setConfig(ConfigHelper::SHOW_OUT_OF_STOCK, 0);
+        $this->updateStockItem(ProductsIndexingTest::OUT_OF_STOCK_PRODUCT_SKU, false);
+
         $this->productBatchQueueProcessor->processBatch($storeId);
         $this->algoliaConnector->waitLastTask();
     }

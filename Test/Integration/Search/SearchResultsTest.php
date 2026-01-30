@@ -84,4 +84,27 @@ class SearchResultsTest extends BackendSearchTestCase
         $this->assertLessThanOrEqual(12, count($documents));
         $this->assertGreaterThan(0, count($documents), 'Search should return at least some products');
     }
+
+    /**
+     * Test that product count matches expected total
+     * @magentoDbIsolation disabled
+     * @throws AlgoliaException
+     * @throws NoSuchEntityException
+     * @throws LocalizedException
+     */
+    public function testProductCountMatchesExpected(): void
+    {
+        $request = $this->buildSearchRequest(
+            pageSize: 12
+        );
+
+        $response = $this->executeBackendSearch($request);
+
+        // Total count should match expected product count
+        $this->assertEquals(
+            $this->expectedProductCount,
+            $response->getTotal(),
+            'Total product count should match expected value'
+        );
+    }
 }
