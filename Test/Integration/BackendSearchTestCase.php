@@ -68,7 +68,7 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
             from: $from,
             size: $pageSize,
             dimensions: $this->buildDimensions(),
-            aggregations: $aggregations ?: $this->buildDefaultAggregations(),
+            aggregations: $this->buildAggregations($aggregations),
             sort: $sort
         );
     }
@@ -126,14 +126,50 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
     /**
      * Build default aggregations (buckets) for faceted search
      */
-    protected function buildDefaultAggregations(): array
+    protected function buildAggregations(array $aggregations = []): array
     {
-        return [
+        $defaultAggregations = [
             'price_bucket' => new DynamicBucket('price_bucket', 'price', 'auto'),
             'category_bucket' => new TermBucket('category_bucket', 'category_ids', []),
             'color_bucket' => new TermBucket('color_bucket', 'color', []),
             'size_bucket' => new TermBucket('size_bucket', 'size', []),
         ];
+        return array_merge($defaultAggregations, $aggregations);
+    }
+
+    protected function assertBucketExists(QueryResponse $response, string $bucketName): void
+    {
+        $aggregations = $response->getAggregations();
+        $this->assertTrue(
+            $aggregations->getBucket($bucketName) !== null,
+            "Bucket '$bucketName' not found in aggregations"
+        );
+    }
+
+    protected function assertBucketHasValues(QueryResponse $response, string $bucketName): void
+    {
+        $bucket = $response->getAggregations()->getBucket($bucketName);
+        $this->assertNotNull($bucket, "Bucket '$bucketName' not found");
+        $this->assertNotEmpty($bucket->getValues(), "Bucket '$bucketName' has no values");
+    }
+
+    /**
+     * Get bucket values as an associative array
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    protected function getBucketValues(QueryResponse $response, string $bucketName): array
+    {
+        $bucket = $response->getAggregations()->getBucket($bucketName);
+        if (!$bucket) {
+            return [];
+        }
+
+        $values = [];
+        foreach ($bucket->getValues() as $value) {
+            $values[$value->getValue()] = $value->getMetrics();
+        }
+        return $values;
     }
 
 }
