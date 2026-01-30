@@ -5,6 +5,7 @@ namespace Algolia\SearchAdapter\Test\Integration;
 use Algolia\AlgoliaSearch\Exception\DiagnosticsException;
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\AlgoliaSearch\Helper\ConfigHelper;
+use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTest;
 use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTestCase;
 use Algolia\SearchAdapter\Model\Adapter;
@@ -13,7 +14,9 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\Request\Aggregation\DynamicBucket;
 use Magento\Framework\Search\Request\Aggregation\TermBucket;
 use Magento\Framework\Search\Request\Dimension;
+use Magento\Framework\Search\Request\Filter\Term;
 use Magento\Framework\Search\Request\Query\BoolExpression as BoolQuery;
+use Magento\Framework\Search\Request\Query\Filter as FilterQuery;
 use Magento\Framework\Search\Request\QueryInterface;
 use Magento\Framework\Search\RequestInterface;
 use Magento\Framework\Search\Response\QueryResponse;
@@ -25,11 +28,13 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
     protected const CATEGORY_REQUEST_NAME = 'catalog_view_container';
 
     protected ?Adapter $adapter = null;
+    protected ?InstantSearchHelper $instantSearchHelper = null;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->adapter = $this->objectManager->get(Adapter::class);
+        $this->instantSearchHelper = $this->objectManager->get(InstantSearchHelper::class);
     }
 
     /**
@@ -49,7 +54,7 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
     }
 
     /**
-     * Build a search request for quick search
+     * Build request for "quick search"
      */
     protected function buildSearchRequest(
         string $query = '',
@@ -69,6 +74,33 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
             size: $pageSize,
             dimensions: $this->buildDimensions(),
             aggregations: $this->buildAggregations($aggregations),
+            sort: $sort
+        );
+    }
+
+    /**
+     * Build request for category page browse
+     */
+    protected function buildCategoryRequest(
+        int $categoryId,
+        array $filters = [],
+        ?array $sort = null,
+        int $page = 1,
+        int $pageSize = self::DEFAULT_PAGE_SIZE
+    ): RequestInterface {
+        // Add category filter to the filters array
+        $filters['category'] = $this->buildCategoryFilter($categoryId);
+
+        $from = ($page - 1) * $pageSize;
+
+        return new SearchRequest(
+            name: self::CATEGORY_REQUEST_NAME,
+            indexName: 'catalogsearch_fulltext',
+            query: $this->buildBoolQuery('', $filters),
+            from: $from,
+            size: $pageSize,
+            dimensions: $this->buildDimensions(),
+            aggregations: $this->buildAggregations(),
             sort: $sort
         );
     }
@@ -137,6 +169,17 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
         return array_merge($defaultAggregations, $aggregations);
     }
 
+    protected function buildCategoryFilter(int $categoryId): FilterQuery
+    {
+        $termFilter = new Term('category', $categoryId, 'category_ids');
+        return new FilterQuery(
+            'category',
+            1,
+            FilterQuery::REFERENCE_FILTER,
+            $termFilter // incorrectly typed in Magento core
+        );
+    }
+
     protected function assertBucketExists(QueryResponse $response, string $bucketName): void
     {
         $aggregations = $response->getAggregations();
@@ -170,6 +213,52 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
             $values[$value->getValue()] = $value->getMetrics();
         }
         return $values;
+    }
+
+    /**
+     * Add an attribute to the instant search facets configuration.
+     *
+     * @param string $attribute The attribute code to add as a facet
+     * @param string $type The facet type: 'conjunctive', 'disjunctive', 'slider', or 'other'
+     * @param string $label The display label for the facet
+     * @param string $searchable Whether the facet is searchable: '1' = yes, '2' = no
+     * @param string $createRule Whether to create a merchandising rule: '1' = yes, '2' = no
+     */
+    protected function addFacet(
+        string $attribute,
+        string $type = 'disjunctive',
+        string $label = '',
+        string $searchable = '2',
+        string $createRule = '2'
+    ): void {
+        $serializer = $this->getSerializer();
+
+        $currentFacets = $this->instantSearchHelper->getFacets();
+
+        // Check if attribute already exists
+        $existingIndex = null;
+        foreach ($currentFacets as $index => $facet) {
+            if ($facet['attribute'] === $attribute) {
+                $existingIndex = $index;
+                break;
+            }
+        }
+
+        $facetConfig = [
+            'attribute' => $attribute,
+            'type' => $type,
+            'label' => $label ?: ucfirst($attribute),
+            'searchable' => $searchable,
+            'create_rule' => $createRule,
+        ];
+
+        if ($existingIndex !== null) {
+            $currentFacets[$existingIndex] = $facetConfig;
+        } else {
+            $currentFacets[] = $facetConfig;
+        }
+
+        $this->setConfig(InstantSearchHelper::FACETS, $serializer->serialize($currentFacets));
     }
 
 }

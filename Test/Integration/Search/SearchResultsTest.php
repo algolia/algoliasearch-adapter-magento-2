@@ -24,6 +24,7 @@ class SearchResultsTest extends BackendSearchTestCase
         $this->setupTestSuiteIndexPrefix();
 
         $this->runOnce(function() {
+            $this->addFacet('size', 'conjunctive');
             $this->indexAllProducts();
         }, __CLASS__ . '::indexProducts');
 
@@ -179,5 +180,189 @@ class SearchResultsTest extends BackendSearchTestCase
 
         $this->assertBucketExists($response, 'category_bucket');
         $this->assertBucketHasValues($response, 'category_bucket');
+    }
+
+    /**
+     * Test that price facets are returned in aggregations
+     *
+     * @magentoDbIsolation disabled
+     * @throws AlgoliaException
+     * @throws NoSuchEntityException
+     * @throws LocalizedException
+     */
+    public function testPriceFacetsReturned(): void
+    {
+        $request = $this->buildSearchRequest(
+            pageSize: 12
+        );
+
+        $response = $this->executeBackendSearch($request);
+
+        $this->assertBucketExists($response, 'price_bucket');
+        $this->assertBucketHasValues($response, 'price_bucket');
+    }
+
+    /**
+     * Test that color attribute facets are returned
+     *
+     * @magentoDbIsolation disabled
+     * @throws AlgoliaException
+     * @throws NoSuchEntityException
+     * @throws LocalizedException
+     */
+    public function testColorAttributeFacetsReturned(): void
+    {
+        $request = $this->buildSearchRequest(
+            pageSize: 12
+        );
+
+        $response = $this->executeBackendSearch($request);
+
+        $this->assertBucketExists($response, 'color_bucket');
+        $this->assertBucketHasValues($response, 'color_bucket');
+    }
+
+    /**
+     * Test that size attribute facets are returned
+     *
+     * @magentoDbIsolation disabled
+     * @throws AlgoliaException
+     * @throws NoSuchEntityException
+     * @throws LocalizedException
+     */
+    public function testSizeAttributeFacetsReturned(): void
+    {
+        $request = $this->buildCategoryRequest(
+            categoryId: 21,
+            pageSize: 12
+        );
+
+        $response = $this->executeBackendSearch($request);
+
+        $this->assertBucketExists($response, 'size_bucket');
+        $this->assertBucketHasValues($response, 'size_bucket');
+    }
+
+    /**
+     * Test search with a specific query term returns relevant products
+     *
+     * @magentoDbIsolation disabled
+     * @throws AlgoliaException
+     * @throws NoSuchEntityException
+     * @throws LocalizedException
+     */
+    public function testSearchWithQueryTermReturnsRelevantProducts(): void
+    {
+        $request = $this->buildSearchRequest(
+            query: 'jacket',
+            page: 1,
+            pageSize: 12
+        );
+
+        $response = $this->executeBackendSearch($request);
+
+        $documents = iterator_to_array($response);
+        $this->assertGreaterThan(0, count($documents), 'Search for "jacket" should return results');
+
+        $this->assertLessThan(
+            $this->expectedProductCount,
+            $response->count(),
+            'Filtered search should return fewer products than total'
+        );
+    }
+
+    /**
+     * Test that first 5 products are returned correctly
+     *
+     * @magentoDbIsolation disabled
+     * @throws AlgoliaException
+     * @throws NoSuchEntityException
+     * @throws LocalizedException
+     */
+    public function testFirst5ProductsReturned(): void
+    {
+        $request = $this->buildSearchRequest(
+            pageSize: 5
+        );
+
+        $response = $this->executeBackendSearch($request);
+        $documents = iterator_to_array($response);
+
+        $this->assertCount(5, $documents, 'Should return exactly 5 products');
+
+        foreach ($documents as $document) {
+            $this->assertNotEmpty($document->getId(), 'Document should have an ID');
+            $this->assertIsNumeric($document->getId(), 'Document ID should be numeric (product ID)');
+        }
+    }
+
+    /**
+     * Test empty search results handling
+     *
+     * @magentoDbIsolation disabled
+     * @throws AlgoliaException
+     * @throws NoSuchEntityException
+     * @throws LocalizedException
+     */
+    public function testEmptySearchResultsHandling(): void
+    {
+        $request = $this->buildSearchRequest(
+            query: 'xyznonexistentproduct123456789',
+            pageSize: 12
+        );
+
+        $response = $this->executeBackendSearch($request);
+
+        $documents = iterator_to_array($response);
+        $this->assertCount(0, $documents, 'Search with non-existent term should return no results');
+        $this->assertEquals(0, $response->count(), 'Total count should be 0');
+    }
+
+    /**
+     * Test different page sizes
+     *
+     * @magentoDbIsolation disabled
+     * @throws AlgoliaException
+     * @throws NoSuchEntityException
+     * @throws LocalizedException
+     *
+     * @dataProvider pageSizeProvider
+     */
+    public function testDifferentPageSizes(int $pageSize): void
+    {
+        $request = $this->buildSearchRequest(
+            page: 1,
+            pageSize: $pageSize
+        );
+
+        $response = $this->executeBackendSearch($request);
+        $documents = iterator_to_array($response);
+
+        $this->assertLessThanOrEqual(
+            $pageSize,
+            count($documents),
+            "Should return at most $pageSize products"
+        );
+
+        // If we have enough products, first page should be full
+        if ($response->count() >= $pageSize) {
+            $this->assertCount(
+                $pageSize,
+                $documents,
+                "First page should be full with $pageSize products"
+            );
+        }
+    }
+
+    /**
+     * Data provider for page sizes
+     */
+    public static function pageSizeProvider(): array
+    {
+        return [
+            'page size 12' => [12],
+            'page size 24' => [24],
+            'page size 36' => [36],
+        ];
     }
 }
