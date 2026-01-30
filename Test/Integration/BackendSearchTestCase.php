@@ -9,6 +9,8 @@ use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTest;
 use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTestCase;
 use Algolia\SearchAdapter\Model\Adapter;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\Request\Aggregation\DynamicBucket;
@@ -20,6 +22,7 @@ use Magento\Framework\Search\Request\Query\Filter as FilterQuery;
 use Magento\Framework\Search\Request\QueryInterface;
 use Magento\Framework\Search\RequestInterface;
 use Magento\Framework\Search\Response\QueryResponse;
+use Magento\Store\Model\ScopeInterface;
 
 class BackendSearchTestCase extends ProductsIndexingTestCase
 {
@@ -223,13 +226,15 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
      * @param string $label The display label for the facet
      * @param string $searchable Whether the facet is searchable: '1' = yes, '2' = no
      * @param string $createRule Whether to create a merchandising rule: '1' = yes, '2' = no
+     * @param bool $persistToDb Should this config write to database
      */
     protected function addFacet(
         string $attribute,
         string $type = 'disjunctive',
         string $label = '',
         string $searchable = '2',
-        string $createRule = '2'
+        string $createRule = '2',
+        bool   $persistToDb = false
     ): void {
         $serializer = $this->getSerializer();
 
@@ -258,7 +263,16 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
             $currentFacets[] = $facetConfig;
         }
 
-        $this->setConfig(InstantSearchHelper::FACETS, $serializer->serialize($currentFacets));
+        if ($persistToDb) {
+            /** @var WriterInterface $configWriter */
+            $configWriter = $this->objectManager->get(WriterInterface::class);
+
+            $configWriter->save(InstantSearchHelper::FACETS, $serializer->serialize($currentFacets));
+
+            $this->refreshConfigFromDb();
+        } else {
+            $this->setConfig(InstantSearchHelper::FACETS, $serializer->serialize($currentFacets));
+        }
     }
 
 }

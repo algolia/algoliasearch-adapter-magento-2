@@ -24,7 +24,7 @@ class SearchResultsTest extends BackendSearchTestCase
         $this->setupTestSuiteIndexPrefix();
 
         $this->runOnce(function() {
-            $this->addFacet('size', 'conjunctive');
+            $this->addFacet(attribute: 'size', type: 'conjunctive', persistToDb: true);
             $this->indexAllProducts();
         }, __CLASS__ . '::indexProducts');
 
