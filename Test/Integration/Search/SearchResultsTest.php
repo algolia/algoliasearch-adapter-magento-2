@@ -94,16 +94,21 @@ class SearchResultsTest extends BackendSearchTestCase
      */
     public function testProductCountMatchesExpected(): void
     {
+        $pageSize = 12;
         $request = $this->buildSearchRequest(
-            pageSize: 12
+            pageSize: $pageSize
         );
 
         $response = $this->executeBackendSearch($request);
 
-        // Total count should match expected product count
+        $this->assertEquals($pageSize, $response->count(), 'Page size should match response count');
+
+        // Use the SearchResponseBuilder to get the total count due to deprecated getTotal() method
+        $searchResponseBuilder = $this->objectManager->get(\Magento\Framework\Search\SearchResponseBuilder::class);
+        $searchResult = $searchResponseBuilder->build($response);
         $this->assertEquals(
             $this->expectedProductCount,
-            $response->getTotal(),
+            $searchResult->getTotalCount(),
             'Total product count should match expected value'
         );
     }
