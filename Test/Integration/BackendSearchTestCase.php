@@ -9,20 +9,20 @@ use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTest;
 use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTestCase;
 use Algolia\SearchAdapter\Model\Adapter;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Search\Request;
 use Magento\Framework\Search\Request\Aggregation\DynamicBucket;
 use Magento\Framework\Search\Request\Aggregation\TermBucket;
 use Magento\Framework\Search\Request\Dimension;
 use Magento\Framework\Search\Request\Filter\Term;
 use Magento\Framework\Search\Request\Query\BoolExpression as BoolQuery;
 use Magento\Framework\Search\Request\Query\Filter as FilterQuery;
+use Magento\Framework\Search\Request\Query\MatchQuery;
 use Magento\Framework\Search\Request\QueryInterface;
 use Magento\Framework\Search\RequestInterface;
 use Magento\Framework\Search\Response\QueryResponse;
-use Magento\Store\Model\ScopeInterface;
 
 class BackendSearchTestCase extends ProductsIndexingTestCase
 {
@@ -69,14 +69,14 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
     ): RequestInterface {
         $from = ($page - 1) * $pageSize;
 
-        return new SearchRequest(
+        return new Request(
             name: self::SEARCH_REQUEST_NAME,
             indexName: 'catalogsearch_fulltext',
             query: $this->buildBoolQuery($query, $filters),
             from: $from,
             size: $pageSize,
             dimensions: $this->buildDimensions(),
-            aggregations: $this->buildAggregations($aggregations),
+            buckets: $this->buildAggregations($aggregations),
             sort: $sort
         );
     }
@@ -127,10 +127,11 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
 
         // Add search term if provided
         if ($query !== '') {
-            $should['search'] = new SearchMatchQuery(
+            $should['search'] = new MatchQuery(
                 name: 'search',
                 value: $query,
-                field: 'search_query'
+                boost: 1,
+                matches: []
             );
         }
 
@@ -234,8 +235,8 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
         string $label = '',
         string $searchable = '2',
         string $createRule = '2',
-        bool   $persistToDb = false
-    ): void {
+        bool   $persistToDb = false): void
+    {
         $serializer = $this->getSerializer();
 
         $currentFacets = $this->instantSearchHelper->getFacets();
@@ -273,106 +274,5 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
         } else {
             $this->setConfig(InstantSearchHelper::FACETS, $serializer->serialize($currentFacets));
         }
-    }
-
-}
-
-/**
- * Simple implementation of RequestInterface for testing
- */
-class SearchRequest implements RequestInterface
-{
-    public function __construct(
-        private string $name,
-        private string $indexName,
-        private QueryInterface $query,
-        private int $from,
-        private int $size,
-        private array $dimensions,
-        private array $aggregations,
-        private ?array $sort = null
-    ) {}
-
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    public function getIndex(): string
-    {
-        return $this->indexName;
-    }
-
-    public function getDimensions(): array
-    {
-        return $this->dimensions;
-    }
-
-    public function getAggregation(): array
-    {
-        return $this->aggregations;
-    }
-
-    public function getQuery(): QueryInterface
-    {
-        return $this->query;
-    }
-
-    public function getFrom(): ?int
-    {
-        return $this->from;
-    }
-
-    public function getSize(): ?int
-    {
-        return $this->size;
-    }
-
-    public function getSort(): array
-    {
-        return $this->sort ?? [];
-    }
-}
-
-
-/**
- * Simple implementation of MatchQuery for testing
- */
-class SearchMatchQuery implements QueryInterface
-{
-    public function __construct(
-        private string $name,
-        private string $value,
-        private string $field
-    ) {}
-
-    public function getType(): string
-    {
-        return QueryInterface::TYPE_MATCH;
-    }
-
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    public function getBoost(): ?float
-    {
-        return 1;
-    }
-
-    public function getValue(): string
-    {
-        return $this->value;
-    }
-
-    public function getField(): string
-    {
-        return $this->field;
-    }
-
-    public function getMatches(): string
-    {
-        return $this->field;
     }
 }
