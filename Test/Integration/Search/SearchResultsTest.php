@@ -13,7 +13,6 @@ use Magento\Framework\Search\SearchResponseBuilder;
 class SearchResultsTest extends BackendSearchTestCase
 {
     protected int $expectedProductCount;
-    protected static string $testSuiteIndexPrefix;
 
     protected ?SearchResponseBuilder $searchResponseBuilder = null;
 
@@ -21,12 +20,8 @@ class SearchResultsTest extends BackendSearchTestCase
     {
         parent::setUp();
 
-        $this->setupTestSuiteIndexPrefix();
-
-        $this->runOnce(function() {
-            $this->addFacet(attribute: 'size', type: 'conjunctive', persistToDb: true);
-            $this->indexAllProducts();
-        }, __CLASS__ . '::indexProducts');
+        $this->addFacet(attribute: 'size', type: 'conjunctive');
+        $this->indexOncePerClass(__CLASS__ . '::indexProducts');
 
         $this->expectedProductCount = $this->assertValues->productsOnStockCount;
         $this->searchResponseBuilder =  $this->objectManager->get(SearchResponseBuilder::class);
@@ -35,26 +30,6 @@ class SearchResultsTest extends BackendSearchTestCase
     protected function tearDown(): void
     {
         // Prevent inherited tear down and perform after all tests have executed
-    }
-
-    /**
-     * @throws NoSuchEntityException|AlgoliaException
-     */
-    public static function tearDownAfterClass(): void
-    {
-        IndexCleaner::clean(self::$testSuiteIndexPrefix);
-    }
-
-    /**
-     * Removes timestamp from index prefix for index reuse.
-     * For expected format see:
-     * @see \Algolia\AlgoliaSearch\Test\Integration\TestCase::bootstrap
-     */
-    protected function setupTestSuiteIndexPrefix(): void
-    {
-        $this->indexPrefix = $this->simplifyIndexPrefix($this->indexPrefix);
-        self::$testSuiteIndexPrefix = $this->indexPrefix; // Clear after all tests
-        $this->setConfig('algoliasearch_credentials/credentials/index_prefix', $this->indexPrefix);
     }
 
     /**
@@ -233,7 +208,7 @@ class SearchResultsTest extends BackendSearchTestCase
     public function testSizeAttributeFacetsReturned(): void
     {
         $request = $this->buildCategoryRequest(
-            categoryId: 21,
+            categoryId: self::CATEGORY_WOMEN_TOPS,
             pageSize: 12
         );
 

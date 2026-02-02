@@ -6,6 +6,7 @@ use Algolia\AlgoliaSearch\Exception\DiagnosticsException;
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\AlgoliaSearch\Helper\ConfigHelper;
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
+use Algolia\AlgoliaSearch\Test\Integration\IndexCleaner;
 use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTest;
 use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTestCase;
 use Algolia\SearchAdapter\Model\Adapter;
@@ -30,6 +31,18 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
     protected const SEARCH_REQUEST_NAME = 'quick_search_container';
     protected const CATEGORY_REQUEST_NAME = 'catalog_view_container';
 
+    /**
+     * Category IDs from sample data
+     */
+    protected const CATEGORY_WOMEN = 20;
+    protected const CATEGORY_WOMEN_TOPS = 21;
+    protected const CATEGORY_WOMEN_BOTTOMS = 22;
+    protected const CATEGORY_MEN = 11;
+    protected const CATEGORY_MEN_TOPS = 12;
+    protected const CATEGORY_MEN_BOTTOMS = 13;
+
+    protected static string $testSuiteIndexPrefix;
+
     protected ?Adapter $adapter = null;
     protected ?InstantSearchHelper $instantSearchHelper = null;
 
@@ -39,6 +52,45 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
         $this->adapter = $this->objectManager->get(Adapter::class);
         $this->instantSearchHelper = $this->objectManager->get(InstantSearchHelper::class);
     }
+
+    /**
+     * @param string $key - a unique key for the operationi
+     * @return void
+     * @throws AlgoliaException
+     * @throws DiagnosticsException
+     * @throws NoSuchEntityException
+     */
+    protected function indexOncePerClass(string $key): void
+    {
+        $this->setupTestSuiteIndexPrefix();
+
+        $this->runOnce(function() {
+            $this->indexAllProducts();
+        }, $key);
+    }
+
+    /**
+     * @throws NoSuchEntityException|AlgoliaException
+     */
+    public static function tearDownAfterClass(): void
+    {
+        if (self::$testSuiteIndexPrefix) {
+            IndexCleaner::clean(self::$testSuiteIndexPrefix);
+        }
+    }
+
+    /**
+     * Removes timestamp from index prefix for index reuse.
+     * For expected format see:
+     * @see \Algolia\AlgoliaSearch\Test\Integration\TestCase::bootstrap
+     */
+    protected function setupTestSuiteIndexPrefix(): void
+    {
+        $this->indexPrefix = $this->simplifyIndexPrefix($this->indexPrefix);
+        self::$testSuiteIndexPrefix = $this->indexPrefix; // Clear after all tests
+        $this->setConfig('algoliasearch_credentials/credentials/index_prefix', $this->indexPrefix);
+    }
+
 
     /**
      * For all searches, test against an "in stock" product use case.
@@ -96,14 +148,14 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
 
         $from = ($page - 1) * $pageSize;
 
-        return new SearchRequest(
+        return new Request(
             name: self::CATEGORY_REQUEST_NAME,
             indexName: 'catalogsearch_fulltext',
             query: $this->buildBoolQuery('', $filters),
             from: $from,
             size: $pageSize,
             dimensions: $this->buildDimensions(),
-            aggregations: $this->buildAggregations(),
+            buckets: $this->buildAggregations(),
             sort: $sort
         );
     }
