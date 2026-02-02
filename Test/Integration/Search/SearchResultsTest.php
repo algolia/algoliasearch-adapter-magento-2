@@ -3,13 +3,20 @@
 namespace Algolia\SearchAdapter\Test\Integration\Search;
 
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
-use Algolia\AlgoliaSearch\Test\Integration\IndexCleaner;
 use Algolia\SearchAdapter\Test\Integration\BackendSearchTestCase;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\Request\Aggregation\TermBucket;
-use Magento\Framework\Search\SearchResponseBuilder;
 
+
+/**
+ * Tests for basic search result verification including products, counts, pages, and facets
+ *
+ * @magentoDbIsolation disabled
+ * @magentoAppIsolation enabled
+ * @magentoConfigFixture default/catalog/search/engine algolia
+ * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 0
+ */
 class SearchResultsTest extends BackendSearchTestCase
 {
     protected int $expectedProductCount;
@@ -32,7 +39,6 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test that a basic search returns the expected number of products on first page
      *
-     * @magentoDbIsolation disabled
      * @throws AlgoliaException
      * @throws NoSuchEntityException
      * @throws LocalizedException
@@ -55,7 +61,7 @@ class SearchResultsTest extends BackendSearchTestCase
 
     /**
      * Test that product count matches expected total
-     * @magentoDbIsolation disabled
+     *
      * @throws AlgoliaException
      * @throws NoSuchEntityException
      * @throws LocalizedException
@@ -82,11 +88,11 @@ class SearchResultsTest extends BackendSearchTestCase
 
 
     /**
-     * @magentoDbIsolation disabled
+     * Test that number of pages is correctly calculated
+     *
      * @throws AlgoliaException
      * @throws NoSuchEntityException
      * @throws LocalizedException
-     * Test that number of pages is correctly calculated
      */
     public function testNumberOfPagesCalculation(): void
     {
@@ -119,7 +125,6 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test that category facets are returned in aggregations
      *
-     * @magentoDbIsolation disabled
      * @throws AlgoliaException
      * @throws NoSuchEntityException
      * @throws LocalizedException
@@ -147,7 +152,6 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test that price facets are returned in aggregations
      *
-     * @magentoDbIsolation disabled
      * @throws AlgoliaException
      * @throws NoSuchEntityException
      * @throws LocalizedException
@@ -167,7 +171,6 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test that color attribute facets are returned
      *
-     * @magentoDbIsolation disabled
      * @throws AlgoliaException
      * @throws NoSuchEntityException
      * @throws LocalizedException
@@ -187,7 +190,6 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test that size attribute facets are returned
      *
-     * @magentoDbIsolation disabled
      * @throws AlgoliaException
      * @throws NoSuchEntityException
      * @throws LocalizedException
@@ -208,7 +210,6 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test search with a specific query term returns relevant products
      *
-     * @magentoDbIsolation disabled
      * @throws AlgoliaException
      * @throws NoSuchEntityException
      * @throws LocalizedException
@@ -236,7 +237,6 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test that first 5 products are returned correctly
      *
-     * @magentoDbIsolation disabled
      * @throws AlgoliaException
      * @throws NoSuchEntityException
      * @throws LocalizedException
@@ -261,7 +261,6 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test empty search results handling
      *
-     * @magentoDbIsolation disabled
      * @throws AlgoliaException
      * @throws NoSuchEntityException
      * @throws LocalizedException
@@ -283,7 +282,6 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test different page sizes
      *
-     * @magentoDbIsolation disabled
      * @throws AlgoliaException
      * @throws NoSuchEntityException
      * @throws LocalizedException

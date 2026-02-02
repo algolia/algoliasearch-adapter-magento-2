@@ -10,6 +10,7 @@ use Algolia\AlgoliaSearch\Test\Integration\IndexCleaner;
 use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTest;
 use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTestCase;
 use Algolia\SearchAdapter\Model\Adapter;
+use Magento\Framework\Api\Search\DocumentInterface;
 use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -22,7 +23,6 @@ use Magento\Framework\Search\Request\Filter\Term;
 use Magento\Framework\Search\Request\Query\BoolExpression as BoolQuery;
 use Magento\Framework\Search\Request\Query\Filter as FilterQuery;
 use Magento\Framework\Search\Request\Query\MatchQuery;
-use Magento\Framework\Search\Request\QueryInterface;
 use Magento\Framework\Search\RequestInterface;
 use Magento\Framework\Search\Response\QueryResponse;
 use Magento\Framework\Search\SearchResponseBuilder;
@@ -310,6 +310,21 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
             $values[$value->getValue()] = $value->getMetrics();
         }
         return $values;
+    }
+
+    /**
+     * Get document IDs from the response
+     *
+     * @return string[]
+     */
+    protected function getDocumentIds(QueryResponse $response): array
+    {
+        $ids = [];
+        foreach ($response as $document) {
+            /** @var DocumentInterface $document */
+            $ids[] = $document->getId();
+        }
+        return $ids;
     }
 
     /**

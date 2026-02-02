@@ -4,6 +4,14 @@ namespace Algolia\SearchAdapter\Test\Integration\Search;
 
 use Algolia\SearchAdapter\Test\Integration\BackendSearchTestCase;
 
+/**
+ * Tests for filtered search functionality including category, price, and attribute filters
+ *
+ * @magentoDbIsolation disabled
+ * @magentoAppIsolation enabled
+ * @magentoConfigFixture default/catalog/search/engine algolia
+ * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 0
+ */
 class FilteredSearchTest extends BackendSearchTestCase
 {
     protected int $expectedProductCount;
@@ -25,8 +33,6 @@ class FilteredSearchTest extends BackendSearchTestCase
 
     /**
      * Test that category filter correctly filters products
-     *
-     * @magentoDbIsolation disabled
      */
     public function testCategoryFilterApplied(): void
     {
@@ -51,7 +57,6 @@ class FilteredSearchTest extends BackendSearchTestCase
      * Test category filter with different categories
      *
      * @dataProvider categoryProvider
-     * @magentoDbIsolation disabled
      */
     public function testCategoryFilterWithDifferentCategories(
         int $categoryId,
@@ -91,8 +96,6 @@ class FilteredSearchTest extends BackendSearchTestCase
 
     /**
      * Test that price range filter correctly filters products
-     *
-     * @magentoDbIsolation disabled
      */
     public function testPriceRangeFilterApplied(): void
     {
@@ -123,7 +126,6 @@ class FilteredSearchTest extends BackendSearchTestCase
      * Test different price ranges
      *
      * @dataProvider priceRangeProvider
-     * @magentoDbIsolation disabled
      */
     public function testDifferentPriceRanges(float $from, float $to, bool $expectResults): void
     {
@@ -167,8 +169,6 @@ class FilteredSearchTest extends BackendSearchTestCase
 
     /**
      * Test that attribute filter (color) correctly filters products
-     *
-     * @magentoDbIsolation disabled
      */
     public function testColorAttributeFilterApplied(): void
     {
@@ -208,8 +208,6 @@ class FilteredSearchTest extends BackendSearchTestCase
 
     /**
      * Test that attribute filter (size) correctly filters products
-     *
-     * @magentoDbIsolation disabled
      */
     public function testSizeAttributeFilterApplied(): void
     {
@@ -248,8 +246,6 @@ class FilteredSearchTest extends BackendSearchTestCase
 
     /**
      * Test multiple filters applied together
-     *
-     * @magentoDbIsolation disabled
      */
     public function testMultipleFiltersApplied(): void
     {
@@ -291,8 +287,6 @@ class FilteredSearchTest extends BackendSearchTestCase
 
     /**
      * Test category filter combined with search query
-     *
-     * @magentoDbIsolation disabled
      */
     public function testCategoryFilterWithSearchQuery(): void
     {
@@ -321,8 +315,6 @@ class FilteredSearchTest extends BackendSearchTestCase
 
     /**
      * Test that facet counts update when filters are applied
-     *
-     * @magentoDbIsolation disabled
      */
     public function testFacetCountsUpdateWithFilters(): void
     {
