@@ -24,6 +24,7 @@ use Magento\Framework\Search\Request\Query\MatchQuery;
 use Magento\Framework\Search\Request\QueryInterface;
 use Magento\Framework\Search\RequestInterface;
 use Magento\Framework\Search\Response\QueryResponse;
+use Magento\Framework\Search\SearchResponseBuilder;
 
 class BackendSearchTestCase extends ProductsIndexingTestCase
 {
@@ -45,12 +46,14 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
 
     protected ?Adapter $adapter = null;
     protected ?InstantSearchHelper $instantSearchHelper = null;
+    protected ?SearchResponseBuilder $searchResponseBuilder = null;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->adapter = $this->objectManager->get(Adapter::class);
         $this->instantSearchHelper = $this->objectManager->get(InstantSearchHelper::class);
+        $this->searchResponseBuilder =  $this->objectManager->get(SearchResponseBuilder::class);
     }
 
     /**
@@ -91,6 +94,15 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
         $this->setConfig('algoliasearch_credentials/credentials/index_prefix', $this->indexPrefix);
     }
 
+    /**
+     * In order to reuse the same index across tests strip the timestamp
+     */
+    protected function simplifyIndexPrefix(string $indexPrefix): string
+    {
+        $parts = explode('_', $this->indexPrefix);
+        unset($parts[2]); // kill the timestamp
+        return implode('_', array_values($parts));
+    }
 
     /**
      * For all searches, test against an "in stock" product use case.

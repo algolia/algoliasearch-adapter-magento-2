@@ -14,8 +14,6 @@ class SearchResultsTest extends BackendSearchTestCase
 {
     protected int $expectedProductCount;
 
-    protected ?SearchResponseBuilder $searchResponseBuilder = null;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -24,22 +22,11 @@ class SearchResultsTest extends BackendSearchTestCase
         $this->indexOncePerClass(__CLASS__ . '::indexProducts');
 
         $this->expectedProductCount = $this->assertValues->productsOnStockCount;
-        $this->searchResponseBuilder =  $this->objectManager->get(SearchResponseBuilder::class);
     }
 
     protected function tearDown(): void
     {
         // Prevent inherited tear down and perform after all tests have executed
-    }
-
-    /**
-     * In order to reuse the same index across tests strip the timestamp
-     */
-    protected function simplifyIndexPrefix(string $indexPrefix): string
-    {
-        $parts = explode('_', $this->indexPrefix);
-        unset($parts[2]); // kill the timestamp
-        return implode('_', array_values($parts));
     }
 
     /**
