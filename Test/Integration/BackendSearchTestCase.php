@@ -17,6 +17,7 @@ use Magento\Framework\Search\Request;
 use Magento\Framework\Search\Request\Aggregation\DynamicBucket;
 use Magento\Framework\Search\Request\Aggregation\TermBucket;
 use Magento\Framework\Search\Request\Dimension;
+use Magento\Framework\Search\Request\Filter\Range;
 use Magento\Framework\Search\Request\Filter\Term;
 use Magento\Framework\Search\Request\Query\BoolExpression as BoolQuery;
 use Magento\Framework\Search\Request\Query\Filter as FilterQuery;
@@ -77,7 +78,7 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
      */
     public static function tearDownAfterClass(): void
     {
-        if (self::$testSuiteIndexPrefix) {
+        if (self::$testSuiteIndexPrefix ?? false) {
             IndexCleaner::clean(self::$testSuiteIndexPrefix);
         }
     }
@@ -239,9 +240,37 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
 
     protected function buildCategoryFilter(int $categoryId): FilterQuery
     {
-        $termFilter = new Term('category', $categoryId, 'category_ids');
+        $termFilter = new Term(name: 'category', value: $categoryId, field: 'category_ids');
         return new FilterQuery(
             'category',
+            1,
+            FilterQuery::REFERENCE_FILTER,
+            $termFilter // incorrectly typed in Magento core
+        );
+    }
+
+    /**
+     * Build a price range filter
+     */
+    protected function buildPriceFilter(float $from, float $to): FilterQuery
+    {
+        $rangeFilter = new Range('price_filter', 'price', $from, $to);
+        return new FilterQuery(
+            'price',
+            1,
+            FilterQuery::REFERENCE_FILTER,
+            $rangeFilter // incorrectly typed in Magento core
+        );
+    }
+
+    /**
+     * Build an attribute filter (e.g., color, size)
+     */
+    protected function buildAttributeFilter(string $attribute, mixed $value): FilterQuery
+    {
+        $termFilter = new Term(name: $attribute, value: $value, field: $attribute);
+        return new FilterQuery(
+            $attribute,
             1,
             FilterQuery::REFERENCE_FILTER,
             $termFilter // incorrectly typed in Magento core
