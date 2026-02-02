@@ -8,7 +8,6 @@ use Algolia\SearchAdapter\Test\Integration\BackendSearchTestCase;
  * Tests for pagination functionality including page navigation and page size handling
  *
  * @magentoDbIsolation disabled
- * @magentoAppIsolation enabled
  */
 class PaginationTest extends BackendSearchTestCase
 {
@@ -25,6 +24,8 @@ class PaginationTest extends BackendSearchTestCase
 
     /**
      * Test that page 2 returns different results than page 1
+     *
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testSecondPageReturnsDifferentResults(): void
     {
@@ -47,6 +48,8 @@ class PaginationTest extends BackendSearchTestCase
 
     /**
      * Test that page size is correctly respected
+     *
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testPageSizeRespected(): void
     {
@@ -74,6 +77,8 @@ class PaginationTest extends BackendSearchTestCase
 
     /**
      * Test total pages calculation is correct
+     *
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testTotalPagesCalculation(): void
     {
@@ -101,6 +106,8 @@ class PaginationTest extends BackendSearchTestCase
 
     /**
      * Test pagination maintains consistent ordering
+     *
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testPaginationMaintainsConsistentOrdering(): void
     {
@@ -133,6 +140,8 @@ class PaginationTest extends BackendSearchTestCase
 
     /**
      * Test large page sizes
+     *
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testLargePageSize(): void
     {
@@ -152,6 +161,7 @@ class PaginationTest extends BackendSearchTestCase
      * Test small page sizes
      *
      * @dataProvider smallPageSizeProvider
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testSmallPageSizes(int $pageSize): void
     {
@@ -183,6 +193,7 @@ class PaginationTest extends BackendSearchTestCase
      * Test page navigation through all results
      *
      * @dataProvider pageNavigationProvider
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testPageNavigation(int $pageSize, int $maxPagesToTest): void
     {
@@ -234,6 +245,8 @@ class PaginationTest extends BackendSearchTestCase
 
     /**
      * Test that offset calculations are correct for Magento 1-based to Algolia 0-based conversion
+     *
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testOffsetCalculationFromPageNumber(): void
     {
@@ -254,6 +267,8 @@ class PaginationTest extends BackendSearchTestCase
 
     /**
      * Test pagination with filtered results
+     *
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testPaginationWithFilteredResults(): void
     {

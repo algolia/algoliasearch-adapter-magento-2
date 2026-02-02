@@ -11,7 +11,6 @@ use Magento\Framework\Api\SortOrder;
  * Tests for sorting functionality including price/name sorting and replica index usage
  *
  * @magentoDbIsolation disabled
- * @magentoAppIsolation enabled
  */
 class SortingTest extends BackendSearchTestCase
 {

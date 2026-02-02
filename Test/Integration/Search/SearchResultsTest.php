@@ -13,7 +13,6 @@ use Magento\Framework\Search\Request\Aggregation\TermBucket;
  * Tests for basic search result verification including products, counts, pages, and facets
  *
  * @magentoDbIsolation disabled
- * @magentoAppIsolation enabled
  */
 class SearchResultsTest extends BackendSearchTestCase
 {
@@ -37,9 +36,7 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test that a basic search returns the expected number of products on first page
      *
-     * @throws AlgoliaException
-     * @throws NoSuchEntityException
-     * @throws LocalizedException
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testBasicSearchReturnsFirstPageProducts(): void
     {
@@ -60,9 +57,7 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test that product count matches expected total
      *
-     * @throws AlgoliaException
-     * @throws NoSuchEntityException
-     * @throws LocalizedException
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testProductCountMatchesExpected(): void
     {
@@ -88,9 +83,7 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test that number of pages is correctly calculated
      *
-     * @throws AlgoliaException
-     * @throws NoSuchEntityException
-     * @throws LocalizedException
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testNumberOfPagesCalculation(): void
     {
@@ -123,9 +116,7 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test that category facets are returned in aggregations
      *
-     * @throws AlgoliaException
-     * @throws NoSuchEntityException
-     * @throws LocalizedException
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testCategoryFacetsReturned(): void
     {
@@ -150,9 +141,7 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test that price facets are returned in aggregations
      *
-     * @throws AlgoliaException
-     * @throws NoSuchEntityException
-     * @throws LocalizedException
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testPriceFacetsReturned(): void
     {
@@ -169,9 +158,7 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test that color attribute facets are returned
      *
-     * @throws AlgoliaException
-     * @throws NoSuchEntityException
-     * @throws LocalizedException
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testColorAttributeFacetsReturned(): void
     {
@@ -188,9 +175,7 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test that size attribute facets are returned
      *
-     * @throws AlgoliaException
-     * @throws NoSuchEntityException
-     * @throws LocalizedException
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testSizeAttributeFacetsReturned(): void
     {
@@ -208,9 +193,7 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test search with a specific query term returns relevant products
      *
-     * @throws AlgoliaException
-     * @throws NoSuchEntityException
-     * @throws LocalizedException
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testSearchWithQueryTermReturnsRelevantProducts(): void
     {
@@ -235,9 +218,7 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test that first 5 products are returned correctly
      *
-     * @throws AlgoliaException
-     * @throws NoSuchEntityException
-     * @throws LocalizedException
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testFirst5ProductsReturned(): void
     {
@@ -259,9 +240,7 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test empty search results handling
      *
-     * @throws AlgoliaException
-     * @throws NoSuchEntityException
-     * @throws LocalizedException
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testEmptySearchResultsHandling(): void
     {
@@ -280,11 +259,8 @@ class SearchResultsTest extends BackendSearchTestCase
     /**
      * Test different page sizes
      *
-     * @throws AlgoliaException
-     * @throws NoSuchEntityException
-     * @throws LocalizedException
-     *
      * @dataProvider pageSizeProvider
+     * @magentoConfigFixture default/catalog/search/engine algolia
      */
     public function testDifferentPageSizes(int $pageSize): void
     {
