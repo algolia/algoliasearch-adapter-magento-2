@@ -14,8 +14,6 @@ use Magento\Framework\Search\Request\Aggregation\TermBucket;
  *
  * @magentoDbIsolation disabled
  * @magentoAppIsolation enabled
- * @magentoConfigFixture default/catalog/search/engine algolia
- * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 0
  */
 class SearchResultsTest extends BackendSearchTestCase
 {
@@ -25,7 +23,7 @@ class SearchResultsTest extends BackendSearchTestCase
     {
         parent::setUp();
 
-        $this->addFacet(attribute: 'size', type: 'conjunctive');
+        $this->addFacet(attribute: 'size', type: 'conjunctive'); // test OOTB facet config
         $this->indexOncePerClass(__CLASS__ . '::indexProducts');
 
         $this->expectedProductCount = $this->assertValues->productsOnStockCount;

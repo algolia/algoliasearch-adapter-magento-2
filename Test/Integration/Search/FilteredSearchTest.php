@@ -9,8 +9,6 @@ use Algolia\SearchAdapter\Test\Integration\BackendSearchTestCase;
  *
  * @magentoDbIsolation disabled
  * @magentoAppIsolation enabled
- * @magentoConfigFixture default/catalog/search/engine algolia
- * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 0
  */
 class FilteredSearchTest extends BackendSearchTestCase
 {
@@ -20,7 +18,7 @@ class FilteredSearchTest extends BackendSearchTestCase
     {
         parent::setUp();
 
-        $this->addFacet(attribute: 'size', type: 'conjunctive');
+        $this->configureFacets(); // mock facets
         $this->indexOncePerClass(__CLASS__ . '::indexProducts');
 
         $this->expectedProductCount = $this->assertValues->productsOnStockCount;

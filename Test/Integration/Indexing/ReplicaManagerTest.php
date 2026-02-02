@@ -9,6 +9,12 @@ use Algolia\AlgoliaSearch\Service\Product\ReplicaManager;
 use Algolia\SearchAdapter\Helper\ConfigHelper as AdapterConfigHelper;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 
+/**
+ * Tests for replica manager functionality including replica sync and indexing
+ *
+ * @magentoDbIsolation disabled
+ * @magentoAppIsolation enabled
+ */
 class ReplicaManagerTest extends BackendSearchTestCase
 {
     protected ?ReplicaManager $replicaManager = null;
@@ -25,7 +31,6 @@ class ReplicaManagerTest extends BackendSearchTestCase
     /**
      * Test that replica sync is enabled when backend search is enabled without InstantSearch
      *
-     * @magentoDbIsolation disabled
      * @magentoConfigFixture default/catalog/search/engine algolia
      * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 0
      * @magentoConfigFixture current_store algoliasearch_indexing_manager/algolia_indexing/enable_indexing 1
@@ -48,7 +53,6 @@ class ReplicaManagerTest extends BackendSearchTestCase
     /**
      * Test that replica sync is enabled with InstantSearch only (original behavior)
      *
-     * @magentoDbIsolation disabled
      * @magentoConfigFixture default/catalog/search/engine opensearch
      * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 1
      * @magentoConfigFixture current_store algoliasearch_indexing_manager/algolia_indexing/enable_indexing 1
@@ -71,7 +75,6 @@ class ReplicaManagerTest extends BackendSearchTestCase
     /**
      * Test that indexing products with backend search creates replicas
      *
-     * @magentoDbIsolation disabled
      * @magentoConfigFixture default/catalog/search/engine algolia
      * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 0
      * @magentoConfigFixture current_store algoliasearch_indexing_manager/algolia_indexing/enable_indexing 1
@@ -108,7 +111,6 @@ class ReplicaManagerTest extends BackendSearchTestCase
      * Test that replica sync requires indexing to be enabled
      * Even with Algolia backend search, replica sync should be disabled if indexing is not enabled
      *
-     * @magentoDbIsolation disabled
      * @magentoConfigFixture default/catalog/search/engine algolia
      * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 0
      * @magentoConfigFixture current_store algoliasearch_indexing_manager/algolia_indexing/enable_indexing 0
@@ -126,7 +128,6 @@ class ReplicaManagerTest extends BackendSearchTestCase
     /**
      * Test that both conditions must be met for backend search replica sync
      *
-     * @magentoDbIsolation disabled
      * @dataProvider backendSearchReplicaSyncConditionsProvider
      * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 0
      */
@@ -182,7 +183,6 @@ class ReplicaManagerTest extends BackendSearchTestCase
     /**
      * Test that replica sync is enabled when both InstantSearch and backend search are enabled
      *
-     * @magentoDbIsolation disabled
      * @magentoConfigFixture default/catalog/search/engine algolia
      * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 1
      * @magentoConfigFixture current_store algoliasearch_indexing_manager/algolia_indexing/enable_indexing 1

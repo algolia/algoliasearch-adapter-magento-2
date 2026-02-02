@@ -11,6 +11,7 @@ use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTest
 use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTestCase;
 use Algolia\SearchAdapter\Model\Adapter;
 use Magento\Framework\Api\Search\DocumentInterface;
+use Magento\Framework\Api\SortOrder;
 use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -277,6 +278,19 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
         );
     }
 
+    /**
+     * Build sort array for request
+     */
+    protected function buildSort(string $field, string $direction = SortOrder::SORT_ASC): array
+    {
+        return [
+            [
+                SortOrder::FIELD => $field,
+                SortOrder::DIRECTION => $direction
+            ]
+        ];
+    }
+
     protected function assertBucketExists(QueryResponse $response, string $bucketName): void
     {
         $aggregations = $response->getAggregations();
@@ -328,7 +342,35 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
     }
 
     /**
-     * Add an attribute to the instant search facets configuration.
+     * Configure sorting indices for the adapter
+     */
+    protected function configureSortingIndices(): void
+    {
+        $sortingIndices = $this->getSerializer()->serialize([
+            ['attribute' => 'price', 'sort' => 'asc', 'label' => 'Price: Low to High'],
+            ['attribute' => 'price', 'sort' => 'desc', 'label' => 'Price: High to Low'],
+            ['attribute' => 'name', 'sort' => 'asc', 'label' => 'Name: A to Z'],
+            ['attribute' => 'name', 'sort' => 'desc', 'label' => 'Name: Z to A'],
+        ]);
+        $this->setConfig(InstantSearchHelper::SORTING_INDICES, $sortingIndices);
+    }
+
+    /**
+     * Configure default facets for testing
+     */
+    protected function configureFacets(): void
+    {
+        $facets = $this->getSerializer()->serialize([
+            ['attribute' => 'price', 'type' => 'slider', 'label' => 'Price'],
+            ['attribute' => 'categories', 'type' => 'conjunctive', 'label' => 'Categories'],
+            ['attribute' => 'color', 'type' => 'conjunctive', 'label' => 'Color'],
+            ['attribute' => 'size', 'type' => 'conjunctive', 'label' => 'Size'],
+        ]);
+        $this->setConfig(InstantSearchHelper::FACETS, $facets);
+    }
+
+    /**
+     * Add an attribute to the OOTB instant search facets configuration.
      *
      * @param string $attribute The attribute code to add as a facet
      * @param string $type The facet type: 'conjunctive', 'disjunctive', 'slider', or 'other'

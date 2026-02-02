@@ -9,8 +9,6 @@ use Algolia\SearchAdapter\Test\Integration\BackendSearchTestCase;
  *
  * @magentoDbIsolation disabled
  * @magentoAppIsolation enabled
- * @magentoConfigFixture default/catalog/search/engine algolia
- * @magentoConfigFixture current_store algoliasearch_instant/instant/is_instant_enabled 0
  */
 class PaginationTest extends BackendSearchTestCase
 {
