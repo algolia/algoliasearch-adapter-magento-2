@@ -104,6 +104,8 @@ class ReplicaManagerTest extends BackendSearchTestCase
             $settings['replicas'],
             'Primary index should have the same number of replicas as sorts'
         );
+
+        $this->resetOutOfStockUseCase();
     }
 
 

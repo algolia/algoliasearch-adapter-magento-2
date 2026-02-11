@@ -6,9 +6,9 @@ use Algolia\AlgoliaSearch\Exception\DiagnosticsException;
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\AlgoliaSearch\Helper\ConfigHelper;
 use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
+use Algolia\AlgoliaSearch\Test\Integration\Frontend\Search\SearchTestCase;
 use Algolia\AlgoliaSearch\Test\Integration\IndexCleaner;
 use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTest;
-use Algolia\AlgoliaSearch\Test\Integration\Indexing\Product\ProductsIndexingTestCase;
 use Algolia\SearchAdapter\Model\Adapter;
 use Magento\Framework\Api\Search\DocumentInterface;
 use Magento\Framework\Api\SortOrder;
@@ -28,7 +28,7 @@ use Magento\Framework\Search\RequestInterface;
 use Magento\Framework\Search\Response\QueryResponse;
 use Magento\Framework\Search\SearchResponseBuilder;
 
-class BackendSearchTestCase extends ProductsIndexingTestCase
+class BackendSearchTestCase extends SearchTestCase
 {
     protected const DEFAULT_PAGE_SIZE = 12;
     protected const SEARCH_REQUEST_NAME = 'quick_search_container';
@@ -44,8 +44,6 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
     protected const CATEGORY_MEN_TOPS = 12;
     protected const CATEGORY_MEN_BOTTOMS = 13;
 
-    protected static string $testSuiteIndexPrefix;
-
     protected ?Adapter $adapter = null;
     protected ?InstantSearchHelper $instantSearchHelper = null;
     protected ?SearchResponseBuilder $searchResponseBuilder = null;
@@ -59,55 +57,11 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
     }
 
     /**
-     * @param string $key - a unique key for the operationi
-     * @return void
-     * @throws AlgoliaException
-     * @throws DiagnosticsException
-     * @throws NoSuchEntityException
-     */
-    protected function indexOncePerClass(string $key): void
-    {
-        $this->setupTestSuiteIndexPrefix();
-
-        $this->runOnce(function() {
-            $this->indexAllProducts();
-        }, $key);
-    }
-
-    /**
-     * @throws NoSuchEntityException|AlgoliaException
-     */
-    public static function tearDownAfterClass(): void
-    {
-        if (self::$testSuiteIndexPrefix ?? false) {
-            IndexCleaner::clean(self::$testSuiteIndexPrefix);
-        }
-    }
-
-    /**
-     * Removes timestamp from index prefix for index reuse.
-     * For expected format see:
-     * @see \Algolia\AlgoliaSearch\Test\Integration\TestCase::bootstrap
-     */
-    protected function setupTestSuiteIndexPrefix(): void
-    {
-        $this->indexPrefix = $this->simplifyIndexPrefix($this->indexPrefix);
-        self::$testSuiteIndexPrefix = $this->indexPrefix; // Clear after all tests
-        $this->setConfig('algoliasearch_credentials/credentials/index_prefix', $this->indexPrefix);
-    }
-
-    /**
-     * In order to reuse the same index across tests strip the timestamp
-     */
-    protected function simplifyIndexPrefix(string $indexPrefix): string
-    {
-        $parts = explode('_', $this->indexPrefix);
-        unset($parts[2]); // kill the timestamp
-        return implode('_', array_values($parts));
-    }
-
-    /**
      * For all searches, test against an "in stock" product use case.
+     *
+     * Be sure to tear down when done testing
+     *
+     * @see resetOutOfStockUseCase
      *
      * @throws AlgoliaException
      * @throws NoSuchEntityException
@@ -115,11 +69,23 @@ class BackendSearchTestCase extends ProductsIndexingTestCase
      */
     protected function indexAllProducts(int $storeId = 1): void
     {
+        // Set one product to out of stock
         $this->setConfig(ConfigHelper::SHOW_OUT_OF_STOCK, 0);
         $this->updateStockItem(ProductsIndexingTest::OUT_OF_STOCK_PRODUCT_SKU, false);
 
-        $this->productBatchQueueProcessor->processBatch($storeId);
-        $this->algoliaConnector->waitLastTask();
+        parent::indexAllProducts($storeId);
+    }
+
+    /**
+     * Cleans up the catalog update performed while testing the "out of stock" use case.
+     *
+     * @see indexAllProducts
+     *
+     * @throws NoSuchEntityException
+     */
+    protected function resetOutOfStockUseCase(): void
+    {
+        $this->updateStockItem(ProductsIndexingTest::OUT_OF_STOCK_PRODUCT_SKU, true);
     }
 
     /**

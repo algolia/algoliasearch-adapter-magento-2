@@ -17,9 +17,16 @@ class PaginationTest extends BackendSearchTestCase
         $this->indexOncePerClass(__CLASS__ . '::indexProducts');
     }
 
+    /**
+     * Does not call parent tearDown
+     * Index tear down will occur after all tests have executed for this suite
+     * @see \Algolia\AlgoliaSearch\Test\Integration\Frontend\Search\SearchTestCase::tearDownAfterClass
+     */
     protected function tearDown(): void
     {
-        // Prevent inherited tear down and perform after all tests have executed
+        $this->runOnce(function() {
+            $this->resetOutOfStockUseCase();
+        }, __CLASS__ . '::tearDown');
     }
 
     /**
