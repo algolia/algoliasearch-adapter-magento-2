@@ -140,7 +140,6 @@ If you use the **Yes (for all users)** mode, this problem does not apply because
 | Config Path | Label | Type | Default |
 |-------------|-------|------|---------|
 | `catalog/search/engine` | Search Engine | select | - |
-| `catalog/search/algolia_app_id` | Algolia Application ID | text | - |
 | `catalog/search/algolia_connect_timeout` | Connection Timeout (seconds) | text | `2` |
 | `catalog/search/algolia_read_timeout` | Read Timeout (seconds) | text | `5` |
 | `catalog/search/algolia_seo_filters` | Enable SEO Friendly Filters | yes/no | `Yes` |
