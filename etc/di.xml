@@ -164,4 +164,27 @@
             </argument>
         </arguments>
     </type>
+
+    <!--  BEGIN Advanced search -->
+    <virtualType name="algoliaAdvancedCollection" type="Magento\CatalogSearch\Model\ResourceModel\Advanced\Collection">
+        <arguments>
+            <argument name="searchRequestName" xsi:type="string">advanced_search_container</argument>
+            <argument name="searchCriteriaResolverFactory" xsi:type="object">algoliaSearchCriteriaResolverFactory</argument>
+            <argument name="totalRecordsResolverFactory" xsi:type="object">algoliaTotalRecordsResolver\Factory</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="algoliaAdvancedCollectionFactory" type="Magento\CatalogSearch\Model\ResourceModel\Advanced\CollectionFactory">
+        <arguments>
+            <argument name="instanceName" xsi:type="string">algoliaAdvancedCollection</argument>
+        </arguments>
+    </virtualType>
+
+    <type name="Magento\CatalogSearch\Model\Search\ItemCollectionProvider">
+        <arguments>
+            <argument name="factories" xsi:type="array">
+                <item name="algolia" xsi:type="object">algoliaAdvancedCollectionFactory</item>
+            </argument>
+        </arguments>
+    </type>
+    <!-- END Advanced Search -->
 </config>
