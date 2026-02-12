@@ -63,7 +63,7 @@ class ConfigHelper
             $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT;
             $scopeId = null;
         }
-        return $this->configInterface->getValue($path, $scope, $scopeId);
+        return $this->configInterface->getValue($path, $scope, $scopeId) ?? '';
     }
 
     /**
