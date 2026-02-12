@@ -5,6 +5,11 @@
     <preference for="Algolia\SearchAdapter\Api\Data\DocumentMapperResultInterface" type="Algolia\SearchAdapter\Model\Response\DocumentMapperResult" />
     <preference for="Algolia\SearchAdapter\Api\Data\SearchQueryResultInterface" type="Algolia\SearchAdapter\Model\Response\SearchQueryResult" />
 
+    <type name="Algolia\AlgoliaSearch\Service\Product\ReplicaManager">
+        <plugin name="backend_search_replica_sync"
+                type="Algolia\SearchAdapter\Plugin\Service\Product\ReplicaManagerPlugin" />
+    </type>
+
     <type name="Magento\Search\Model\EngineResolver">
         <arguments>
             <argument name="engines" xsi:type="array">
