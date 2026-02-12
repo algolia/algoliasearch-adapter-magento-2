@@ -2,10 +2,7 @@
 
 namespace Algolia\SearchAdapter\Test\Integration\Search;
 
-use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\SearchAdapter\Test\Integration\BackendSearchTestCase;
-use Magento\Framework\Exception\LocalizedException;
-use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Search\Request\Aggregation\TermBucket;
 
 

@@ -2,9 +2,9 @@
 
 namespace Algolia\SearchAdapter\Test\Integration\Search;
 
-use Algolia\AlgoliaSearch\Helper\ConfigHelper;
-use Algolia\AlgoliaSearch\Helper\Configuration\InstantSearchHelper;
 use Algolia\SearchAdapter\Test\Integration\BackendSearchTestCase;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SortOrder;
 
 /**
@@ -327,27 +327,36 @@ class SortingTest extends BackendSearchTestCase
     /**
      * Get prices for products by ID
      *
-     * For complex product types (configurable, grouped, bundle), this retrieves
-     * the minimum price from the price index rather than the base price attribute.
+     * Uses the same pricing logic as Magento\Catalog\Pricing\Render\FinalPriceBox
+     * to ensure parity with frontend price display. For all product types (including
+     * configurable, grouped, bundle), this retrieves the final price via PriceInfo.
      *
      * @return array<string, float>
      */
     protected function getProductPrices(array $productIds): array
     {
-        $productCollection = $this->objectManager->create(
-            \Magento\Catalog\Model\ResourceModel\Product\Collection::class
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->get(
+            ProductRepositoryInterface::class
         );
-        $productCollection->addAttributeToSelect('price');
-        $productCollection->addIdFilter($productIds);
-        // Add price index data to get minimal_price for configurable/grouped/bundle products
-        $productCollection->addMinimalPrice();
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->objectManager->get(
+            SearchCriteriaBuilder::class
+        );
+
+        $searchCriteria = $searchCriteriaBuilder
+            ->addFilter('entity_id', $productIds, 'in')
+            ->create();
+
+        $searchResults = $productRepository->getList($searchCriteria);
 
         $prices = [];
-        foreach ($productCollection as $product) {
-            // Use minimal_price from price index for accurate pricing on complex products
-            // Falls back to regular price if minimal_price is not available
-            $minimalPrice = $product->getMinimalPrice();
-            $prices[$product->getId()] = (float) ($minimalPrice ?? $product->getFinalPrice());
+        foreach ($searchResults->getItems() as $product) {
+            // Mirror FinalPriceBox logic:
+            // $this->getPriceType(Price\FinalPrice::PRICE_CODE)->getAmount()->getValue()
+            $priceInfo = $product->getPriceInfo();
+            $finalPrice = $priceInfo->getPrice(\Magento\Catalog\Pricing\Price\FinalPrice::PRICE_CODE);
+            $prices[$product->getId()] = (float) $finalPrice->getAmount()->getValue();
         }
 
         // Maintain the order from productIds
