@@ -1,0 +1,6 @@
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <!-- Disable advanced search until full support -->
+        <referenceBlock name="catalog-search-advanced-link" remove="true" />
+    </body>
+</page>
