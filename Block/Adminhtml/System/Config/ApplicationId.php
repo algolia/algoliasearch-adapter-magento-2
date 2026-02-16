@@ -26,7 +26,8 @@ class ApplicationId extends \Magento\Config\Block\System\Config\Form\Field
         $websiteId = $request->getParam('website') ?? null;
         $storeId = $request->getParam('store') ?? null;
 
-        return '<strong>' . $this->configHelper->getApplicationId($websiteId, $storeId) . '</strong>';
+        $algoliaAppId = $this->configHelper->getApplicationId($websiteId, $storeId) ?: "NOT CONFIGURED";
+        return "<strong>$algoliaAppId</strong>";
     }
 
     protected function _isInheritCheckboxRequired(AbstractElement $element): bool
