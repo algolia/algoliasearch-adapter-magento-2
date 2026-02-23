@@ -3,7 +3,7 @@
   "description": "Algolia Search Adapter extension for Magento 2 - Backend rendering support",
   "type": "magento2-module",
   "license": ["MIT"],
-  "version": "0.1.0",
+  "version": "0.9.0",
   "require": {
     "php": "~8.2|~8.3|~8.4",
     "algolia/algoliasearch-magento-2": "^3.18.0"
