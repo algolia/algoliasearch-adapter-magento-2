@@ -10,7 +10,7 @@ The adapter can operate **independently** (pure server-side rendering) or **alon
 
 - PHP 8.2+
 - Magento 2.4+ (framework `^103.0`)
-- `algolia/algoliasearch-magento-2` ^3.18
+- `algolia/algoliasearch-magento-2` ~3.18
 
 ## Installation
 
