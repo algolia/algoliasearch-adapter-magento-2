@@ -25,6 +25,19 @@
             </argument>
         </arguments>
     </type>
+    <!--
+        Maximum page size for the "algolia" engine. Magento's search API callers (e.g. the GraphQL products query
+        and Magento\Search\Api\SearchInterface consumers) request PageSizeProvider::getMaxPageSize() results at once.
+        Without an entry here it defaults to PHP_INT_MAX, which Algolia rejects ("Value for hitsPerPage is too large").
+        Core engines register their own value the same way (e.g. opensearch = 10000).
+    -->
+    <type name="Magento\Search\Model\Search\PageSizeProvider">
+        <arguments>
+            <argument name="pageSizeBySearchEngine" xsi:type="array">
+                <item name="algolia" xsi:type="number">1000</item>
+            </argument>
+        </arguments>
+    </type>
     <type name="Magento\CatalogSearch\Model\ResourceModel\EngineProvider">
         <arguments>
             <argument name="engines" xsi:type="array">
